@@ -46,7 +46,13 @@ if "show_recovery_prompt" not in st.session_state: st.session_state.show_recover
 if "cached_recovery_data" not in st.session_state: st.session_state.cached_recovery_data = {}
 if "duplicate_log_csv" not in st.session_state: st.session_state.duplicate_log_csv = None
 
-# 🎨 Pakistan Post Green Enterprise Style Sheet & Layout Engine
+# Initialize Persistent Column Mappings Memory
+mapping_keys = ["map_article", "map_name", "map_city", "map_phone", "map_date", "map_mrn", "map_address", "map_bo", "map_dup"]
+for key in mapping_keys:
+    if key not in st.session_state:
+        st.session_state[key] = None
+
+# 🎨 Pakistan Post Premium 3D & Etched Glass UI Engine
 sidebar_css_rule = ""
 if not st.session_state.logged_in:
     sidebar_css_rule = """
@@ -56,7 +62,7 @@ if not st.session_state.logged_in:
     .st-emotion-cache-1jicfl2 { padding-left: 1rem !important; padding-right: 1rem !important; }
     """
 else:
-    # Force expand sidebar and lock down structural shifting
+    # Premium Frosted Glass (Glassmorphism) with Craft Engraving Aesthetics
     sidebar_css_rule = """
     button[data-testid="stSidebarCollapseButton"] { display: none !important; visibility: hidden !important; }
     [data-testid="collapsedControl"] { display: none !important; visibility: hidden !important; }
@@ -64,74 +70,99 @@ else:
         display: block !important;
         visibility: visible !important;
         transform: translateX(0%) !important;
-        min-width: 280px !important;
-        max-width: 280px !important;
+        min-width: 300px !important;
+        max-width: 300px !important;
+        background: rgba(255, 255, 255, 0.45) !important;
+        backdrop-filter: blur(20px) saturate(170%) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(170%) !important;
+        border-right: 2px solid rgba(0, 102, 51, 0.2) !important;
+        box-shadow: 5px 0px 30px rgba(0, 77, 38, 0.08) !important;
+    }
+    section[data-testid="stSidebar"] .stMarkdown {
+        text-shadow: 0.5px 0.5px 1px rgba(255,255,255,0.9);
     }
     """
 
 st.markdown(f"""
     <style>
-    /* 🔒 Hide all unwanted default Streamlit structural frames */
+    /* 🔒 Hide unwanted default frames */
     div[data-testid="stToolbar"] {{ visibility: hidden !important; display: none !important; }}
     .stDeployButton {{ display: none !important; }}
     footer {{ visibility: hidden !important; }}
     
     {sidebar_css_rule}
     
-    /* Hide native input instructions globally */
     div[data-testid="stInputInstructions"] {{ display: none !important; }}
     div[data-testid="InputInstructions"] {{ display: none !important; }}
     small {{ display: none !important; }}
     
-    /* Native Pakistan Post Green Color Frame */
-    .stApp {{ background-color: #fcfefe; }}
+    /* Native App Color Frame - ep.gov.pk Inspired */
+    .stApp {{ background-color: #f4f8f5; }}
     body {{ font-family: 'Segoe UI', -apple-system, sans-serif; }}
     
-    .brand-title {{ color: #004d26; font-weight: 700; font-size: 1.9rem; letter-spacing: -0.03rem; margin-top: 5px; margin-bottom: 2px; }}
-    .brand-subtitle {{ color: #334155; font-size: 1.0rem; margin-bottom: 25px; font-weight: 500; border-left: 3px solid #006633; padding-left: 10px; }}
+    .brand-title {{ color: #004d26; font-weight: 800; font-size: 2.1rem; letter-spacing: -0.04rem; margin-top: 5px; margin-bottom: 2px; text-shadow: 0px 1px 1px rgba(0,0,0,0.05); }}
+    .brand-subtitle {{ color: #3d5a4c; font-size: 1.05rem; margin-bottom: 25px; font-weight: 600; border-left: 4px solid #d4af37; padding-left: 12px; }}
     
-    /* Clean Enterprise Boxes */
+    /* Clean Panels */
     div[data-testid="stForm"], .pyqt-panel {{
         background: #ffffff !important;
-        border-radius: 6px !important;
-        border: 1px solid #cbd5e1 !important;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05) !important;
-        padding: 28px !important;
+        border-radius: 8px !important;
+        border: 1px solid #c2d1c9 !important;
+        box-shadow: 0 6px 12px -2px rgba(0,77,38,0.04) !important;
+        padding: 30px !important;
     }}
     
-    /* Auto-Fit Form Design */
     label p {{
-        color: #334155 !important;
-        font-weight: 600 !important;
+        color: #2c4035 !important;
+        font-weight: 700 !important;
         font-size: 12px !important;
         text-transform: uppercase !important;
         letter-spacing: 0.5px !important;
     }}
     
-    /* High-contrast Pakistan Post Buttons */
-    div.stButton > button {{
-        background: #006633 !important;
+    /* 🚀 Advanced PySide6 / Win11 Native 3D Button Style Engine */
+    div.stButton > button, div.stDownloadButton > button {{
+        background: linear-gradient(180deg, #008040 0%, #006633 100%) !important;
         color: #ffffff !important;
         border: 1px solid #004d26 !important;
-        border-radius: 4px !important;
-        padding: 7px 20px !important;
-        font-weight: 600 !important;
-        font-size: 13px !important;
-    }}
-    div.stButton > button:hover {{
-        background: #004d26 !important;
-        color: #ffffff !important;
-        border-color: #00331a !important;
+        border-bottom: 4px solid #00331a !important; /* Thick 3D Lip */
+        border-radius: 6px !important;
+        padding: 8px 24px !important;
+        font-weight: 700 !important;
+        font-size: 13.5px !important;
+        text-shadow: 0px 1px 2px rgba(0,0,0,0.4);
+        box-shadow: 0px 4px 8px rgba(0,0,0,0.12) !important;
+        transition: all 0.05s ease-in-out !important;
     }}
     
-    .active-nav-btn div.stButton > button {{
-        background: #004d26 !important;
-        border-color: #00331a !important;
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.2) !important;
+    div.stButton > button:hover, div.stDownloadButton > button:hover {{
+        background: linear-gradient(180deg, #00994d 0%, #007339 100%) !important;
+        color: #ffffff !important;
+        border-color: #004d26 !important;
     }}
+    
+    /* 3D Pressed Mechanical Feedback */
+    div.stButton > button:active, div.stDownloadButton > button:active {{
+        border-bottom: 1px solid #00331a !important;
+        transform: translateY(3px) !important;
+        box-shadow: 0px 1px 3px rgba(0,0,0,0.2) !important;
+    }}
+    
+    /* Special Navigation Active Tab State */
+    .active-nav-btn div.stButton > button {{
+        background: linear-gradient(180deg, #004d26 0%, #00331a 100%) !important;
+        border-bottom: 1px solid #001a0d !important;
+        transform: translateY(2px) !important;
+        box-shadow: inset 0px 3px 6px rgba(0,0,0,0.4) !important;
+    }}
+    
+    /* Sidebar Specific Styling elements */
+    .sb-headline {{ color: #004d26; font-weight: 800; font-size: 1.15rem; border-bottom: 2px solid rgba(0,102,51,0.2); padding-bottom: 6px; margin-bottom: 15px; }}
+    .sb-name-tag {{ font-size: 1.05rem; color: #1e293b; font-weight: 500; margin-bottom: 5px; }}
+    .sb-name-bold {{ color: #b48608; font-weight: 800; font-size: 1.2rem; text-shadow: 0px 1px 0px rgba(255,255,255,0.8); }}
     
     .big-phone-display {{ font-family: 'Courier New', monospace; font-size: 32px !important; font-weight: 700 !important; color: #166534 !important; background-color: #f0fdf4; padding: 10px; border-radius: 4px; text-align: center; border: 1px solid #bbf7d0; }}
-    .patient-card-header {{ font-size: 20px !important; font-weight: 700 !important; color: #004d26; border-left: 4px solid #006633; padding-left: 10px; margin-bottom: 12px; }}
+    .patient-card-header {{ font-size: 20px !important; font-weight: 700 !important; color: #004d26; border-left: 4px solid #d4af37; padding-left: 10px; margin-bottom: 12px; }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -163,6 +194,16 @@ def fetch_operator_state(username):
         if res: return res[0]
     except: return None
     return None
+
+# Helper to load column indexes based on state memory
+def calculate_mapped_index(df_cols, session_key, alternative_match_string):
+    saved_val = st.session_state.get(session_key)
+    if saved_val in df_cols:
+        return list(df_cols).index(saved_val)
+    for idx, name in enumerate(df_cols):
+        if alternative_match_string.lower() in str(name).lower():
+            return idx
+    return 0
 
 # ⏱️ Smart Inactivity Verification Control
 if st.session_state.logged_in:
@@ -207,13 +248,13 @@ def fetch_live_emtts_status(article_id):
     except:
         return "⏱️ Timeout Error", "PakPost network nodes timed out."
 
-# Permanent Workspace Sidebar Container (Customized Layout)
+# Permanent Workspace Sidebar Container (Customized Etched Glass Layout)
 if st.session_state.logged_in:
     with st.sidebar:
-        st.markdown("### 🖥️ Enterprise Console")
-        st.markdown(f"**Logged in as:** {st.session_state.full_name}")
+        st.markdown("<div class='sb-headline'>🖥️ Enterprise Console</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='sb-name-tag'>Logged in as: <br><span class='sb-name-bold'>{st.session_state.full_name}</span></div>", unsafe_allow_html=True)
         st.markdown(f"**Privilege Cluster:** `{st.session_state.role.upper()}`")
-        st.markdown("---")
+        st.markdown("<br><hr style='border-top:1px solid rgba(0,102,51,0.2);'><br>", unsafe_allow_html=True)
         if st.button("Terminate Session 🚪", use_container_width=True):
             st.session_state.logged_in = False
             st.query_params.clear()
@@ -226,7 +267,7 @@ st.markdown("<div class='brand-subtitle'>Article Tracking & Patient Feedback Por
 if not st.session_state.logged_in:
     _, center_col, _ = st.columns([1, 1.4, 1])
     with center_col:
-        st.markdown("<div style='background-color:#006633; color:#ffffff; padding:12px; font-weight:600; font-size:13px; border-radius:6px 6px 0px 0px; border:1px solid #004d26; text-align:center; letter-spacing:1px;'>SECURE PORTAL AUTHENTICATION</div>", unsafe_allow_html=True)
+        st.markdown("<div style='background-color:#006633; color:#ffffff; padding:12px; font-weight:700; font-size:13px; border-radius:6px 6px 0px 0px; border:1px solid #004d26; text-align:center; letter-spacing:1px; box-shadow: 0px 2px 4px rgba(0,0,0,0.1);'>SECURE PORTAL AUTHENTICATION</div>", unsafe_allow_html=True)
         with st.form("pyqt_enterprise_login"):
             input_user = st.text_input("OPERATOR ID / USERNAME", placeholder="e.g. shahid_admin")
             input_pass = st.text_input("SECURITY ACCESS PASSWORD", type="password", placeholder="••••••••")
@@ -352,36 +393,55 @@ else:
                 df = pd.read_csv(source_file)
                 st.info("📋 CSV manifest matrix loaded successfully.")
             
+            # Smart Memory Extraction logic for dropdown auto-persistence
+            idx_article = calculate_mapped_index(df.columns, "map_article", "Article ID")
+            idx_name = calculate_mapped_index(df.columns, "map_name", "Name")
+            idx_city = calculate_mapped_index(df.columns, "map_city", "City")
+            idx_phone = calculate_mapped_index(df.columns, "map_phone", "MobileNo")
+            idx_date = calculate_mapped_index(df.columns, "map_date", "Booking Date")
+            idx_mrn = calculate_mapped_index(df.columns, "map_mrn", "MRN No")
+            idx_address = calculate_mapped_index(df.columns, "map_address", "Address")
+            idx_bo = calculate_mapped_index(df.columns, "map_bo", "Booking Office")
+
             mc1, mc2, mc3 = st.columns(3)
             with mc1:
-                c_article = st.selectbox("Article ID Column:", df.columns)
-                c_name = st.selectbox("Patient Name Column:", df.columns)
-                c_city = st.selectbox("Patient City Column:", df.columns)
+                c_article = st.selectbox("Article ID Column:", df.columns, index=idx_article)
+                c_name = st.selectbox("Patient Name Column:", df.columns, index=idx_name)
+                c_city = st.selectbox("Patient City Column:", df.columns, index=idx_city)
             with mc2:
-                c_phone = st.selectbox("Contact Number Column:", df.columns)
-                c_date = st.selectbox("Booking Date Column:", df.columns)
-                c_mrn = st.selectbox("MRN No. Column:", df.columns)
+                c_phone = st.selectbox("Contact Number Column:", df.columns, index=idx_phone)
+                c_date = st.selectbox("Booking Date Column:", df.columns, index=idx_date)
+                c_mrn = st.selectbox("MRN No. Column:", df.columns, index=idx_mrn)
             with mc3:
-                c_address = st.selectbox("Address Column:", df.columns)
-                c_bo = st.selectbox("Booking Office Column:", df.columns)
-                dup_target = st.selectbox("De-duplication Matrix Anchor:", df.columns, index=df.columns.get_loc(c_article))
+                c_address = st.selectbox("Address Column:", df.columns, index=idx_address)
+                c_bo = st.selectbox("Booking Office Column:", df.columns, index=idx_bo)
+                
+                idx_dup = calculate_mapped_index(df.columns, "map_dup", c_article)
+                dup_target = st.selectbox("De-duplication Matrix Anchor:", df.columns, index=idx_dup)
+
+            # Instantly update memory configurations
+            st.session_state["map_article"] = c_article
+            st.session_state["map_name"] = c_name
+            st.session_state["map_city"] = c_city
+            st.session_state["map_phone"] = c_phone
+            st.session_state["map_date"] = c_date
+            st.session_state["map_mrn"] = c_mrn
+            st.session_state["map_address"] = c_address
+            st.session_state["map_bo"] = c_bo
+            st.session_state["map_dup"] = dup_target
 
             if st.button("🚀 Push Verified Records to Cloud Database", use_container_width=True):
                 with st.spinner("Processing Manifest Sequence..."):
-                    # Step A: User anchored deduplication
                     df_anchored = df.drop_duplicates(subset=[dup_target], keep='first')
                     
-                    # Step B: Identify and extract conflicting records based on duplicate Article IDs
                     duplicate_mask = df_anchored.duplicated(subset=[c_article], keep='first')
                     df_duplicates = df_anchored[duplicate_mask]
                     
-                    # Store duplicates log in session memory if any are found
                     if not df_duplicates.empty:
                         st.session_state.duplicate_log_csv = df_duplicates.to_csv(index=False).encode('utf-8')
                     else:
                         st.session_state.duplicate_log_csv = None
                     
-                    # Final clean records for database upsert
                     cleaned_records = df_anchored[~duplicate_mask]
                     
                     staging_area = []
@@ -401,7 +461,6 @@ else:
                             "status": "Pending"
                         })
                     
-                    # ⚡ CHUNK INGESTION ENGINE: Prevents statement timeouts on huge files (e.g. 11.8MB)
                     total_records = len(staging_area)
                     if total_records > 0:
                         try:
