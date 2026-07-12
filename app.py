@@ -25,6 +25,17 @@ st.markdown("""
     div[data-testid="stToolbar"] {visibility: hidden;}
     div[data-testid="InputInstructions"] {display: none !important;}
     
+    /* 🛠️ FIX: Forces the Sidebar Arrow to ALWAYS stay visible even if header is hidden */
+    button[data-testid="collapsedControl"] {
+        visibility: visible !important;
+        background-color: #1e293b !important;
+        color: #f8fafc !important;
+        border-radius: 4px !important;
+        margin-top: 5px !important;
+        margin-left: 5px !important;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
+    }
+    
     .stApp { background-color: #f1f5f9; }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     
@@ -209,9 +220,7 @@ else:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# ----------------------------------------------------
 # 🔐 AUTHENTICATION GATE & BACKUP LOGIN PANEL
-# ----------------------------------------------------
 if not st.session_state.logged_in:
     st.markdown("### 🔒 Secure Portal Authentication")
     
