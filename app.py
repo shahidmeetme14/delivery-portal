@@ -5,6 +5,7 @@ import datetime
 import io
 import time
 import requests
+import urllib.request
 from bs4 import BeautifulSoup
 
 # 🎛️ Page Structural Settings
@@ -209,57 +210,66 @@ if st.session_state.logged_in:
 if st.session_state.logged_in and st.session_state.current_navigation_tab is None:
     st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine" if st.session_state.role == "admin" else "📞 Outbound Communications Hub"
 
-# Improved Robust Live Tracking Engine with Emulated Payload Context
+# --- MAPPED MODE TRANSFORMATION LOGIC ---
+def map_status(raw_status):
+    s = raw_status.lower().strip()
+    if "undelivered" in s: return "Undelivered"
+    if "sent out for delivery" in s: return "Sent out for delivery"
+    if "return" in s or "rts" in s: return "RTS"
+    if "delivered" in s: return "Delivered"
+    if s.startswith("dispatch") or "dispatch" in s: return "Dispatched"
+    if "deposit" in s: return "Deposit"
+    return raw_status.strip()
+
+# --- ADVANCED LOGISTICS PARSING SYSTEM ---
 def fetch_live_emtts_status(article_id):
     if not article_id or article_id.strip() == "":
-        return "⚠️ Invalid Article ID", "No data mapped."
+        return None, "⚠️ Invalid Article ID"
     
-    tracking_url = "https://ep.gov.pk/tracking.asp"
-    payload = {'tracking_id': article_id.strip()}
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Origin': 'https://ep.gov.pk',
-        'Referer': 'https://ep.gov.pk/tracking.asp'
-    }
+    url = f"https://ep.gov.pk/emtts/EPTrack_Live.aspx?ArticleIDz={article_id.strip()}"
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    
     try:
-        response = requests.post(tracking_url, data=payload, headers=headers, timeout=20)
-        if response.status_code != 200: 
-            return "❌ Server Unreachable", f"HTTP Error Server Code: {response.status_code}."
-        
-        soup = BeautifulSoup(response.text, 'html.parser')
-        tables = soup.find_all('table')
-        
-        if len(tables) < 2: 
-            # Fallback evaluation context to handle simplified DOMs
-            page_text = soup.get_text()
-            if "not found" in page_text.lower() or "invalid" in page_text.lower():
-                return "🔎 Record Not Found", "No tracking records loaded yet on PakPost network endpoints."
-            return "🔎 Check History", "Data output rendered outside structural tables. Check complete network endpoints manually."
+        with urllib.request.urlopen(req, timeout=20.0) as response:
+            html = response.read().decode('utf-8', errors='ignore')
+            soup = BeautifulSoup(html, 'html.parser')
             
-        tracking_logs = []
-        for table in tables:
-            for row in table.find_all('tr'):
-                cols = [ele.text.strip().replace('\n', ' ').replace('\r', '') for ele in row.find_all(['td', 'th'])]
-                cleaned_cols = [c for c in cols if c]
-                if cleaned_cols and not any('tracking id' in str(c).lower() for c in cleaned_cols):
-                    tracking_logs.append(" | ".join(cleaned_cols))
-                    
-        if not tracking_logs:
-            return "🔎 Record Not Found", "Server returned tracking structural frames but no logs."
+            mrn = soup.find(id="lblMRNNumber").text.strip() if soup.find(id="lblMRNNumber") else ""
+            b_office = soup.find(id="LblBookingOffice").text.strip() if soup.find(id="LblBookingOffice") else ""
+            d_office = soup.find(id="LblDeliveryOffice").text.strip() if soup.find(id="LblDeliveryOffice") else ""
             
-        latest_status = "Data Found"
-        for log in tracking_logs:
-            if "delivered" in log.lower(): latest_status = "✅ Delivered"; break
-            elif "transit" in log.lower() or "dispatched" in log.lower(): latest_status = "🚚 In Transit"; break
-            elif "booked" in log.lower(): latest_status = "📦 Booked / Received"; break
+            track_div = soup.find(id="TrackDetailDiv")
+            history = []
             
-        return latest_status, "\n".join(tracking_logs[:15])
-    except requests.exceptions.Timeout:
-        return "⏱️ Timeout Error", "PakPost network nodes timed out during data synchronization."
+            if track_div:
+                rows = track_div.find_all("tr")
+                current_date = ""
+                for row in rows:
+                    tds = row.find_all("td")
+                    if len(tds) == 1 and "20" in tds[0].text:
+                        current_date = tds[0].text.strip()
+                    if len(tds) >= 4:
+                        time_val = tds[1].text.strip()
+                        office_val = tds[2].text.strip()
+                        raw_status = tds[3].text.strip()
+                        history.append({
+                            "datetime": f"{current_date} {time_val}",
+                            "office": office_val,
+                            "status": raw_status
+                        })
+            
+            if not history:
+                return None, "🔎 No tracking logs found for this Article ID."
+                
+            return {
+                "mrn": mrn,
+                "booking_office": b_office,
+                "delivery_office": d_office,
+                "history": history
+            }, None
+            
     except Exception as e:
-        return "❌ Script Error", f"Traceback breakdown: {str(e)}"
+        return None, f"Server Timeout / Failed: {str(e)}"
 
 if st.session_state.logged_in:
     with st.sidebar:
@@ -615,11 +625,87 @@ else:
                     st.write(f"🏠 **Address:** {target_profile['address']}")
                     
                     st.markdown("#### 🌐 Pakistan Post Live EMTTS Tracking")
+                    
+                    # Target Preference Control Selectors
+                    opt_col1, opt_col2 = st.columns(2)
+                    with opt_col1:
+                        data_mode = st.radio("Display Transformation:", ["Fetch Live (Raw Mode)", "Fetch Snipped Data (Mapped Mode)"])
+                    with opt_col2:
+                        report_scope = st.radio("Reporting Scope Evaluation:", ["Only Last Status", "All Statuses (Full History)"])
+                    
                     if st.button("🔍 Fetch Live Status from PakPost Server", use_container_width=True):
-                        with st.spinner("Connecting to PakPost network nodes..."):
-                            live_status, trace_detail = fetch_live_emtts_status(target_profile['article_id'])
-                            st.metric(label="Latest Detected Status", value=live_status)
-                            st.text_area("Full EMTTS Tracking History Logs:", value=trace_detail, height=180)
+                        with st.spinner("Connecting to EMTTS Logistics Data Pipeline..."):
+                            data, err = fetch_live_emtts_status(target_profile['article_id'])
+                            
+                            if err:
+                                st.error(err)
+                            elif data and data["history"]:
+                                history_list = data["history"]
+                                
+                                # Scan chronological entries for specific historical patterns
+                                has_delivered = any("delivered" in str(h["status"]).lower() for h in history_list)
+                                has_rts = any("return" in str(h["status"]).lower() or "rts" in str(h["status"]).lower() for h in history_list)
+                                
+                                # Red Blinking Proactive Alert Engine (Strictly English Only)
+                                if has_delivered or has_rts:
+                                    alert_types = []
+                                    if has_delivered: alert_types.append("DELIVERED")
+                                    if has_rts: alert_types.append("RTS")
+                                    joined_alerts = " & ".join(alert_types)
+                                    
+                                    st.markdown(f"""
+                                        <style>
+                                        @keyframes criticalBlink {{
+                                            0% {{ background-color: #dc2626; color: white; box-shadow: 0 0 10px #dc2626; }}
+                                            50% {{ background-color: #fee2e2; color: #b91c1c; box-shadow: 0 0 0px transparent; }}
+                                            100% {{ background-color: #dc2626; color: white; box-shadow: 0 0 10px #dc2626; }}
+                                        }}
+                                        .emtts-blink-container {{
+                                            animation: criticalBlink 1.2s infinite;
+                                            padding: 14px;
+                                            border-radius: 6px;
+                                            font-weight: 800;
+                                            text-align: center;
+                                            margin-bottom: 15px;
+                                            border: 2px solid #b91c1c;
+                                            font-size: 14px;
+                                            letter-spacing: 0.5px;
+                                        }}
+                                        </style>
+                                        <div class="emtts-blink-container">
+                                            ⚠️ CRITICAL LOGISTICS ALERT: THIS CONSIGNMENT WAS PREVIOUSLY {joined_alerts}! CLICK EXPANDER BELOW FOR BRIEF HISTORY details.
+                                        </div>
+                                    """, unsafe_allow_html=True)
+                                    
+                                    with st.expander("👉 Click to View Briefing Layout on Historical Events"):
+                                        st.markdown("##### Historical Event Execution Mapping Details:")
+                                        for h in history_list:
+                                            raw_low = h["status"].lower()
+                                            if "delivered" in raw_low or "return" in raw_low or "rts" in raw_low:
+                                                st.warning(f"**Matched Lifecycle Status:** {h['status']} | **Location Node:** {h['office']} | **Timestamp:** {h['datetime']}")
+                                
+                                # Extract targeted strings based on preference state
+                                use_mapped = (data_mode == "Fetch Snipped Data (Mapped Mode)")
+                                
+                                if report_scope == "Only Last Status":
+                                    last_entry = history_list[-1]
+                                    final_status_str = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
+                                    
+                                    st.metric(label="Latest Tracked Status Flag", value=final_status_str)
+                                    st.info(f"**Last Office Location:** {last_entry['office']} | **Status Timestamp:** {last_entry['datetime']}")
+                                else:
+                                    # Scope B: Generate structural table breakdown
+                                    processed_rows = []
+                                    for idx, h in enumerate(history_list):
+                                        processed_rows.append({
+                                            "Event Order No.": idx + 1,
+                                            "Status Timestamp": h["datetime"],
+                                            "Last Office": h["office"],
+                                            "Status Message": map_status(h["status"]) if use_mapped else h["status"]
+                                        })
+                                    st.dataframe(pd.DataFrame(processed_rows), use_container_width=True)
+                            else:
+                                st.warning("Tracking frame executed successfully but data arrays remain empty.")
                     
                     st.markdown("#### 🎴 DIAL THIS PHONE NUMBER FROM LANDLINE:")
                     st.markdown(f"<div class='big-phone-display'>{target_profile['phone_number']}</div>", unsafe_allow_html=True)
