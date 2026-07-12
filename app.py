@@ -7,7 +7,7 @@ import time
 import requests
 from bs4 import BeautifulSoup
 
-# 🎛️ Page Structural Settings (Sidebar Forced to Open State)
+# 🎛️ Page Structural Settings (Forcing Sidebar State Naturally)
 st.set_page_config(
     page_title="SHC & Pak Post | Delivery Portal", 
     page_icon="📮", 
@@ -18,18 +18,15 @@ st.set_page_config(
 # 🎨 PyQt6 / C++ Enterprise Desktop Style CSS Engine
 st.markdown("""
     <style>
-    /* Hide default Streamlit fluff */
+    /* Hide unnecessary default Streamlit top bars */
     div[data-testid="stToolbar"] { visibility: hidden !important; }
     .stDeployButton { display: none !important; }
     footer { visibility: hidden !important; }
     
-    /* 🔒 FIX 1: Force Sidebar to stay open and completely destroy collapse mechanisms */
-    [data-testid="stSidebarCollapsedControl"] { display: none !important; }
-    button[data-testid="sidebarCollapsedControl"] { display: none !important; }
-    div[data-testid="collapsedControl"] { display: none !important; }
-    .css-6q9sum.e1fqkh3o3 { display: none !important; }
+    /* 🔒 FIX: Sidebar controls cleaned completely to ensure it renders flawlessly on screen */
+    [data-testid="stSidebar"] { min-width: 260px !important; max-width: 320px !important; }
     
-    /* 🔒 FIX 2: Clear native input hints globally (Press Enter to submit) */
+    /* Hide native input hints globally (Press Enter to submit) */
     div[data-testid="stInputInstructions"] { display: none !important; }
     div[data-testid="InputInstructions"] { display: none !important; }
     small { display: none !important; }
@@ -94,14 +91,14 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-SESSION_TIMEOUT = 40 * 60  # 🕒 Strict 40 Minutes Boundary
+SESSION_TIMEOUT = 30 * 60  # 🕒 Strict 30 Minutes Inactivity Boundary
 
 # Global Session Keys Initializer
 if "logged_in" not in st.session_state: st.session_state.logged_in = False
 if "username" not in st.session_state: st.session_state.username = ""
 if "full_name" not in st.session_state: st.session_state.full_name = ""
 if "role" not in st.session_state: st.session_state.role = ""
-if "login_time" not in st.session_state: st.session_state.login_time = 0.0
+if "last_activity" not in st.session_state: st.session_state.last_activity = time.time()
 if "current_navigation_tab" not in st.session_state: st.session_state.current_navigation_tab = None
 if "selected_profile_index" not in st.session_state: st.session_state.selected_profile_index = 0
 if "show_recovery_prompt" not in st.session_state: st.session_state.show_recovery_prompt = False
@@ -119,7 +116,6 @@ except Exception as e:
 
 # 🔄 POWER LOSS/DISCONNECTION TRACKING ENGINE
 def save_operator_state():
-    """Saves active worksheet coordinates instantly to cloud node to survive load-shedding events."""
     if st.session_state.logged_in and st.session_state.username:
         state_payload = {
             "username": st.session_state.username,
@@ -127,21 +123,17 @@ def save_operator_state():
             "last_index": st.session_state.selected_profile_index,
             "updated_at": datetime.datetime.now().isoformat()
         }
-        try:
-            supabase.table("operator_sessions").upsert(state_payload, on_conflict="username").execute()
-        except:
-            pass # Silent fallback if custom recovery table isn't created yet
+        try: supabase.table("operator_sessions").upsert(state_payload, on_conflict="username").execute()
+        except: pass
 
 def fetch_operator_state(username):
-    """Checks if there is any interrupted operational data left behind."""
     try:
         res = supabase.table("operator_sessions").select("*").eq("username", username).execute().data
         if res: return res[0]
-    except:
-        return None
+    except: return None
     return None
 
-# Hydrate parameters from URL if matching signature exists
+# Hydrate parameters from URL if matching signature exists (Survives Refresh)
 if not st.session_state.logged_in and "usr" in st.query_params:
     try:
         param_time = float(st.query_params.get("t", 0))
@@ -150,20 +142,24 @@ if not st.session_state.logged_in and "usr" in st.query_params:
             st.session_state.username = st.query_params["usr"]
             st.session_state.full_name = st.query_params["nm"]
             st.session_state.role = st.query_params["rl"]
-            st.session_state.login_time = param_time
+            st.session_state.last_activity = param_time
         else:
             st.query_params.clear()
     except:
         pass
 
-# Check runtime inactivity bounds
+# ⏱️ Smart Inactivity Verification Control
 if st.session_state.logged_in:
-    if time.time() - st.session_state.login_time > SESSION_TIMEOUT:
+    if time.time() - st.session_state.last_activity > SESSION_TIMEOUT:
         st.session_state.logged_in = False
         st.query_params.clear()
-        st.warning("🔄 Terminal locked automatically after 40 minutes of inactivity.")
+        st.warning("🔄 Terminal locked automatically after 30 minutes of complete inactivity.")
         time.sleep(1)
         st.rerun()
+    else:
+        # User performed an action or script refreshed while they are active. Reset countdown!
+        st.session_state.last_activity = time.time()
+        st.query_params["t"] = str(st.session_state.last_activity)
 
 if st.session_state.logged_in and st.session_state.current_navigation_tab is None:
     st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine" if st.session_state.role == "admin" else "📞 Outbound Communications Hub"
@@ -196,7 +192,7 @@ def fetch_live_emtts_status(article_id):
     except:
         return "⏱️ Timeout Error", "PakPost network nodes timed out."
 
-# Permanent Workspace Sidebar
+# Permanent Workspace Sidebar Container
 with st.sidebar:
     st.markdown("### 🖥️ Enterprise Console")
     if st.session_state.logged_in:
@@ -218,7 +214,6 @@ st.markdown("<div class='brand-subtitle'>Logistics Tracking & Quality Feedback S
 if not st.session_state.logged_in:
     _, center_col, _ = st.columns([1.2, 1.2, 1.2])
     with center_col:
-        # Sharp PyQt6 Desktop login architecture
         st.markdown("<div style='background-color:#1e293b; color:#ffffff; padding:10px; font-weight:600; font-size:12px; border-radius:4px 4px 0px 0px; border:1px solid #0f172a;'>SECURE PORTAL AUTHENTICATION v2.4</div>", unsafe_allow_html=True)
         with st.form("pyqt_enterprise_login"):
             input_user = st.text_input("OPERATOR ID / USERNAME", placeholder="e.g. shahid_admin")
@@ -227,22 +222,18 @@ if not st.session_state.logged_in:
             
             if btn_login:
                 if input_user and input_pass:
-                    # Direct action processing indicator
                     with st.spinner("VALIDATING CREDENTIALS... MATCHING SECURE HASH..."):
                         try:
                             ud = supabase.table("app_users").select("*").eq("username", input_user.strip()).eq("password", input_pass.strip()).execute().data
                             if ud:
-                                # Check if there is any crashed state to recover before routing
                                 recovery_data = fetch_operator_state(ud[0]["username"])
                                 if recovery_data:
                                     st.session_state.cached_recovery_data = recovery_data
                                     st.session_state.show_recovery_prompt = True
-                                    
-                                    # Temporary setup while they choose
                                     st.session_state.username = ud[0]["username"]
                                     st.session_state.full_name = ud[0]["full_name"]
                                     st.session_state.role = ud[0]["role"]
-                                    st.session_state.login_time = time.time()
+                                    st.session_state.last_activity = time.time()
                                     st.rerun()
                                 else:
                                     current_ts = time.time()
@@ -250,7 +241,7 @@ if not st.session_state.logged_in:
                                     st.session_state.username = ud[0]["username"]
                                     st.session_state.full_name = ud[0]["full_name"]
                                     st.session_state.role = ud[0]["role"]
-                                    st.session_state.login_time = current_ts
+                                    st.session_state.last_activity = current_ts
                                     
                                     st.query_params["usr"] = ud[0]["username"]
                                     st.query_params["nm"] = ud[0]["full_name"]
@@ -291,7 +282,7 @@ elif st.session_state.show_recovery_prompt:
                 st.query_params["usr"] = st.session_state.username
                 st.query_params["nm"] = st.session_state.full_name
                 st.query_params["rl"] = st.session_state.role
-                st.query_params["t"] = str(st.session_state.login_time)
+                st.query_params["t"] = str(st.session_state.last_activity)
                 st.rerun()
                 
         with col_new:
@@ -302,7 +293,7 @@ elif st.session_state.show_recovery_prompt:
                 st.query_params["usr"] = st.session_state.username
                 st.query_params["nm"] = st.session_state.full_name
                 st.query_params["rl"] = st.session_state.role
-                st.query_params["t"] = str(st.session_state.login_time)
+                st.query_params["t"] = str(st.session_state.last_activity)
                 save_operator_state()
                 st.rerun()
 
@@ -417,7 +408,6 @@ else:
         else:
             options_list = [f"{r['patient_name']} (MRN: {r.get('mrn_no', 'N/A')}) - [{r['status']}]" for r in recs]
             
-            # Bound check recovery indices safely
             if st.session_state.selected_profile_index >= len(options_list):
                 st.session_state.selected_profile_index = 0
                 
@@ -427,7 +417,6 @@ else:
                 index=st.session_state.selected_profile_index
             )
             
-            # Capture change in choice and auto-save current coordinate context
             current_choice_idx = options_list.index(selected_key)
             if current_choice_idx != st.session_state.selected_profile_index:
                 st.session_state.selected_profile_index = current_choice_idx
@@ -476,7 +465,6 @@ else:
                             try:
                                 supabase.table("patient_deliveries").update(payload_buffer).eq("id", target_profile["id"]).execute()
                                 st.success("Data node updated successfully.")
-                                # Advance sequence automatically after success and log progress
                                 st.session_state.selected_profile_index += 1
                                 save_operator_state()
                                 time.sleep(0.5)
