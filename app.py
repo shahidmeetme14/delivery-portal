@@ -4,7 +4,7 @@ import pandas as pd
 import datetime
 
 # Page Configuration
-st.set_page_config(page_title="(Specialized Health Care) Free Home Delivery of Medicine", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Presented by SHAHID", layout="wide", initial_sidebar_state="expanded")
 
 # Custom CSS for Large Text (For Landline dialing convenience)
 st.markdown("""
