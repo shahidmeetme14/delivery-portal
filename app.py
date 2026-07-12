@@ -12,7 +12,7 @@ st.set_page_config(
     page_title="Presented by SHAHID | Pakistan Post Audit", 
     page_icon="📮", 
     layout="wide", 
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 SESSION_TIMEOUT = 30 * 60  
@@ -27,41 +27,57 @@ if "selected_profile_index" not in st.session_state: st.session_state.selected_p
 if "show_recovery_prompt" not in st.session_state: st.session_state.show_recovery_prompt = False
 if "cached_recovery_data" not in st.session_state: st.session_state.cached_recovery_data = {}
 
-# 🎨 PAKISTAN POST OFFICIAL THEME ENGINE (RED & GOLD) + UI CORRECTIONS
+# 🎨 DYNAMIC UI CLEANING & OFFICIAL PAKPOST THEME
+if not st.session_state.logged_in:
+    # Login page par top bar aur sidebar ka nishan bilkul gayab
+    st.markdown("""
+        <style>
+        [data-testid="stHeader"] {display: none !important;}
+        [data-testid="stSidebar"] {display: none !important;}
+        [data-testid="collapsedControl"] {display: none !important;}
+        footer {visibility: hidden !important;}
+        div[data-testid="stDecoration"] {display: none !important;}
+        .block-container { padding-top: 2.0rem !important; }
+        
+        /* Native Form Box Styling for Centered Login */
+        div[data-testid="stForm"] {
+            background: #ffffff !important;
+            border-radius: 8px !important;
+            border-top: 5px solid #b71c1c !important;
+            border-left: 1px solid #e2e8f0 !important;
+            border-right: 1px solid #e2e8f0 !important;
+            border-bottom: 3.5px solid #d4af37 !important;
+            box-shadow: 0 10px 25px rgba(183, 28, 28, 0.06) !important;
+            padding: 25px !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+else:
+    # Logged In state ke liye clean setup
+    st.markdown("""
+        <style>
+        [data-testid="stHeader"] {background: transparent !important;}
+        .stAppDeployButton, #MainMenu, footer, div[data-testid="stDecoration"] {display: none !important;}
+        .block-container { padding-top: 2.0rem !important; }
+        
+        /* Standard Forms styling inside dashboard */
+        div[data-testid="stForm"] {
+            background: #ffffff !important;
+            border-radius: 6px !important;
+            border: 1px solid #dcdcdc !important;
+            padding: 15px !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+# Common Theme Elements
 st.markdown("""
     <style>
-    /* Global Styles & Header Cut Fix */
-    .block-container { 
-        padding-top: 4.0rem !important; /* Fixed header vertical cutoff issue */
-        padding-bottom: 2.0rem !important; 
-    }
-    
-    /* 🔒 HIDING STREAMLIT FOOTER & GITHUB LINKS COMPLETELY */
-    #MainMenu {visibility: hidden !important;}
-    footer {visibility: hidden !important;}
-    div[data-testid="stDecoration"] {visibility: hidden !important;}
-    [data-testid="stStatusWidget"] {visibility: hidden !important;}
-    div[class^="viewerBadge"] {display: none !important;}
-    .viewerBadge_container__1QSob {display: none !important;}
-    
-    /* Pakistan Post Brand Palette */
     .stApp { background-color: #fcf8f8; }
     .brand-title { color: #b71c1c; font-weight: 800; font-size: 1.8rem; margin-bottom: 1px; }
     .brand-subtitle { color: #d4af37; font-size: 1.0rem; margin-bottom: 25px; font-weight: 700; border-left: 4px solid #b71c1c; padding-left: 8px; }
     
-    /* Native Form Styling for Reliable Boxing */
-    div[data-testid="stForm"] {
-        background: #ffffff !important;
-        border-radius: 8px !important;
-        border-top: 5px solid #b71c1c !important;
-        border-left: 1px solid #e2e8f0 !important;
-        border-right: 1px solid #e2e8f0 !important;
-        border-bottom: 3.5px solid #d4af37 !important;
-        box-shadow: 0 10px 25px rgba(183, 28, 28, 0.06) !important;
-        padding: 25px !important;
-    }
-    
-    /* Buttons Customization (PakPost Red) */
+    /* Buttons Customization (PakPost Red & Gold) */
     div.stButton > button, div.stDownloadButton > button, .stFormSubmitButton -> button {
         background: linear-gradient(180deg, #d32f2f 0%, #b71c1c 100%) !important;
         color: #ffffff !important;
@@ -70,37 +86,21 @@ st.markdown("""
         border-radius: 5px !important;
         padding: 6px 20px !important;
         font-weight: 700;
-        box-shadow: 0px 3px 6px rgba(0,0,0,0.1) !important;
     }
-    
     .active-nav-btn div.stButton > button {
         background: linear-gradient(180deg, #ea1c1c 0%, #d4af37 100%) !important;
-        border-bottom: 1px solid #7f0000 !important;
     }
-    
-    /* 3D Dropdowns */
-    div[data-testid="stSelectbox"] > div[data-baseweb="select"] {
-        border-bottom: 3px solid #d4af37 !important;
-    }
-    
-    /* Phone Badge */
     .big-phone-display { 
         font-size: 22px !important; font-weight: 700 !important; color: #ffffff !important; 
         background: linear-gradient(180deg, #d32f2f 0%, #b71c1c 100%) !important; 
         padding: 8px; border-radius: 6px; text-align: center; border-bottom: 3.5px solid #d4af37;
-        letter-spacing: 1.5px; margin: 4px 0;
     }
-    
-    /* Printable Manifesto Clean CSS Layout */
     @media print {
         body * { visibility: hidden; }
         .print-manifesto-area, .print-manifesto-area * { visibility: visible; }
         .print-manifesto-area { position: absolute; left: 0; top: 0; width: 100%; border: 2px solid #000; padding: 20px; font-family: monospace; }
     }
-    
-    .manifesto-preview {
-        background: #fff; border: 2px dashed #b71c1c; padding: 20px; border-radius: 8px; margin-top: 15px; font-family: 'Courier New', Courier, monospace;
-    }
+    .manifesto-preview { background: #fff; border: 2px dashed #b71c1c; padding: 20px; border-radius: 8px; font-family: monospace; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -128,13 +128,6 @@ def fetch_operator_state(username):
         if res: return res[0]
     except: return None
 
-def map_status(raw_status):
-    s = raw_status.lower().strip()
-    if "undelivered" in s: return "Undelivered"
-    if "return" in s or "rts" in s: return "RTS"
-    if "delivered" in s: return "Delivered"
-    return raw_status.strip()
-
 def fetch_live_emtts_status(article_id):
     url = f"https://ep.gov.pk/emtts/EPTrack_Live.aspx?ArticleIDz={article_id.strip()}"
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -156,7 +149,7 @@ def fetch_live_emtts_status(article_id):
             return {"history": history}, None
     except Exception as e: return None, str(e)
 
-# Sidebar Identity
+# Sidebar Identity (Only active when logged in)
 if st.session_state.logged_in:
     with st.sidebar:
         st.markdown("<div style='color:#b71c1c; font-weight:bold; font-size:16px;'>Presented by SHAHID</div>", unsafe_allow_html=True)
@@ -169,12 +162,10 @@ if st.session_state.logged_in:
 st.markdown("<div class='brand-title'>📮 PAKISTAN POST | DATA AUDIT SYSTEM</div>", unsafe_allow_html=True)
 st.markdown("<div class='brand-subtitle'>Lahore GPO Operational Core Dashboard</div>", unsafe_allow_html=True)
 
-# 🔐 LOGIN HUB (FIXED COLS + FORM OVERLAY)
+# 🔐 LOGIN HUB (FIXED COLS + NO SIDEBAR OR BUTTONS VISIBLE)
 if not st.session_state.logged_in and not st.session_state.show_recovery_prompt:
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Grid column block layout to center container without HTML breaking
-    col1, col2, col3 = st.columns([1, 1.3, 1])
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 1.2, 1])
     
     with col2:
         with st.form(key="login_secure_form"):
@@ -218,8 +209,8 @@ elif st.session_state.show_recovery_prompt:
             st.rerun()
 
 else:
-    # Navigation Tabs Setup
-    tabs = ["📊 Administrative Ingestion Engine", "👥 Operator Matrix & Security Audit Logs", "📞 Outbound Communications Hub", "📥 Secure Reports Export Center"] if st.session_state.role == "admin" else ["📞 Outbound Communications Hub", "📥 Secure Reports Export Center"]
+    # Clean & Direct Navigation Tabs
+    tabs = ["📊 Admin Panel", "👥 Operator Matrix", "📞 Outbound Hub", "📥 Reports Center"] if st.session_state.role == "admin" else ["📞 Outbound Hub", "📥 Reports Center"]
     if st.session_state.current_navigation_tab not in tabs: st.session_state.current_navigation_tab = tabs[0]
     
     nc = st.columns(len(tabs))
@@ -232,16 +223,14 @@ else:
                 st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
 
-    # PAGE 1: ADMIN INGESTION & ALERTS
-    if st.session_state.current_navigation_tab == "📊 Administrative Ingestion Engine" and st.session_state.role == "admin":
-        
-        # 🚨 HIGH-PRIORITY CORRUPTION/COMPLAINT ALERTS SECTION
+    # PAGE 1: ADMIN PANEL
+    if st.session_state.current_navigation_tab == "📊 Admin Panel" and st.session_state.role == "admin":
         st.markdown("### 🚨 CRITICAL ADMINISTRATIVE RED-FLAG ALERTS")
         try:
             alerts_data = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes").execute().data
             if alerts_data:
                 for al in alerts_data:
-                    st.error(f"⚠️ **Bribery Alert:** Postman demanded extra cash from **{al['patient_name']}** (MRN: {al.get('mrn_no')}) | Article ID: `{al['article_id']}` | Stamped By: {al.get('operator_stamp')}")
+                    st.error(f"⚠️ **Bribery Alert:** Postman demanded extra cash from **{al['patient_name']}** | Article ID: `{al['article_id']}` | Stamped By: {al.get('operator_stamp')}")
             else:
                 st.success("✅ No unauthorized collection reports received in this batch.")
         except: pass
@@ -251,7 +240,7 @@ else:
         source_file = st.file_uploader("Upload Sheet", type=["xlsx", "csv"])
         if source_file:
             df = pd.read_excel(source_file) if source_file.name.endswith('.xlsx') else pd.read_csv(source_file)
-            if st.button("🚀 Push to Cloud Database (Auto Updates Existing Rows)"):
+            if st.button("🚀 Push to Cloud Database"):
                 staging = []
                 for _, r in df.iterrows():
                     staging.append({
@@ -264,8 +253,8 @@ else:
                     st.success("Data synchronized successfully onto database network nodes!")
                 except Exception as ex: st.error(str(ex))
 
-    # PAGE 3: OUTBOUND COMMUNICATION HUB
-    elif st.session_state.current_navigation_tab == "📞 Outbound Communications Hub":
+    # PAGE 3: OUTBOUND HUB
+    elif st.session_state.current_navigation_tab == "📞 Outbound Hub":
         query_date = st.date_input("Select Audit Target Date:", datetime.date.today())
         try: records = supabase.table("patient_deliveries").select("*").execute().data
         except: records = []
@@ -282,22 +271,18 @@ else:
                 st.markdown(f"#### 👤 Patient Profile: {target['patient_name']}")
                 st.info(f"📦 **Consignment ID:** {target['article_id']}\n\n🏠 **Address:** {target['address']}")
                 
-                # EMTTS LIVE LOOKUP WITH ALL-STATUS AND CONDITION DETECTION
-                st.markdown("#### 🌐 Live EMTTS Real-time History Path")
+                st.markdown("#### 🌐 Live EMTTS History")
                 if st.button("Query Live History Log Table"):
                     data, err = fetch_live_emtts_status(target['article_id'])
                     if err: st.error(err)
                     elif data:
                         h_list = data["history"]
-                        
-                        # High-Visibility Alert Conditions Check
                         is_del = any("delivered" in h["status"].lower() for h in h_list)
                         is_rts = any("return" in h["status"].lower() or "rts" in h["status"].lower() for h in h_list)
                         
-                        if is_del: st.success(f"✅ Delivered Event Confirmed in Tracking Log history!")
-                        elif is_rts: st.error(f"❌ RTS / Return to Sender Event Confirmed in Tracking History!")
+                        if is_del: st.success(f"✅ Delivered Event Confirmed!")
+                        elif is_rts: st.error(f"❌ RTS Event Confirmed!")
                         
-                        # Output full dataframe history cleanly
                         df_hist = pd.DataFrame(h_list)
                         st.dataframe(df_hist, use_container_width=True)
                 
@@ -324,9 +309,8 @@ else:
                     time.sleep(0.4)
                     st.rerun()
                 
-                # 🖨️ BEAUTIFUL PRINTABLE MANIFESTO CARD
                 st.markdown("---")
-                if st.button("🖨️ Generate & Print Beautiful Manifesto Layout"):
+                if st.button("🖨️ Generate & Print Manifesto Layout"):
                     st.markdown(f"""
                     <div class="print-manifesto-area">
                         <div class="manifesto-preview">
