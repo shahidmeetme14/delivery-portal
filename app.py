@@ -83,7 +83,7 @@ if not st.session_state.logged_in:
         with st.form("secure_login_form", clear_on_submit=False):
             st.markdown("<h2 style='text-align: center; color: #0f172a; font-weight:700; margin-bottom: 25px;'>📮 Portal Authentication</h2>", unsafe_allow_html=True)
             
-            username_input = st.text_input("Username", placeholder="Enter official username")
+            username_input = st.text_input("Username", placeholder="Enter username")
             password_input = st.text_input("Password", type="password", placeholder="Enter password")
             
             st.markdown("<br>", unsafe_allow_html=True)
