@@ -4,19 +4,20 @@ import pandas as pd
 import datetime
 import io
 import time
+import hashlib
 
-# Premium Page & Theme Configurations
+# 🎛️ Page Configuration & Styling Framework
 st.set_page_config(
-    page_title="SHC & Pak Post | Patient Feedback Portal", 
+    page_title="SHC & Pak Post | Delivery Portal", 
     page_icon="📮", 
     layout="wide", 
     initial_sidebar_state="expanded"
 )
 
-# Advanced Clean CSS Injection (Removes Streamlit footprints & hides form submit hints)
+# 🎨 Advanced Professional CSS for Dynamic Micro-Animations & Custom UI Elements
 st.markdown("""
     <style>
-    /* 🚫 Hiding Streamlit Default Elements & Form Instructions */
+    /* 🚫 Hiding Default Streamlit Interface Clutter */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
@@ -24,60 +25,91 @@ st.markdown("""
     div[data-testid="stToolbar"] {visibility: hidden;}
     div[data-testid="InputInstructions"] {display: none !important;}
     
-    /* Premium High-End Typography & Color Palette */
+    /* Global Look & Feel */
     .stApp { background-color: #f8fafc; }
-    body { font-family: 'Inter', -apple-system, sans-serif; }
+    body { font-family: 'Inter', system-ui, sans-serif; }
     
-    /* Title optimization as requested (Slightly smaller, ultra clean corporate look) */
-    .main-title { color: #1e3a8a; font-weight: 800; font-size: 1.9rem; letter-spacing: -0.04rem; margin-bottom: 2px; }
-    .sub-title { color: #64748b; font-size: 0.95rem; margin-bottom: 25px; font-weight: 500; }
+    /* Exact Brand Title Styling Matching the Provided Visuals */
+    .brand-title { color: #0f172a; font-weight: 800; font-size: 2.1rem; letter-spacing: -0.05rem; margin-bottom: 0px; }
+    .brand-subtitle { color: #64748b; font-size: 1.05rem; margin-bottom: 25px; font-weight: 500; }
     
-    /* Elite Card & Container Blocks */
-    .stForm, div[data-testid="stVerticalBlock"] > div:has(div.stForm), .custom-card {
+    /* 🌌 Premium Button Micro-Animations (Applies to all interactive actions) */
+    div.stButton > button {
+        background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
+        color: white !important;
+        border-radius: 8px !important;
+        padding: 10px 24px !important;
+        font-weight: 600 !important;
+        border: none !important;
+        box-shadow: 0 4px 6px -1px rgba(30, 58, 138, 0.15) !important;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    div.stButton > button:hover {
+        background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 10px 15px -3px rgba(30, 58, 138, 0.3) !important;
+    }
+    div.stButton > button:active {
+        transform: translateY(1px) !important;
+    }
+    
+    /* Special Logout Styling Override */
+    div[data-testid="stSidebar"] div.stButton > button {
+        background: #ffffff !important;
+        color: #ef4444 !important;
+        border: 1px solid #fee2e2 !important;
+        box-shadow: none !important;
+    }
+    div[data-testid="stSidebar"] div.stButton > button:hover {
+        background: #fef2f2 !important;
+        color: #dc2626 !important;
+        border-color: #fca5a5 !important;
+    }
+    
+    /* Smooth Input Field Custom Layouts */
+    .stTextInput input, .stSelectbox div[data-baseweb="select"] {
+        border-radius: 8px !important;
+        border: 1px solid #cbd5e1 !important;
+        transition: all 0.2s ease !important;
+    }
+    .stTextInput input:focus {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+    }
+    
+    /* Elegant Content Bounding Cards */
+    .stForm, div.custom-card {
         background: #ffffff !important;
         border-radius: 12px !important;
-        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1) !important;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03), 0 2px 4px -1px rgba(0,0,0,0.02) !important;
         border: 1px solid #e2e8f0 !important;
         padding: 24px !important;
     }
     
-    /* Phone and Operational Metric Viewers */
-    .big-phone-display { font-size: 32px !important; font-weight: 800 !important; color: #1e3a8a !important; background-color: #f0fdf4; padding: 14px; border-radius: 10px; text-align: center; border: 2px solid #bbf7d0; letter-spacing: 1.2px; }
-    .patient-card-header { font-size: 24px !important; font-weight: 700 !important; color: #0f172a; border-left: 5px solid #1e3a8a; padding-left: 10px; margin-bottom: 15px; }
-    
     /* Modern Navigation Tabs Customization */
-    .stTabs [data-baseweb="tab-list"] { gap: 8px; background-color: #f1f5f9; padding: 6px; border-radius: 8px; border: 1px solid #e2e8f0; }
-    .stTabs [data-baseweb="tab"] { background-color: transparent; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; color: #64748b; }
-    .stTabs [data-baseweb="tab"]:hover { color: #0f172a; }
-    .stTabs [data-baseweb="tab"][aria-selected="true"] { background-color: #ffffff !important; color: #1e3a8a !important; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05) !important; }
+    .stTabs [data-baseweb="tab-list"] { gap: 8px; background-color: #e2e8f0; padding: 6px; border-radius: 10px; }
+    .stTabs [data-baseweb="tab"] { background-color: transparent; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; color: #475569; transition: all 0.2s ease; }
+    .stTabs [data-baseweb="tab"]:hover { color: #0f172a; background-color: #cbd5e1; }
+    .stTabs [data-baseweb="tab"][aria-selected="true"] { background-color: #ffffff !important; color: #1e3a8a !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08) !important; }
+    
+    /* Metric Card Viewports */
+    .big-phone-display { font-size: 32px !important; font-weight: 800 !important; color: #16a34a !important; background-color: #f0fdf4; padding: 14px; border-radius: 10px; text-align: center; border: 2px solid #bbf7d0; letter-spacing: 1.2px; }
+    .patient-card-header { font-size: 24px !important; font-weight: 700 !important; color: #0f172a; border-left: 5px solid #1e3a8a; padding-left: 12px; margin-bottom: 15px; }
     </style>
 """, unsafe_allow_html=True)
 
-# ⏳ SESSION TIMEOUT & PERSISTENCE MANAGEMENT 
-TIMEOUT_LIMIT = 45 * 60  # 45 Minutes in seconds
+# ⏳ PERSISTENT REFRESH MANAGER & TIMEOUT STRATEGY
+TIMEOUT_LIMIT = 45 * 60  # 45 Minutes
 
+# Initialization of structural runtime containers
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "last_activity" not in st.session_state:
     st.session_state.last_activity = time.time()
-if "saved_buffer_state" not in st.session_state:
-    st.session_state.saved_buffer_state = None
 if "last_saved_entry" not in st.session_state:
     st.session_state.last_saved_entry = None
 
-# Track and handle expiration limits
-if st.session_state.logged_in:
-    elapsed_time = time.time() - st.session_state.last_activity
-    if elapsed_time > TIMEOUT_LIMIT:
-        # Save working checkpoint before flashing out context
-        if "selected_patient_key" in st.session_state:
-            st.session_state.saved_buffer_state = st.session_state.selected_patient_key
-        st.session_state.logged_in = False
-        st.warning("🔄 Session expired due to 45 minutes of inactivity. Please re-authenticate.")
-    else:
-        st.session_state.last_activity = time.time() # Update watch timestamp
-
-# Initialize Remote Cloud Connect
+# Establish Database Connection
 @st.cache_resource
 def init_connection():
     return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
@@ -85,8 +117,32 @@ def init_connection():
 try:
     supabase: Client = init_connection()
 except Exception as e:
-    st.error(f"Database handshakes failed: {e}")
+    st.error(f"Database interface offline: {e}")
     st.stop()
+
+# 🔄 COOKIE-EMULATOR: Browser url state token checking mechanism
+if not st.session_state.logged_in and "session_token" in st.query_params:
+    token_username = st.query_params["session_token"]
+    try:
+        user_data = supabase.table("app_users").select("*").eq("username", token_username).execute()
+        if user_data.data:
+            # Re-auth matching validation index maps
+            st.session_state.logged_in = True
+            st.session_state.username = user_data.data[0]["username"]
+            st.session_state.full_name = user_data.data[0]["full_name"]
+            st.session_state.role = user_data.data[0]["role"]
+            st.session_state.last_activity = time.time()
+    except:
+        pass
+
+# Timeout computation
+if st.session_state.logged_in:
+    if time.time() - st.session_state.last_activity > TIMEOUT_LIMIT:
+        st.session_state.logged_in = False
+        st.query_params.clear()
+        st.warning("🔄 Session expired due to 45 minutes of inactivity. Please re-authenticate.")
+    else:
+        st.session_state.last_activity = time.time()
 
 # --- PASSWORD CHANGE INTERACTION CONSOLE (DIALOG MODAL) ---
 @st.dialog("🔐 Change System Access Password")
@@ -98,29 +154,29 @@ def change_password_modal():
     
     if st.button("Commit Access Token Update", use_container_width=True):
         if not curr_p or not new_p or not conf_p:
-            st.error("All authentication fields must be fulfilled.")
+            st.error("All fields must be filled out.")
         elif new_p != conf_p:
-            st.error("Mismatch detected! New password entries must match precisely.")
+            st.error("Mismatch detected! New entries must match precisely.")
         else:
             try:
                 verify = supabase.table("app_users").select("*").eq("username", st.session_state.username).execute()
                 if verify.data and verify.data[0]["password"] == curr_p.strip():
                     supabase.table("app_users").update({"password": new_p.strip()}).eq("username", st.session_state.username).execute()
                     st.success("Access tokens updated! Your password has been changed.")
-                    time.sleep(1.5)
+                    time.sleep(1.2)
                     st.rerun()
                 else:
                     st.error("Verification failed: Current password matches no records.")
             except Exception as e:
                 st.error(f"Execution rejected by database: {e}")
 
-# --- SECURE AUTENTICATION LAYER ---
+# --- AUTHENTICATION SCREEN INTERFACE ---
 if not st.session_state.logged_in:
-    _, center_col, _ = st.columns([1, 1.2, 1])
+    _, center_col, _ = st.columns([1, 1.1, 1])
     with center_col:
         st.markdown("<br><br><br>", unsafe_allow_html=True)
         with st.form("portal_auth_form"):
-            st.markdown("<h3 style='text-align: center; color: #1e3a8a; font-weight:700;'>📮 Portal Authentication</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='text-align: center; color: #1e3a8a; font-weight:700; margin-bottom: 20px;'>📮 Portal Authentication</h3>", unsafe_allow_html=True)
             user_in = st.text_input("Username Input", placeholder="Enter official assignment username", label_visibility="collapsed")
             pass_in = st.text_input("Password Input", type="password", placeholder="Enter authorization key", label_visibility="collapsed")
             
@@ -135,7 +191,11 @@ if not st.session_state.logged_in:
                             st.session_state.full_name = user_query.data[0]["full_name"]
                             st.session_state.role = user_query.data[0]["role"]
                             st.session_state.last_activity = time.time()
+                            
+                            # Persistent state mapping inside web url parameters
+                            st.query_params["session_token"] = user_query.data[0]["username"]
                             st.success("Authorized! Fetching parameters...")
+                            time.sleep(0.5)
                             st.rerun()
                         else:
                             st.error("Authentication match rejected.")
@@ -145,42 +205,34 @@ if not st.session_state.logged_in:
                     st.warning("Operational values missing.")
     st.stop()
 
-# --- POST LOGIN CONTEXT BOUNDARY ---
-if st.session_state.saved_buffer_state:
-    st.info("💡 An active session checkpoint was located from your previous execution.")
-    res_choice = st.radio("Choose operational checkpoint mode:", ["Resume from where you left off", "Discard and start standard pipeline"], horizontal=True)
-    if res_choice == "Discard and start standard pipeline":
-        st.session_state.saved_buffer_state = None
-        st.rerun()
-
-# Sidebar Configuration Workspace Area
+# --- MAIN POST-LOGIN WORKSPACE WORKFLOW ---
 with st.sidebar:
     st.markdown(f"👤 **Logged in as:**<br><b style='font-size:15px; color:#1e3a8a;'>{st.session_state.full_name}</b>", unsafe_allow_html=True)
     st.markdown(f"Privilege Matrix: `{st.session_state.role.upper()}`")
     st.markdown("---")
     
-    # Trigger dialog box for password modification
     if st.button("🔑 Change Password", use_container_width=True):
         change_password_modal()
         
     st.markdown("<br><br><br>", unsafe_allow_html=True)
     if st.button("Logout 🚪", use_container_width=True):
         st.session_state.logged_in = False
-        st.session_state.saved_buffer_state = None
+        st.session_state.last_saved_entry = None
+        st.query_params.clear() # Wipe URL parameter bindings completely
         st.rerun()
 
-# Standardized Persistent Header Configuration Across All Access Groups
-st.markdown("<div class='main-title'>SHC & Pak Post | Free Home Delivery of Medicine</div>", unsafe_allow_html=True)
-st.markdown("<div class='sub-title'>Logistics Tracking & Quality Feedback System</div>", unsafe_allow_html=True)
+# Brand Identity Headers Mapped Identically to Original Specs
+st.markdown("<div class='brand-title'>SHC & Pak Post | Free Home Delivery of Medicine</div>", unsafe_allow_html=True)
+st.markdown("<div class='brand-subtitle'>Logistics Tracking & Quality Feedback System</div>", unsafe_allow_html=True)
 
-# Access Control Navigation Configurations
+# Access Control Navigation Configuration Setup
 if st.session_state.role == "admin":
     tabs = st.tabs(["📊 Administrative Ingestion Engine", "👥 Operator Matrix & Security Audit Logs", "📞 Outbound Communications Hub"])
 else:
     tabs = st.tabs(["📞 Outbound Communications Hub"])
 
 # ----------------------------------------------------
-# ADMIN COMPONENT: FILE INGESTION & DATA SYNC
+# ADMIN INTERFACE MODULE: DATA INGESTION ENGINE
 # ----------------------------------------------------
 if st.session_state.role == "admin":
     with tabs[0]:
@@ -233,7 +285,7 @@ if st.session_state.role == "admin":
                     st.error(f"Batch write failure: {ex}")
 
 # ----------------------------------------------------
-# ADMIN COMPONENT: OPERATOR MANAGEMENT CONSOLE
+# ADMIN INTERFACE MODULE: OPERATOR SETTINGS
 # ----------------------------------------------------
 if st.session_state.role == "admin":
     with tabs[1]:
@@ -252,24 +304,24 @@ if st.session_state.role == "admin":
                     except Exception as e: st.error(f"Error mapping account: {e}")
 
 # ----------------------------------------------------
-# COMPONENT 3: COMMUNICATIONS HUB & MODIFICATION INTERFACE
+# GENERAL WORKSPACE MODULE: LOGISTICS COMMUNICATIONS DATA
 # ----------------------------------------------------
 staff_idx = 2 if st.session_state.role == "admin" else 0
 with tabs[staff_idx]:
     st.markdown("### 📞 Outbound Communications Desk")
     
-    # 📝 LAST SAVED QUICK EDIT SHORTCUT COMPONENT
+    # 📝 LIVE EDIT CORRECTION SHIFT CONSOLE FOR PREVIOUS DATA ENTRY
     if st.session_state.last_saved_entry:
-        with st.expander("✏️ Quick-Correction Panel (Modify Last Saved Entry)", expanded=False):
+        with st.expander("✏️ Quick-Correction Panel (Modify Last Saved Entry)", expanded=True):
             st.info(f"You can overwrite the evaluation metrics for the last updated file record profile: **{st.session_state.last_saved_entry['name']}**")
             mod_status = st.selectbox("Modify Status Context:", ["Delivered", "Issue / Complaint", "Pending"])
-            mod_notes = st.text_area("Adjustment Audit Comments:")
+            mod_notes = st.text_area("Adjustment Audit Comments / Failure Reason:")
             if st.button("Commit Overwrite Changes", use_container_width=True):
                 try:
                     supabase.table("patient_deliveries").update({"status": mod_status, "issue_reason": mod_notes}).eq("id", st.session_state.last_saved_entry["id"]).execute()
                     st.success("Record parameters updated dynamically.")
                     st.session_state.last_saved_entry = None
-                    time.sleep(1)
+                    time.sleep(0.8)
                     st.rerun()
                 except Exception as e:
                     st.error(f"Modification tracking exception: {e}")
@@ -284,15 +336,7 @@ with tabs[staff_idx]:
         st.info("No matching configuration matrices located for this date profile.")
     else:
         manifest_mapping = {f"{r['patient_name']} (MRN: {r.get('mrn_no', 'N/A')}) - [{r['status']}]": r for r in recs}
-        
-        # Checking for auto-resume state if timeout occurred
-        start_idx = 0
-        if st.session_state.saved_buffer_state in manifest_mapping:
-            start_idx = list(manifest_mapping.keys()).index(st.session_state.saved_buffer_state)
-            st.session_state.saved_buffer_state = None # Clear after tracking fallback match
-            
-        selected_key = st.selectbox("Select Patient Profile to Process:", list(manifest_mapping.keys()), index=start_idx)
-        st.session_state.selected_patient_key = selected_key
+        selected_key = st.selectbox("Select Patient Profile to Process:", list(manifest_mapping.keys()))
         
         target_profile = manifest_mapping[selected_key]
         st.markdown("<hr>", unsafe_allow_html=True)
@@ -329,9 +373,8 @@ with tabs[staff_idx]:
                 else:
                     try:
                         supabase.table("patient_deliveries").update(payload_buffer).eq("id", target_profile["id"]).execute()
-                        # Record tracking context for quick adjustment workspace overrides
                         st.session_state.last_saved_entry = {"id": target_profile["id"], "name": target_profile["patient_name"]}
                         st.success("Session changes pushed successfully.")
-                        time.sleep(1)
+                        time.sleep(0.8)
                         st.rerun()
                     except Exception as e: st.error(f"Commit exception: {e}")
