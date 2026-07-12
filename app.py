@@ -4,9 +4,8 @@ import pandas as pd
 import datetime
 import io
 import time
-import hashlib
 
-# 🎛️ Page Configuration & Styling Framework
+# 🎛️ Page Setup & Shell Initializer
 st.set_page_config(
     page_title="SHC & Pak Post | Delivery Portal", 
     page_icon="📮", 
@@ -14,10 +13,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 Advanced Professional CSS for Dynamic Micro-Animations & Custom UI Elements
+# 🎨 Premium C++ Style Tactile UI Engine (3D Glossy Buttons & Micro-Animations)
 st.markdown("""
     <style>
-    /* 🚫 Hiding Default Streamlit Interface Clutter */
+    /* 🚫 Clutter Removal Protocol */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
@@ -25,91 +24,86 @@ st.markdown("""
     div[data-testid="stToolbar"] {visibility: hidden;}
     div[data-testid="InputInstructions"] {display: none !important;}
     
-    /* Global Look & Feel */
-    .stApp { background-color: #f8fafc; }
-    body { font-family: 'Inter', system-ui, sans-serif; }
+    /* Sleek Desktop Runtime Environment Theme Background */
+    .stApp { background-color: #f1f5f9; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     
-    /* Exact Brand Title Styling Matching the Provided Visuals */
-    .brand-title { color: #0f172a; font-weight: 800; font-size: 2.1rem; letter-spacing: -0.05rem; margin-bottom: 0px; }
-    .brand-subtitle { color: #64748b; font-size: 1.05rem; margin-bottom: 25px; font-weight: 500; }
+    /* Window Framework Brand Elements */
+    .brand-title { color: #0f172a; font-weight: 800; font-size: 2.1rem; letter-spacing: -0.05rem; margin-bottom: 0px; margin-top: -30px; }
+    .brand-subtitle { color: #475569; font-size: 1.05rem; margin-bottom: 30px; font-weight: 500; }
     
-    /* 🌌 Premium Button Micro-Animations (Applies to all interactive actions) */
+    /* 🧱 Ultra-Crisp Mechanical 3D Navigation & Utility Buttons CSS */
     div.stButton > button {
-        background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
-        color: white !important;
-        border-radius: 8px !important;
-        padding: 10px 24px !important;
-        font-weight: 600 !important;
-        border: none !important;
-        box-shadow: 0 4px 6px -1px rgba(30, 58, 138, 0.15) !important;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        background: linear-gradient(180deg, #1e40af 0%, #1e3a8a 100%) !important;
+        color: #ffffff !important;
+        border: 1px solid #172554 !important;
+        border-radius: 6px !important;
+        padding: 12px 24px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 0 #172554, 0 8px 12px rgba(0, 0, 0, 0.15) !important;
+        transition: all 0.1s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
     }
     div.stButton > button:hover {
-        background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%) !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 10px 15px -3px rgba(30, 58, 138, 0.3) !important;
+        background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 5px 0 #172554, 0 10px 15px rgba(0, 0, 0, 0.2) !important;
     }
     div.stButton > button:active {
-        transform: translateY(1px) !important;
+        transform: translateY(3px) !important;
+        box-shadow: 0 1px 0 #172554, 0 2px 4px rgba(0, 0, 0, 0.1) !important;
     }
     
-    /* Special Logout Styling Override */
+    /* Highlighted State Override for Selected Active Tab Button */
+    .active-nav-btn div.stButton > button {
+        background: linear-gradient(180deg, #155e75 0%, #115e59 100%) !important;
+        border-color: #042f2e !important;
+        box-shadow: 0 4px 0 #042f2e, 0 8px 12px rgba(0, 0, 0, 0.2) !important;
+    }
+    
+    /* Danger/Logout Button Override Specs */
     div[data-testid="stSidebar"] div.stButton > button {
-        background: #ffffff !important;
-        color: #ef4444 !important;
-        border: 1px solid #fee2e2 !important;
-        box-shadow: none !important;
+        background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%) !important;
+        border-color: #7f1d1d !important;
+        box-shadow: 0 4px 0 #7f1d1d !important;
     }
     div[data-testid="stSidebar"] div.stButton > button:hover {
-        background: #fef2f2 !important;
-        color: #dc2626 !important;
-        border-color: #fca5a5 !important;
+        background: linear-gradient(180deg, #f87171 0%, #dc2626 100%) !important;
     }
     
-    /* Smooth Input Field Custom Layouts */
-    .stTextInput input, .stSelectbox div[data-baseweb="select"] {
-        border-radius: 8px !important;
-        border: 1px solid #cbd5e1 !important;
-        transition: all 0.2s ease !important;
-    }
-    .stTextInput input:focus {
-        border-color: #3b82f6 !important;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
-    }
-    
-    /* Elegant Content Bounding Cards */
+    /* Rigid Form Containers and Desktop Panels */
     .stForm, div.custom-card {
         background: #ffffff !important;
-        border-radius: 12px !important;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03), 0 2px 4px -1px rgba(0,0,0,0.02) !important;
-        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03) !important;
+        border: 1px solid #cbd5e1 !important;
         padding: 24px !important;
     }
     
-    /* Modern Navigation Tabs Customization */
-    .stTabs [data-baseweb="tab-list"] { gap: 8px; background-color: #e2e8f0; padding: 6px; border-radius: 10px; }
-    .stTabs [data-baseweb="tab"] { background-color: transparent; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; color: #475569; transition: all 0.2s ease; }
-    .stTabs [data-baseweb="tab"]:hover { color: #0f172a; background-color: #cbd5e1; }
-    .stTabs [data-baseweb="tab"][aria-selected="true"] { background-color: #ffffff !important; color: #1e3a8a !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08) !important; }
+    /* Metric Card Custom Outputs */
+    .big-phone-display { font-size: 30px !important; font-weight: 800 !important; color: #15803d !important; background-color: #f0fdf4; padding: 12px; border-radius: 8px; text-align: center; border: 2px solid #bbf7d0; letter-spacing: 1px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.04); }
+    .patient-card-header { font-size: 22px !important; font-weight: 700 !important; color: #0f172a; border-left: 6px solid #1e3a8a; padding-left: 12px; margin-bottom: 15px; }
     
-    /* Metric Card Viewports */
-    .big-phone-display { font-size: 32px !important; font-weight: 800 !important; color: #16a34a !important; background-color: #f0fdf4; padding: 14px; border-radius: 10px; text-align: center; border: 2px solid #bbf7d0; letter-spacing: 1.2px; }
-    .patient-card-header { font-size: 24px !important; font-weight: 700 !important; color: #0f172a; border-left: 5px solid #1e3a8a; padding-left: 12px; margin-bottom: 15px; }
+    /* ⏳ Processing Animation Overlay Elements */
+    .processing-pulse { color: #1d4ed8; font-weight: bold; font-size: 1.1rem; letter-spacing: 3px; animation: pulse 1.4s infinite; text-align: center; margin-top: 10px; }
+    @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
     </style>
 """, unsafe_allow_html=True)
 
-# ⏳ PERSISTENT REFRESH MANAGER & TIMEOUT STRATEGY
-TIMEOUT_LIMIT = 45 * 60  # 45 Minutes
+# ⏳ SECURITY LOCKS & INTERVAL THRESHOLDS
+TIMEOUT_LIMIT = 45 * 60  # 45 Minutes Context Security
 
-# Initialization of structural runtime containers
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "last_activity" not in st.session_state:
     st.session_state.last_activity = time.time()
 if "last_saved_entry" not in st.session_state:
     st.session_state.last_saved_entry = None
+if "current_navigation_tab" not in st.session_state:
+    st.session_state.current_navigation_tab = "📞 Outbound Communications Hub"
 
-# Establish Database Connection
+# Establish Secure Gateway Instance Connect
 @st.cache_resource
 def init_connection():
     return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
@@ -117,25 +111,24 @@ def init_connection():
 try:
     supabase: Client = init_connection()
 except Exception as e:
-    st.error(f"Database interface offline: {e}")
+    st.error(f"Database sync fault: {e}")
     st.stop()
 
-# 🔄 COOKIE-EMULATOR: Browser url state token checking mechanism
+# 🔄 COOKIE HYDRATION: Re-populate token maps on manual window reloads
 if not st.session_state.logged_in and "session_token" in st.query_params:
-    token_username = st.query_params["session_token"]
     try:
-        user_data = supabase.table("app_users").select("*").eq("username", token_username).execute()
-        if user_data.data:
-            # Re-auth matching validation index maps
+        preserved_user = st.query_params["session_token"]
+        ud = supabase.table("app_users").select("*").eq("username", preserved_user).execute().data
+        if ud:
             st.session_state.logged_in = True
-            st.session_state.username = user_data.data[0]["username"]
-            st.session_state.full_name = user_data.data[0]["full_name"]
-            st.session_state.role = user_data.data[0]["role"]
+            st.session_state.username = ud[0]["username"]
+            st.session_state.full_name = ud[0]["full_name"]
+            st.session_state.role = ud[0]["role"]
             st.session_state.last_activity = time.time()
     except:
         pass
 
-# Timeout computation
+# Timeout Checker Execution Loop
 if st.session_state.logged_in:
     if time.time() - st.session_state.last_activity > TIMEOUT_LIMIT:
         st.session_state.logged_in = False
@@ -144,33 +137,33 @@ if st.session_state.logged_in:
     else:
         st.session_state.last_activity = time.time()
 
-# --- PASSWORD CHANGE INTERACTION CONSOLE (DIALOG MODAL) ---
+# --- MODAL ACTION INTERFACE ---
 @st.dialog("🔐 Change System Access Password")
 def change_password_modal():
-    st.write("Provide structural validation details to change your secure vault passkey.")
+    st.write("Provide verification parameters to modify database access codes.")
     curr_p = st.text_input("Current Password:", type="password")
     new_p = st.text_input("New Secure Password:", type="password")
     conf_p = st.text_input("Confirm New Password:", type="password")
     
     if st.button("Commit Access Token Update", use_container_width=True):
         if not curr_p or not new_p or not conf_p:
-            st.error("All fields must be filled out.")
+            st.error("All validation blocks must be filled.")
         elif new_p != conf_p:
-            st.error("Mismatch detected! New entries must match precisely.")
+            st.error("Tokens match discrepancy! Match entries exactly.")
         else:
             try:
                 verify = supabase.table("app_users").select("*").eq("username", st.session_state.username).execute()
                 if verify.data and verify.data[0]["password"] == curr_p.strip():
                     supabase.table("app_users").update({"password": new_p.strip()}).eq("username", st.session_state.username).execute()
-                    st.success("Access tokens updated! Your password has been changed.")
-                    time.sleep(1.2)
+                    st.success("Access tokens modified successfully.")
+                    time.sleep(1)
                     st.rerun()
                 else:
-                    st.error("Verification failed: Current password matches no records.")
+                    st.error("Current authentication record rejected.")
             except Exception as e:
-                st.error(f"Execution rejected by database: {e}")
+                st.error(f"Database write execution error: {e}")
 
-# --- AUTHENTICATION SCREEN INTERFACE ---
+# --- DESKTOP USER INTERFACE SIGN-ON FRAME ---
 if not st.session_state.logged_in:
     _, center_col, _ = st.columns([1, 1.1, 1])
     with center_col:
@@ -181,8 +174,14 @@ if not st.session_state.logged_in:
             pass_in = st.text_input("Password Input", type="password", placeholder="Enter authorization key", label_visibility="collapsed")
             
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.form_submit_button("Authenticate Session 🚀", use_container_width=True):
+            submit_action = st.form_submit_button("Authenticate Session 🚀", use_container_width=True)
+            
+            if submit_action:
                 if user_in and pass_in:
+                    # Render sequential pulsing animated sequence dots container immediately
+                    pulse_container = st.empty()
+                    pulse_container.markdown("<div class='processing-pulse'>PROCESSING COMPILING LEDGERS . . . . .</div>", unsafe_allow_html=True)
+                    
                     try:
                         user_query = supabase.table("app_users").select("*").eq("username", user_in.strip()).execute()
                         if user_query.data and user_query.data[0]["password"] == pass_in.strip():
@@ -191,21 +190,22 @@ if not st.session_state.logged_in:
                             st.session_state.full_name = user_query.data[0]["full_name"]
                             st.session_state.role = user_query.data[0]["role"]
                             st.session_state.last_activity = time.time()
-                            
-                            # Persistent state mapping inside web url parameters
                             st.query_params["session_token"] = user_query.data[0]["username"]
-                            st.success("Authorized! Fetching parameters...")
-                            time.sleep(0.5)
+                            
+                            pulse_container.success("Access Authorized!")
+                            time.sleep(0.6)
                             st.rerun()
                         else:
-                            st.error("Authentication match rejected.")
+                            pulse_container.empty()
+                            st.error("Authentication details match rejected.")
                     except Exception as err:
-                        st.error(f"Cloud interface error: {err}")
+                        pulse_container.empty()
+                        st.error(f"Cloud mapping access error: {err}")
                 else:
-                    st.warning("Operational values missing.")
+                    st.warning("Provide complete secure values.")
     st.stop()
 
-# --- MAIN POST-LOGIN WORKSPACE WORKFLOW ---
+# --- OPERATIONAL DESKTOP SHELL AFTER ACCOUNT SIGN-ON ---
 with st.sidebar:
     st.markdown(f"👤 **Logged in as:**<br><b style='font-size:15px; color:#1e3a8a;'>{st.session_state.full_name}</b>", unsafe_allow_html=True)
     st.markdown(f"Privilege Matrix: `{st.session_state.role.upper()}`")
@@ -218,113 +218,142 @@ with st.sidebar:
     if st.button("Logout 🚪", use_container_width=True):
         st.session_state.logged_in = False
         st.session_state.last_saved_entry = None
-        st.query_params.clear() # Wipe URL parameter bindings completely
+        st.query_params.clear()
         st.rerun()
 
-# Brand Identity Headers Mapped Identically to Original Specs
+# Layout Window Branding Blocks
 st.markdown("<div class='brand-title'>SHC & Pak Post | Free Home Delivery of Medicine</div>", unsafe_allow_html=True)
 st.markdown("<div class='brand-subtitle'>Logistics Tracking & Quality Feedback System</div>", unsafe_allow_html=True)
 
-# Access Control Navigation Configuration Setup
+# 🧱 PREMIUM 3D SEGMENTED OPERATIONAL NAVIGATION BUTTONS MATRIX
 if st.session_state.role == "admin":
-    tabs = st.tabs(["📊 Administrative Ingestion Engine", "👥 Operator Matrix & Security Audit Logs", "📞 Outbound Communications Hub"])
-else:
-    tabs = st.tabs(["📞 Outbound Communications Hub"])
-
-# ----------------------------------------------------
-# ADMIN INTERFACE MODULE: DATA INGESTION ENGINE
-# ----------------------------------------------------
-if st.session_state.role == "admin":
-    with tabs[0]:
-        st.markdown("### 📥 Bulk Logistics Ingestion Engine")
-        source_file = st.file_uploader("Upload Parcel Manifest Data Sheet (.xlsx or .csv)", type=["xlsx", "csv"])
+    nc1, nc2, nc3 = st.columns(3)
+    
+    # Tab 1 Selector
+    with nc1:
+        t1_class = "active-nav-btn" if st.session_state.current_navigation_tab == "📊 Administrative Ingestion Engine" else ""
+        st.markdown(f"<div class='{t1_class}'>", unsafe_allow_html=True)
+        if st.button("📊 Administrative Ingestion Engine", use_container_width=True):
+            st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine"
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
         
-        if source_file is not None:
-            df = pd.read_excel(source_file) if source_file.name.endswith('.xlsx') else pd.read_csv(source_file)
-            st.success("Manifest read successfully!")
+    # Tab 2 Selector
+    with nc2:
+        t2_class = "active-nav-btn" if st.session_state.current_navigation_tab == "👥 Operator Matrix & Security Audit Logs" else ""
+        st.markdown(f"<div class='{t2_class}'>", unsafe_allow_html=True)
+        if st.button("👥 Operator Matrix & Logs", use_container_width=True):
+            st.session_state.current_navigation_tab = "👥 Operator Matrix & Security Audit Logs"
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+    # Tab 3 Selector
+    with nc3:
+        t3_class = "active-nav-btn" if st.session_state.current_navigation_tab == "📞 Outbound Communications Hub" else ""
+        st.markdown(f"<div class='{t3_class}'>", unsafe_allow_html=True)
+        if st.button("📞 Outbound Communications Hub", use_container_width=True):
+            st.session_state.current_navigation_tab = "📞 Outbound Communications Hub"
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+else:
+    # Standard terminal employees lock step view layout option mapping directly to communication desk operations
+    st.session_state.current_navigation_tab = "📞 Outbound Communications Hub"
+    st.markdown("<div class='active-nav-btn'>", unsafe_allow_html=True)
+    st.button("📞 Outbound Communications Hub", use_container_width=True, disabled=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+# ----------------------------------------------------
+# MODULE BLOCK 1: DATA BULK INGESTION RUNTIME (ADMIN ENVIRONMENT)
+# ----------------------------------------------------
+if st.session_state.current_navigation_tab == "📊 Administrative Ingestion Engine" and st.session_state.role == "admin":
+    st.markdown("### 📥 Bulk Logistics Ingestion Engine")
+    source_file = st.file_uploader("Upload Parcel Manifest Data Sheet (.xlsx or .csv)", type=["xlsx", "csv"])
+    
+    if source_file is not None:
+        df = pd.read_excel(source_file) if source_file.name.endswith('.xlsx') else pd.read_csv(source_file)
+        st.success("Manifest read successfully!")
+        
+        mc1, mc2, mc3 = st.columns(3)
+        with mc1:
+            c_article = st.selectbox("Article ID Column:", df.columns)
+            c_name = st.selectbox("Patient Name Column:", df.columns)
+            c_city = st.selectbox("Patient City Column:", df.columns)
+        with mc2:
+            c_phone = st.selectbox("Contact Number Column:", df.columns)
+            c_date = st.selectbox("Booking Date Column:", df.columns)
+            c_mrn = st.selectbox("MRN No. Column:", df.columns)
+        with mc3:
+            c_address = st.selectbox("Address Column:", df.columns)
+            c_bo = st.selectbox("Booking Office Column:", df.columns)
+            dup_target = st.selectbox("De-duplication Target:", df.columns, index=df.columns.get_loc(c_article))
+
+        if st.button("🚀 Push Verified Records to Cloud Database", use_container_width=True):
+            cleaned_records = df.drop_duplicates(subset=[dup_target], keep='first')
+            staging_area = []
             
-            mc1, mc2, mc3 = st.columns(3)
-            with mc1:
-                c_article = st.selectbox("Article ID Column:", df.columns)
-                c_name = st.selectbox("Patient Name Column:", df.columns)
-                c_city = st.selectbox("Patient City Column:", df.columns)
-            with mc2:
-                c_phone = st.selectbox("Contact Number Column:", df.columns)
-                c_date = st.selectbox("Booking Date Column:", df.columns)
-                c_mrn = st.selectbox("MRN No. Column:", df.columns)
-            with mc3:
-                c_address = st.selectbox("Address Column:", df.columns)
-                c_bo = st.selectbox("Booking Office Column:", df.columns)
-                dup_target = st.selectbox("De-duplication Target:", df.columns, index=df.columns.get_loc(c_article))
+            for _, row in cleaned_records.iterrows():
+                final_dt = str(datetime.date.today())
+                try: final_dt = pd.to_datetime(row[c_date]).strftime('%Y-%m-%d')
+                except: pass
+                    
+                staging_area.append({
+                    "article_id": str(row[c_article]).strip(),
+                    "patient_name": str(row[c_name]).strip(),
+                    "phone_number": str(row[c_phone]).strip(),
+                    "booking_date": final_dt,
+                    "address": str(row[c_address]).strip(),
+                    "patient_city": str(row[c_city]).strip(),
+                    "mrn_no": str(row[c_mrn]).strip(),
+                    "booking_office": str(row[c_bo]).strip(),
+                    "status": "Pending"
+                })
+            
+            try:
+                supabase.table("patient_deliveries").upsert(staging_area, on_conflict="article_id").execute()
+                st.success(f"Successfully processed entries into Supabase cloud node architecture.")
+            except Exception as ex:
+                st.error(f"Batch synchronization exception: {ex}")
 
-            if st.button("🚀 Push Verified Records to Cloud Database", use_container_width=True):
-                cleaned_records = df.drop_duplicates(subset=[dup_target], keep='first')
-                staging_area = []
-                
-                for _, row in cleaned_records.iterrows():
-                    final_dt = str(datetime.date.today())
-                    try: final_dt = pd.to_datetime(row[c_date]).strftime('%Y-%m-%d')
-                    except: pass
-                        
-                    staging_area.append({
-                        "article_id": str(row[c_article]).strip(),
-                        "patient_name": str(row[c_name]).strip(),
-                        "phone_number": str(row[c_phone]).strip(),
-                        "booking_date": final_dt,
-                        "address": str(row[c_address]).strip(),
-                        "patient_city": str(row[c_city]).strip(),
-                        "mrn_no": str(row[c_mrn]).strip(),
-                        "booking_office": str(row[c_bo]).strip(),
-                        "status": "Pending"
-                    })
-                
+# ----------------------------------------------------
+# MODULE BLOCK 2: OPERATOR ACCOUNT MANAGEMENT CONTROL (ADMIN ENVIRONMENT)
+# ----------------------------------------------------
+elif st.session_state.current_navigation_tab == "👥 Operator Matrix & Security Audit Logs" and st.session_state.role == "admin":
+    st.markdown("### 👥 Operational Account Provisioning Center")
+    uc1, uc2 = st.columns(2)
+    with uc1:
+        st.markdown("#### ➕ Provision New Operator Account")
+        nf = st.text_input("Operator Full Name")
+        nu = st.text_input("Operational Username")
+        np = st.text_input("Assigned Initial Password", type="password")
+        if st.button("Register Operator Account", use_container_width=True):
+            if nf and nu and np:
                 try:
-                    supabase.table("patient_deliveries").upsert(staging_area, on_conflict="article_id").execute()
-                    st.success(f"Successfully processed and synchronized entries into Supabase server storage.")
-                except Exception as ex:
-                    st.error(f"Batch write failure: {ex}")
+                    supabase.table("app_users").insert({"username": nu.strip(), "password": np.strip(), "full_name": nf.strip(), "role": "staff"}).execute()
+                    st.success("New active account framework mapped successfully.")
+                except Exception as e: st.error(f"Mapping rejection: {e}")
 
 # ----------------------------------------------------
-# ADMIN INTERFACE MODULE: OPERATOR SETTINGS
+# MODULE BLOCK 3: DESKTOP QUALITY VERIFICATION COMMUNICATIONS DESK
 # ----------------------------------------------------
-if st.session_state.role == "admin":
-    with tabs[1]:
-        st.markdown("### 👥 Operational Account Provisioning Center")
-        uc1, uc2 = st.columns(2)
-        with uc1:
-            st.markdown("#### ➕ Provision New Operator Account")
-            nf = st.text_input("Operator Full Name")
-            nu = st.text_input("Operational Username")
-            np = st.text_input("Assigned Initial Password", type="password")
-            if st.button("Register Operator Account", use_container_width=True):
-                if nf and nu and np:
-                    try:
-                        supabase.table("app_users").insert({"username": nu.strip(), "password": np.strip(), "full_name": nf.strip(), "role": "staff"}).execute()
-                        st.success("New terminal employee profile mapped successfully.")
-                    except Exception as e: st.error(f"Error mapping account: {e}")
-
-# ----------------------------------------------------
-# GENERAL WORKSPACE MODULE: LOGISTICS COMMUNICATIONS DATA
-# ----------------------------------------------------
-staff_idx = 2 if st.session_state.role == "admin" else 0
-with tabs[staff_idx]:
+elif st.session_state.current_navigation_tab == "📞 Outbound Communications Hub":
     st.markdown("### 📞 Outbound Communications Desk")
     
-    # 📝 LIVE EDIT CORRECTION SHIFT CONSOLE FOR PREVIOUS DATA ENTRY
+    # Quick Correction Panel Area for Modifications Tracker Console
     if st.session_state.last_saved_entry:
         with st.expander("✏️ Quick-Correction Panel (Modify Last Saved Entry)", expanded=True):
-            st.info(f"You can overwrite the evaluation metrics for the last updated file record profile: **{st.session_state.last_saved_entry['name']}**")
+            st.info(f"Modify configuration variables for your last updated record: **{st.session_state.last_saved_entry['name']}**")
             mod_status = st.selectbox("Modify Status Context:", ["Delivered", "Issue / Complaint", "Pending"])
-            mod_notes = st.text_area("Adjustment Audit Comments / Failure Reason:")
+            mod_notes = st.text_area("Adjustment Audit Failure Reasons:")
             if st.button("Commit Overwrite Changes", use_container_width=True):
                 try:
                     supabase.table("patient_deliveries").update({"status": mod_status, "issue_reason": mod_notes}).eq("id", st.session_state.last_saved_entry["id"]).execute()
-                    st.success("Record parameters updated dynamically.")
+                    st.success("Cloud parameter entry values adjusted.")
                     st.session_state.last_saved_entry = None
-                    time.sleep(0.8)
+                    time.sleep(0.5)
                     st.rerun()
-                except Exception as e:
-                    st.error(f"Modification tracking exception: {e}")
+                except Exception as e: st.error(f"Write update fault: {e}")
 
     query_date = st.date_input("Filter Manifest Records by Booking Date:", datetime.date.today())
     
@@ -333,7 +362,7 @@ with tabs[staff_idx]:
     except: recs = []
         
     if not recs:
-        st.info("No matching configuration matrices located for this date profile.")
+        st.info("No logistics tracking matrices located matching this manifest date profile.")
     else:
         manifest_mapping = {f"{r['patient_name']} (MRN: {r.get('mrn_no', 'N/A')}) - [{r['status']}]": r for r in recs}
         selected_key = st.selectbox("Select Patient Profile to Process:", list(manifest_mapping.keys()))
@@ -369,12 +398,12 @@ with tabs[staff_idx]:
                 
             if st.button("💾 Finalize Session & Commit Logs", use_container_width=True):
                 if is_delivered == "Select Assessment Option":
-                    st.error("Please provide a verification status choice.")
+                    st.error("Select verification response parameter before finalizing profile entry.")
                 else:
                     try:
                         supabase.table("patient_deliveries").update(payload_buffer).eq("id", target_profile["id"]).execute()
                         st.session_state.last_saved_entry = {"id": target_profile["id"], "name": target_profile["patient_name"]}
-                        st.success("Session changes pushed successfully.")
-                        time.sleep(0.8)
+                        st.success("Session logs pushed to database nodes.")
+                        time.sleep(0.5)
                         st.rerun()
-                    except Exception as e: st.error(f"Commit exception: {e}")
+                    except Exception as e: st.error(f"Commit tracking sync error: {e}")
