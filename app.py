@@ -23,8 +23,9 @@ st.markdown("""
     .stDeployButton { display: none !important; }
     footer { visibility: hidden !important; }
     
-    /* 🔒 FIX: Sidebar controls cleaned completely to ensure it renders flawlessly on screen */
-    [data-testid="stSidebar"] { min-width: 260px !important; max-width: 320px !important; }
+    /* 🔓 SIDEBAR RESET: Force default toggle buttons to be completely visible so you can open it manually */
+    button[data-testid="stSidebarCollapseButton"] { visibility: visible !important; display: block !important; }
+    [data-testid="collapsedControl"] { visibility: visible !important; display: block !important; }
     
     /* Hide native input hints globally (Press Enter to submit) */
     div[data-testid="stInputInstructions"] { display: none !important; }
@@ -157,7 +158,7 @@ if st.session_state.logged_in:
         time.sleep(1)
         st.rerun()
     else:
-        # User performed an action or script refreshed while they are active. Reset countdown!
+        # Operator performed an action or interaction. Reset internal timer node.
         st.session_state.last_activity = time.time()
         st.query_params["t"] = str(st.session_state.last_activity)
 
