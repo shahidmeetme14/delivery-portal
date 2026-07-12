@@ -22,10 +22,6 @@ st.markdown("""
     .main-title { color: #1e3a8a; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 2.5rem; letter-spacing: -0.05rem; margin-bottom: 5px; }
     .sub-title { color: #64748b; font-size: 1.1rem; margin-bottom: 30px; font-weight: 400; }
     
-    /* Elegant Login Card Styling */
-    .login-container { max-width: 450px; margin: 80px auto; padding: 40px; background: #ffffff; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; }
-    .login-header { text-align: center; font-size: 1.8rem; font-weight: 700; color: #0f172a; margin-bottom: 25px; }
-    
     /* Phone Number Display Box */
     .big-phone-display { font-size: 34px !important; font-weight: 800 !important; color: #dc2626 !important; background-color: #fef2f2; padding: 15px; border-radius: 12px; text-align: center; border: 2px dashed #f87171; letter-spacing: 2px; box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06); }
     .patient-card-header { font-size: 26px !important; font-weight: 700 !important; color: #1e3a8a; border-left: 5px solid #2563eb; padding-left: 10px; margin-bottom: 15px; }
@@ -51,20 +47,6 @@ except Exception as e:
     st.error(f"Database connection failed: {e}")
     st.stop()
 
-# Auto-seed/Update Principal Admin Profile dynamically
-def auto_seed_admin():
-    try:
-        supabase.table("app_users").upsert({
-            "username": "shahid",
-            "password": "shahid@2341",
-            "full_name": "Shahid Hussain",
-            "role": "admin"
-        }, on_conflict="username").execute()
-    except:
-        pass
-
-auto_seed_admin()
-
 # Initialize Session Infrastructure
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -77,49 +59,68 @@ if "role" not in st.session_state:
 
 # --- SECURE GATEWAY WORKFLOW ---
 if not st.session_state.logged_in:
-    st.markdown("<div class='login-container'>", unsafe_allow_html=True)
-    st.markdown("<div class='login-header'>📮 Portal Authentication</div>", unsafe_allow_html=True)
+    # Centering the login card using columns layout
+    _, center_col, _ = st.columns([1, 1.5, 1])
     
-    username_input = st.text_input("Username")
-    password_input = st.text_input("Password", type="password")
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("Authenticate Session 🚀", use_container_width=True):
-        if username_input and password_input:
-            try:
-                user_query = supabase.table("app_users").select("*").eq("username", username_input.strip()).execute()
-                
-                if user_query.data and user_query.data[0]["password"] == password_input.strip():
-                    st.session_state.logged_in = True
-                    st.session_state.username = user_query.data[0]["username"]
-                    st.session_state.full_name = user_query.data[0]["full_name"]
-                    st.session_state.role = user_query.data[0]["role"]
-                    
-                    # Capture Client Audit Data
+    with center_col:
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("<h2 style='text-align: center; color: #0f172a; font-family: sans-serif; margin-bottom: 25px;'>📮 Portal Authentication</h2>", unsafe_allow_html=True)
+            
+            username_input = st.text_input("Username", placeholder="Enter username")
+            password_input = st.text_input("Password", type="password", placeholder="Enter password")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("Authenticate Session 🚀", use_container_width=True):
+                if username_input and password_input:
                     try:
-                        headers = st.context.headers
-                        ip_addr = headers.get("X-Forwarded-For", "127.0.0.1").split(",")[0]
-                        dev_info = headers.get("User-Agent", "Unknown Hardware/Browser")
-                    except:
-                        ip_addr = "Local Gateway"
-                        dev_info = "Secure API Browser Agent"
-                    
-                    # Log Event to Database
-                    supabase.table("user_logins").insert({
-                        "username": st.session_state.username,
-                        "ip_address": ip_addr,
-                        "device_info": dev_info
-                    }).execute()
-                    
-                    st.success("Session verified successfully!")
-                    st.rerun()
+                        user_query = supabase.table("app_users").select("*").eq("username", username_input.strip()).execute()
+                        
+                        if user_query.data and user_query.data[0]["password"] == password_input.strip():
+                            st.session_state.logged_in = True
+                            st.session_state.username = user_query.data[0]["username"]
+                            st.session_state.full_name = user_query.data[0]["full_name"]
+                            st.session_state.role = user_query.data[0]["role"]
+                            
+                            # Log Event to Database
+                            try:
+                                headers = st.context.headers
+                                ip_addr = headers.get("X-Forwarded-For", "127.0.0.1").split(",")[0]
+                                dev_info = headers.get("User-Agent", "Unknown Hardware")
+                                supabase.table("user_logins").insert({
+                                    "username": st.session_state.username,
+                                    "ip_address": ip_addr,
+                                    "device_info": dev_info
+                                }).execute()
+                            except:
+                                pass
+                            
+                            st.success("Session verified successfully!")
+                            st.rerun()
+                        else:
+                            st.error("Invalid Username or Password! Please verify credentials.")
+                    except Exception as auth_err:
+                        st.error(f"Authentication Server Offline or Table Column Mismatch: {auth_err}")
                 else:
-                    st.error("Invalid Username or Password! Please verify credentials.")
-            except Exception as auth_err:
-                st.error(f"Authentication Server Offline: {auth_err}")
-        else:
-            st.warning("Please complete all fields.")
-    st.markdown("</div>", unsafe_allow_html=True)
+                    st.warning("Please complete all fields.")
+            
+            # Diagnostic tools for Admin Setup
+            st.markdown("---")
+            with st.expander("🛠️ Database Admin Initialization Tools"):
+                st.write("If you are running this for the first time, click below to inject the default Admin user into Supabase:")
+                if st.button("Inject Admin User ('shahid') into Database"):
+                    try:
+                        res = supabase.table("app_users").upsert({
+                            "username": "shahid",
+                            "password": "shahid@2341",
+                            "full_name": "Shahid Hussain",
+                            "role": "admin"
+                        }, on_conflict="username").execute()
+                        st.success("Successfully written to Supabase! Try logging in now.")
+                    except Exception as seed_err:
+                        st.error(f"Supabase Insertion Failed: {seed_err}")
+                        st.info("Tip: Check if your table has columns named exactly: 'username', 'password', 'full_name', and 'role'.")
+
     st.stop()
 
 # --- POST-AUTHENTICATION APPLICATION SPACE ---
@@ -128,7 +129,6 @@ with st.sidebar:
     st.markdown(f"🎖️ Privileges: `{st.session_state.role.upper()}`")
     st.markdown("---")
     
-    # Self Account Maintenance Module
     st.markdown("⚙️ **Change Profile Password**")
     new_secret = st.text_input("New Password:", type="password", key="self_p_chg")
     if st.button("Apply New Password", use_container_width=True):
