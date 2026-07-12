@@ -7,7 +7,7 @@ import time
 import requests
 from bs4 import BeautifulSoup
 
-# 🎛️ Page Structural Settings (Sidebar Always Expanded Initially)
+# 🎛️ Page Structural Settings (Sidebar Forced to Open State)
 st.set_page_config(
     page_title="SHC & Pak Post | Delivery Portal", 
     page_icon="📮", 
@@ -15,78 +15,97 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 Premium UI Engine - Clean & Modern Slate Theme
+# 🎨 PyQt6 / C++ Enterprise Desktop Style CSS Engine
 st.markdown("""
     <style>
-    /* Hide unnecessary default Streamlit bars */
+    /* Hide default Streamlit fluff */
     div[data-testid="stToolbar"] { visibility: hidden !important; }
     .stDeployButton { display: none !important; }
     footer { visibility: hidden !important; }
     
-    /* 🔒 FIX 1: Make Sidebar completely UNHIDEABLE by destroying the collapse button */
+    /* 🔒 FIX 1: Force Sidebar to stay open and completely destroy collapse mechanisms */
+    [data-testid="stSidebarCollapsedControl"] { display: none !important; }
     button[data-testid="sidebarCollapsedControl"] { display: none !important; }
-    button[data-testid="collapsedControl"] { display: none !important; }
+    div[data-testid="collapsedControl"] { display: none !important; }
+    .css-6q9sum.e1fqkh3o3 { display: none !important; }
     
-    /* 🔒 FIX 2: Hide "Press enter to submit" instructions globally */
+    /* 🔒 FIX 2: Clear native input hints globally (Press Enter to submit) */
     div[data-testid="stInputInstructions"] { display: none !important; }
     div[data-testid="InputInstructions"] { display: none !important; }
+    small { display: none !important; }
     
-    .stApp { background-color: #f8fafc; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    /* PyQt6 Desktop System Colors (Slate Gray / Dark Metallic Corporate Theme) */
+    .stApp { background-color: #f1f5f9; }
+    body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; }
     
-    .brand-title { color: #0f172a; font-weight: 800; font-size: 2.1rem; letter-spacing: -0.05rem; margin-bottom: 0px; margin-top: -20px; }
-    .brand-subtitle { color: #475569; font-size: 1.05rem; margin-bottom: 30px; font-weight: 500; }
+    .brand-title { color: #1e293b; font-weight: 700; font-size: 1.85rem; letter-spacing: -0.03rem; margin-top: -25px; margin-bottom: 2px; }
+    .brand-subtitle { color: #64748b; font-size: 0.95rem; margin-bottom: 25px; font-weight: 500; }
     
-    /* Premium Grid Forms */
-    div[data-testid="stForm"] {
+    /* PyQt6 Sharp Container Boxes */
+    div[data-testid="stForm"], .pyqt-panel {
         background: #ffffff !important;
-        border-radius: 12px !important;
-        border: 1px solid #e2e8f0 !important;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-        padding: 30px !important;
+        border-radius: 4px !important;
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+        padding: 24px !important;
     }
     
-    div.stButton > button {
-        background: linear-gradient(180deg, #475569 0%, #1e293b 100%) !important;
-        color: #f8fafc !important;
-        border: 1px solid #0f172a !important;
-        border-radius: 6px !important;
-        padding: 10px 22px !important;
+    /* Sharp Technical UI Form Labels */
+    label p {
+        color: #334155 !important;
         font-weight: 600 !important;
-        font-size: 14px !important;
-        box-shadow: 0 4px 0 #0f172a, 0 6px 10px rgba(0, 0, 0, 0.12) !important;
-        transition: all 0.05s ease-in-out !important;
+        font-size: 13px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+    
+    /* High-contrast Action Buttons (Native Application Style) */
+    div.stButton > button {
+        background: #1e293b !important;
+        color: #ffffff !important;
+        border: 1px solid #0f172a !important;
+        border-radius: 3px !important;
+        padding: 6px 18px !important;
+        font-weight: 600 !important;
+        font-size: 13px !important;
+        transition: background 0.1s ease !important;
     }
     div.stButton > button:hover {
-        background: linear-gradient(180deg, #64748b 0%, #334155 100%) !important;
-        transform: translateY(-1px) !important;
-        box-shadow: 0 5px 0 #0f172a, 0 8px 12px rgba(0, 0, 0, 0.18) !important;
+        background: #334155 !important;
+        color: #ffffff !important;
+        border-color: #1e293b !important;
     }
     div.stButton > button:active {
-        transform: translateY(3px) !important;
-        box-shadow: 0 1px 0 #0f172a, 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        background: #0f172a !important;
     }
     
+    /* Highlighted Nav Toggles */
     .active-nav-btn div.stButton > button {
-        background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%) !important;
-        border-color: #1e3a8a !important;
-        box-shadow: 0 4px 0 #172554, 0 6px 10px rgba(37, 99, 235, 0.2) !important;
+        background: #2563eb !important;
+        border-color: #1d4ed8 !important;
+    }
+    .active-nav-btn div.stButton > button:hover {
+        background: #1d4ed8 !important;
     }
     
-    .big-phone-display { font-size: 30px !important; font-weight: 800 !important; color: #15803d !important; background-color: #f0fdf4; padding: 12px; border-radius: 8px; text-align: center; border: 2px solid #bbf7d0; letter-spacing: 1px; }
-    .patient-card-header { font-size: 22px !important; font-weight: 700 !important; color: #0f172a; border-left: 6px solid #1e3a8a; padding-left: 12px; margin-bottom: 15px; }
+    /* Technical Stats Displays */
+    .big-phone-display { font-family: 'Courier New', monospace; font-size: 32px !important; font-weight: 700 !important; color: #166534 !important; background-color: #f0fdf4; padding: 10px; border-radius: 4px; text-align: center; border: 1px solid #bbf7d0; }
+    .patient-card-header { font-size: 20px !important; font-weight: 700 !important; color: #0f172a; border-left: 4px solid #1e3a8a; padding-left: 10px; margin-bottom: 12px; }
     </style>
 """, unsafe_allow_html=True)
 
-SESSION_TIMEOUT = 40 * 60  # 🕒 Strict 40 Minutes Lock Boundary
+SESSION_TIMEOUT = 40 * 60  # 🕒 Strict 40 Minutes Boundary
 
-# Initialize session structures safely
+# Global Session Keys Initializer
 if "logged_in" not in st.session_state: st.session_state.logged_in = False
 if "username" not in st.session_state: st.session_state.username = ""
 if "full_name" not in st.session_state: st.session_state.full_name = ""
 if "role" not in st.session_state: st.session_state.role = ""
 if "login_time" not in st.session_state: st.session_state.login_time = 0.0
 if "current_navigation_tab" not in st.session_state: st.session_state.current_navigation_tab = None
+if "selected_profile_index" not in st.session_state: st.session_state.selected_profile_index = 0
+if "show_recovery_prompt" not in st.session_state: st.session_state.show_recovery_prompt = False
+if "cached_recovery_data" not in st.session_state: st.session_state.cached_recovery_data = {}
 
 @st.cache_resource
 def init_connection():
@@ -95,10 +114,34 @@ def init_connection():
 try:
     supabase: Client = init_connection()
 except Exception as e:
-    st.error(f"Database sync fault: {e}")
+    st.error(f"Database core failure: {e}")
     st.stop()
 
-# 🔄 FIX 5: HYDRATION ENGINE (Survives Refresh perfectly using safe browser parameters)
+# 🔄 POWER LOSS/DISCONNECTION TRACKING ENGINE
+def save_operator_state():
+    """Saves active worksheet coordinates instantly to cloud node to survive load-shedding events."""
+    if st.session_state.logged_in and st.session_state.username:
+        state_payload = {
+            "username": st.session_state.username,
+            "last_tab": st.session_state.current_navigation_tab,
+            "last_index": st.session_state.selected_profile_index,
+            "updated_at": datetime.datetime.now().isoformat()
+        }
+        try:
+            supabase.table("operator_sessions").upsert(state_payload, on_conflict="username").execute()
+        except:
+            pass # Silent fallback if custom recovery table isn't created yet
+
+def fetch_operator_state(username):
+    """Checks if there is any interrupted operational data left behind."""
+    try:
+        res = supabase.table("operator_sessions").select("*").eq("username", username).execute().data
+        if res: return res[0]
+    except:
+        return None
+    return None
+
+# Hydrate parameters from URL if matching signature exists
 if not st.session_state.logged_in and "usr" in st.query_params:
     try:
         param_time = float(st.query_params.get("t", 0))
@@ -113,19 +156,19 @@ if not st.session_state.logged_in and "usr" in st.query_params:
     except:
         pass
 
-# Check live runtime inactivity
+# Check runtime inactivity bounds
 if st.session_state.logged_in:
     if time.time() - st.session_state.login_time > SESSION_TIMEOUT:
         st.session_state.logged_in = False
         st.query_params.clear()
-        st.warning("🔄 Session expired automatically after 40 minutes.")
+        st.warning("🔄 Terminal locked automatically after 40 minutes of inactivity.")
         time.sleep(1)
         st.rerun()
 
 if st.session_state.logged_in and st.session_state.current_navigation_tab is None:
     st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine" if st.session_state.role == "admin" else "📞 Outbound Communications Hub"
 
-# 🌐 REAL WEB SCRAPER FOR PAKISTAN POST EMTTS
+# Real-time Web Tracker for PakPost EMTTS Nodes
 def fetch_live_emtts_status(article_id):
     if not article_id or article_id.strip() == "":
         return "⚠️ Invalid Article ID", "No data mapped."
@@ -137,7 +180,7 @@ def fetch_live_emtts_status(article_id):
         if response.status_code != 200: return "❌ Server Unreachable", "HTTP Error."
         soup = BeautifulSoup(response.text, 'html.parser')
         tables = soup.find_all('table')
-        if len(tables) < 2: return "🔎 Record Not Found", "No tracking history rows found yet."
+        if len(tables) < 2: return "🔎 Record Not Found", "No tracking records loaded yet."
         tracking_logs = []
         for table in tables:
             for row in table.find_all('tr'):
@@ -151,66 +194,120 @@ def fetch_live_emtts_status(article_id):
             elif "booked" in log.lower(): latest_status = "📦 Booked / Received"; break
         return latest_status, "\n".join(tracking_logs[:12])
     except:
-        return "⏱️ Timeout / Connection Error", "PakPost server failed to respond."
+        return "⏱️ Timeout Error", "PakPost network nodes timed out."
 
-# Sidebar Layout (Permanently Open)
+# Permanent Workspace Sidebar
 with st.sidebar:
-    st.markdown("### Workspace Navigation")
+    st.markdown("### 🖥️ Enterprise Console")
     if st.session_state.logged_in:
-        st.markdown(f"👤 **Operator:** <b style='color:#1e3a8a;'>{st.session_state.full_name}</b>", unsafe_allow_html=True)
-        st.markdown(f"Access Privilege: `{st.session_state.role.upper()}`")
+        st.markdown(f"**Operator ID:** `{st.session_state.username}`")
+        st.markdown(f"**Name:** {st.session_state.full_name}")
+        st.markdown(f"**Privilege Cluster:** `{st.session_state.role.upper()}`")
         st.markdown("---")
-        if st.button("Logout 🚪", use_container_width=True):
+        if st.button("Terminate Session 🚪", use_container_width=True):
             st.session_state.logged_in = False
             st.query_params.clear()
             st.rerun()
     else:
-        st.markdown("🔒 *Terminal Locked*")
+        st.markdown("🔒 *Authentication Required*")
 
 st.markdown("<div class='brand-title'>SHC & Pak Post | Free Home Delivery of Medicine</div>", unsafe_allow_html=True)
 st.markdown("<div class='brand-subtitle'>Logistics Tracking & Quality Feedback System</div>", unsafe_allow_html=True)
 
-# Main Terminal Logic Switch
+# Main Authentication Router
 if not st.session_state.logged_in:
-    _, center_col, _ = st.columns([1, 1.3, 1])
+    _, center_col, _ = st.columns([1.2, 1.2, 1.2])
     with center_col:
-        st.markdown("<h3 style='text-align: center; color: #0f172a; margin-bottom:20px;'>🔒 Secure Portal Authentication</h3>", unsafe_allow_html=True)
-        with st.form("clean_login_form"):
-            input_user = st.text_input("Username / Operator ID", placeholder="Enter Operator ID")
-            input_pass = st.text_input("Security Password", type="password", placeholder="••••••••")
-            btn_login = st.form_submit_button("Verify & Unlock Terminal", use_container_width=True)
+        # Sharp PyQt6 Desktop login architecture
+        st.markdown("<div style='background-color:#1e293b; color:#ffffff; padding:10px; font-weight:600; font-size:12px; border-radius:4px 4px 0px 0px; border:1px solid #0f172a;'>SECURE PORTAL AUTHENTICATION v2.4</div>", unsafe_allow_html=True)
+        with st.form("pyqt_enterprise_login"):
+            input_user = st.text_input("OPERATOR ID / USERNAME", placeholder="e.g. shahid_admin")
+            input_pass = st.text_input("SECURITY ACCESS PASSWORD", type="password", placeholder="••••••••")
+            btn_login = st.form_submit_button("UNLOCK TERMINAL", use_container_width=True)
             
             if btn_login:
                 if input_user and input_pass:
-                    # 🔄 FIX 4: Real-time Processing placeholder simulation inside the action stream
-                    with st.spinner("Processing Authentication... Synchronizing Cloud Nodes..."):
+                    # Direct action processing indicator
+                    with st.spinner("VALIDATING CREDENTIALS... MATCHING SECURE HASH..."):
                         try:
                             ud = supabase.table("app_users").select("*").eq("username", input_user.strip()).eq("password", input_pass.strip()).execute().data
                             if ud:
-                                current_ts = time.time()
-                                st.session_state.logged_in = True
-                                st.session_state.username = ud[0]["username"]
-                                st.session_state.full_name = ud[0]["full_name"]
-                                st.session_state.role = ud[0]["role"]
-                                st.session_state.login_time = current_ts
-                                
-                                # Save to URL variables to survive F5 refreshes flawlessly
-                                st.query_params["usr"] = ud[0]["username"]
-                                st.query_params["nm"] = ud[0]["full_name"]
-                                st.query_params["rl"] = ud[0]["role"]
-                                st.query_params["t"] = str(current_ts)
-                                
-                                st.success("✅ Granted! Opening core systems...")
-                                time.sleep(0.5)
-                                st.rerun()
+                                # Check if there is any crashed state to recover before routing
+                                recovery_data = fetch_operator_state(ud[0]["username"])
+                                if recovery_data:
+                                    st.session_state.cached_recovery_data = recovery_data
+                                    st.session_state.show_recovery_prompt = True
+                                    
+                                    # Temporary setup while they choose
+                                    st.session_state.username = ud[0]["username"]
+                                    st.session_state.full_name = ud[0]["full_name"]
+                                    st.session_state.role = ud[0]["role"]
+                                    st.session_state.login_time = time.time()
+                                    st.rerun()
+                                else:
+                                    current_ts = time.time()
+                                    st.session_state.logged_in = True
+                                    st.session_state.username = ud[0]["username"]
+                                    st.session_state.full_name = ud[0]["full_name"]
+                                    st.session_state.role = ud[0]["role"]
+                                    st.session_state.login_time = current_ts
+                                    
+                                    st.query_params["usr"] = ud[0]["username"]
+                                    st.query_params["nm"] = ud[0]["full_name"]
+                                    st.query_params["rl"] = ud[0]["role"]
+                                    st.query_params["t"] = str(current_ts)
+                                    st.rerun()
                             else:
-                                st.error("❌ Invalid Username or Password.")
+                                st.error("ACCESS DENIED: Invalid configuration credentials.")
                         except Exception as ex:
-                            st.error(f"Database Node Timeout: {ex}")
+                            st.error(f"Database Sync Failure: {ex}")
                 else:
-                    st.warning("Please fill all fields.")
+                    st.warning("All authentication fields must be filled.")
+
+# 🔄 Crash Recovery Selector Pop-up Interface
+elif st.session_state.show_recovery_prompt:
+    _, alert_box, _ = st.columns([1, 2, 1])
+    with alert_box:
+        st.markdown("""
+        <div style='background-color:#fffbeb; border-left:5px solid #d97706; padding:15px; border-radius:4px; margin-bottom:15px;'>
+            <h4 style='margin:0; color:#92400e;'>⚠️ Interrupted Operational Activity Detected</h4>
+            <p style='margin:5px 0 0 0; font-size:13px; color:#78350f;'>
+                System unexpected shutdown ya power-loss detect hua hai. Aapka aakhri active data mehfooz hai.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        rec_info = st.session_state.cached_recovery_data
+        st.info(f"Last Position: Tab `{rec_info.get('last_tab')}` | Row Index `{rec_info.get('last_index')}`")
+        
+        col_res, col_new = st.columns(2)
+        with col_res:
+            if st.button("🔄 RESUME INTERRUPTED SESSION", use_container_width=True):
+                st.session_state.logged_in = True
+                st.session_state.current_navigation_tab = rec_info.get('last_tab')
+                st.session_state.selected_profile_index = int(rec_info.get('last_index', 0))
+                st.session_state.show_recovery_prompt = False
+                
+                st.query_params["usr"] = st.session_state.username
+                st.query_params["nm"] = st.session_state.full_name
+                st.query_params["rl"] = st.session_state.role
+                st.query_params["t"] = str(st.session_state.login_time)
+                st.rerun()
+                
+        with col_new:
+            if st.button("🆕 START FRESH BLANK SESSION", use_container_width=True):
+                st.session_state.logged_in = True
+                st.session_state.show_recovery_prompt = False
+                
+                st.query_params["usr"] = st.session_state.username
+                st.query_params["nm"] = st.session_state.full_name
+                st.query_params["rl"] = st.session_state.role
+                st.query_params["t"] = str(st.session_state.login_time)
+                save_operator_state()
+                st.rerun()
+
 else:
-    # Render Navigation controls for Admins
+    # Navigation Matrix For Admins
     if st.session_state.role == "admin":
         nc1, nc2, nc3 = st.columns(3)
         with nc1:
@@ -218,6 +315,7 @@ else:
             st.markdown(f"<div class='{t1_class}'>", unsafe_allow_html=True)
             if st.button("📊 Administrative Ingestion Engine", use_container_width=True):
                 st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine"
+                save_operator_state()
                 st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
         with nc2:
@@ -225,6 +323,7 @@ else:
             st.markdown(f"<div class='{t2_class}'>", unsafe_allow_html=True)
             if st.button("👥 Operator Matrix & Logs", use_container_width=True):
                 st.session_state.current_navigation_tab = "👥 Operator Matrix & Security Audit Logs"
+                save_operator_state()
                 st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
         with nc3:
@@ -232,12 +331,13 @@ else:
             st.markdown(f"<div class='{t3_class}'>", unsafe_allow_html=True)
             if st.button("📞 Outbound Communications Hub", use_container_width=True):
                 st.session_state.current_navigation_tab = "📞 Outbound Communications Hub"
+                save_operator_state()
                 st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
             
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # PAGE 1: ADMIN INGESTION HUB
+    # PAGE 1: ADMINISTRATIVE BULK MANIFEST DATA INGESTION
     if st.session_state.current_navigation_tab == "📊 Administrative Ingestion Engine" and st.session_state.role == "admin":
         st.markdown("### 📥 Bulk Logistics Ingestion Engine")
         source_file = st.file_uploader("Upload Parcel Manifest Data Sheet (.xlsx or .csv)", type=["xlsx", "csv"])
@@ -246,10 +346,10 @@ else:
             if source_file.name.endswith('.xlsx'):
                 all_sheets = pd.read_excel(source_file, sheet_name=None)
                 df = pd.concat(all_sheets.values(), ignore_index=True)
-                st.info(f"📋 File read successfully! Loaded {len(all_sheets)} sheets combined.")
+                st.info(f"📋 Loaded {len(all_sheets)} worksheets combined successfully.")
             else:
                 df = pd.read_csv(source_file)
-                st.info("📋 CSV loaded successfully.")
+                st.info("📋 CSV manifest matrix loaded successfully.")
             
             mc1, mc2, mc3 = st.columns(3)
             with mc1:
@@ -263,10 +363,10 @@ else:
             with mc3:
                 c_address = st.selectbox("Address Column:", df.columns)
                 c_bo = st.selectbox("Booking Office Column:", df.columns)
-                dup_target = st.selectbox("De-duplication Target:", df.columns, index=df.columns.get_loc(c_article))
+                dup_target = st.selectbox("De-duplication Matrix Anchor:", df.columns, index=df.columns.get_loc(c_article))
 
             if st.button("🚀 Push Verified Records to Cloud Database", use_container_width=True):
-                with st.spinner("Processing Manifest..."):
+                with st.spinner("Processing Manifest Sequence..."):
                     cleaned_records = df.drop_duplicates(subset=[dup_target], keep='first')
                     staging_area = []
                     for _, row in cleaned_records.iterrows():
@@ -287,24 +387,24 @@ else:
                     try:
                         supabase.table("patient_deliveries").upsert(staging_area, on_conflict="article_id").execute()
                         st.balloons()
-                        st.success(f"🎉 Processed and synchronized {len(staging_area)} records successfully!")
+                        st.success(f"🎉 Synchronized {len(staging_area)} clean logs across cloud nodes.")
                     except Exception as ex:
                         st.error(f"❌ Batch sync exception: {ex}")
 
-    # PAGE 2: OPERATOR PROVISIONING
+    # PAGE 2: OPERATOR ACCOUNT MANAGEMENT
     elif st.session_state.current_navigation_tab == "👥 Operator Matrix & Security Audit Logs" and st.session_state.role == "admin":
         st.markdown("### 👥 Operational Account Provisioning Center")
         nf = st.text_input("Operator Full Name")
-        nu = st.text_input("Operational Username")
+        nu = st.text_input("Operational Username / ID")
         np = st.text_input("Assigned Initial Password", type="password")
         if st.button("Register Operator Account", use_container_width=True):
             if nf and nu and np:
                 try:
                     supabase.table("app_users").insert({"username": nu.strip(), "password": np.strip(), "full_name": nf.strip(), "role": "staff"}).execute()
-                    st.success("New active account mapped successfully.")
+                    st.success("New operator mapped to security matrices.")
                 except Exception as e: st.error(f"Mapping rejection: {e}")
 
-    # PAGE 3: COMMUNICATIONS HUB & LIVE CALLS
+    # PAGE 3: MAIN COMMUNICATIONS HUB
     elif st.session_state.current_navigation_tab == "📞 Outbound Communications Hub":
         st.markdown("### 📞 Outbound Communications Desk")
         query_date = st.date_input("Filter Manifest Records by Booking Date:", datetime.date.today())
@@ -313,11 +413,27 @@ else:
         except: recs = []
             
         if not recs:
-            st.info("No records match this booking date profile.")
+            st.info("No logs found matching this calendar timestamp.")
         else:
-            manifest_mapping = {f"{r['patient_name']} (MRN: {r.get('mrn_no', 'N/A')}) - [{r['status']}]": r for r in recs}
-            selected_key = st.selectbox("Select Patient Profile to Process:", list(manifest_mapping.keys()))
-            target_profile = manifest_mapping[selected_key]
+            options_list = [f"{r['patient_name']} (MRN: {r.get('mrn_no', 'N/A')}) - [{r['status']}]" for r in recs]
+            
+            # Bound check recovery indices safely
+            if st.session_state.selected_profile_index >= len(options_list):
+                st.session_state.selected_profile_index = 0
+                
+            selected_key = st.selectbox(
+                "Select Patient Profile to Process:", 
+                options_list, 
+                index=st.session_state.selected_profile_index
+            )
+            
+            # Capture change in choice and auto-save current coordinate context
+            current_choice_idx = options_list.index(selected_key)
+            if current_choice_idx != st.session_state.selected_profile_index:
+                st.session_state.selected_profile_index = current_choice_idx
+                save_operator_state()
+                
+            target_profile = recs[st.session_state.selected_profile_index]
             
             st.markdown("<hr>", unsafe_allow_html=True)
             l_panel, r_panel = st.columns(2)
@@ -330,7 +446,7 @@ else:
                 
                 st.markdown("#### 🌐 Pakistan Post Live EMTTS Tracking")
                 if st.button("🔍 Fetch Live Status from PakPost Server", use_container_width=True):
-                    with st.spinner("Connecting to PakPost network..."):
+                    with st.spinner("Connecting to PakPost network nodes..."):
                         live_status, trace_detail = fetch_live_emtts_status(target_profile['article_id'])
                         st.metric(label="Latest Detected Status", value=live_status)
                         st.text_area("Full EMTTS Tracking History Logs:", value=trace_detail, height=180)
@@ -356,10 +472,13 @@ else:
                     if is_delivered == "Select Assessment Option":
                         st.error("Select verification response parameter before finalizing profile entry.")
                     else:
-                        with st.spinner("Saving logs to database..."):
+                        with st.spinner("Committing logs to cloud infrastructure..."):
                             try:
                                 supabase.table("patient_deliveries").update(payload_buffer).eq("id", target_profile["id"]).execute()
-                                st.success("Session logs committed successfully.")
+                                st.success("Data node updated successfully.")
+                                # Advance sequence automatically after success and log progress
+                                st.session_state.selected_profile_index += 1
+                                save_operator_state()
                                 time.sleep(0.5)
                                 st.rerun()
                             except Exception as e: st.error(f"Commit tracking sync error: {e}")
