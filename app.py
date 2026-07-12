@@ -385,13 +385,20 @@ else:
         source_file = st.file_uploader("Upload Parcel Manifest Data Sheet (.xlsx or .csv)", type=["xlsx", "csv"])
         
         if source_file is not None:
-            if source_file.name.endswith('.xlsx'):
-                all_sheets = pd.read_excel(source_file, sheet_name=None)
-                df = pd.concat(all_sheets.values(), ignore_index=True)
-                st.info(f"📋 Loaded {len(all_sheets)} worksheets combined successfully.")
+            # ⚡ SMART RAM DATAFRAME CACHING ENGINE (Prevents Rerun OOM Crashes on Dropdowns)
+            file_key = f"cached_df_{source_file.name}_{source_file.size}"
+            if file_key not in st.session_state:
+                with st.spinner("Parsing large manifest matrix into secure cache... Please wait."):
+                    if source_file.name.endswith('.xlsx'):
+                        all_sheets = pd.read_excel(source_file, sheet_name=None)
+                        df = pd.concat(all_sheets.values(), ignore_index=True)
+                        st.toast(f"📋 Loaded {len(all_sheets)} worksheets combined successfully.", icon="📋")
+                    else:
+                        df = pd.read_csv(source_file)
+                        st.toast("📋 CSV manifest matrix loaded successfully.", icon="📋")
+                    st.session_state[file_key] = df
             else:
-                df = pd.read_csv(source_file)
-                st.info("📋 CSV manifest matrix loaded successfully.")
+                df = st.session_state[file_key]
             
             # Smart Memory Extraction logic for dropdown auto-persistence
             idx_article = calculate_mapped_index(df.columns, "map_article", "Article ID")
