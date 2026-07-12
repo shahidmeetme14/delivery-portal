@@ -15,32 +15,41 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 Premium UI Engine Dark Mechanical Slate Theme
+# 🎨 Premium UI Engine - Clean & Modern Slate Theme
 st.markdown("""
     <style>
-    #MainMenu {visibility: hidden;}
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
-    .stDeployButton {display:none;}
-    div[data-testid="stToolbar"] {visibility: hidden;}
-    div[data-testid="InputInstructions"] {display: none !important;}
+    /* Clean up default headers without hiding layout components like the sidebar control */
+    div[data-testid="stToolbar"] { visibility: hidden !important; }
+    .stDeployButton { display: none !important; }
+    footer { visibility: hidden !important; }
+    header[data-testid="stHeader"] { background: transparent !important; }
     
-    /* 🛠️ FIX: Forces the Sidebar Arrow to ALWAYS stay visible even if header is hidden */
+    /* 🎯 Sidebar Arrow Styling - Makes sure it is always visible and premium looking */
     button[data-testid="collapsedControl"] {
-        visibility: visible !important;
         background-color: #1e293b !important;
         color: #f8fafc !important;
-        border-radius: 4px !important;
-        margin-top: 5px !important;
-        margin-left: 5px !important;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
+        border-radius: 6px !important;
+        border: 1px solid #334155 !important;
+        margin-top: 10px !important;
+        margin-left: 10px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
     }
     
-    .stApp { background-color: #f1f5f9; }
+    .stApp { background-color: #f8fafc; }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     
-    .brand-title { color: #0f172a; font-weight: 800; font-size: 2.1rem; letter-spacing: -0.05rem; margin-bottom: 0px; margin-top: -30px; }
+    .brand-title { color: #0f172a; font-weight: 800; font-size: 2.1rem; letter-spacing: -0.05rem; margin-bottom: 0px; margin-top: -20px; }
     .brand-subtitle { color: #475569; font-size: 1.05rem; margin-bottom: 30px; font-weight: 500; }
+    
+    /* 🔒 Modern Login Card Styling */
+    .login-container {
+        background: #ffffff !important;
+        border-radius: 12px !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+        padding: 40px !important;
+        margin-top: 20px;
+    }
     
     div.stButton > button {
         background: linear-gradient(180deg, #475569 0%, #1e293b 100%) !important;
@@ -83,7 +92,7 @@ st.markdown("""
 
 TIMEOUT_LIMIT = 45 * 60  
 
-# 🔐 Safe Core Initialization State
+# 🔐 Core Initialization State
 if "logged_in" not in st.session_state: st.session_state.logged_in = False
 if "last_activity" not in st.session_state: st.session_state.last_activity = time.time()
 if "current_navigation_tab" not in st.session_state: st.session_state.current_navigation_tab = None
@@ -185,13 +194,13 @@ with st.sidebar:
             st.query_params.clear()
             st.rerun()
     else:
-        st.markdown("🔒 **Session Status: Locked**", unsafe_allow_html=True)
+        st.markdown("🔒 **Session Status: Locked**<br>Please authenticate via the main panel.", unsafe_allow_html=True)
 
 st.markdown("<div class='brand-title'>SHC & Pak Post | Free Home Delivery of Medicine</div>", unsafe_allow_html=True)
 st.markdown("<div class='brand-subtitle'>Logistics Tracking & Quality Feedback System</div>", unsafe_allow_html=True)
 
 # Main Navigation Tabs Matrix
-if st.session_state.role == "admin":
+if st.session_state.role == "admin" and st.session_state.logged_in:
     nc1, nc2, nc3 = st.columns(3)
     with nc1:
         t1_class = "active-nav-btn" if st.session_state.current_navigation_tab == "📊 Administrative Ingestion Engine" else ""
@@ -218,38 +227,51 @@ else:
     if st.session_state.logged_in:
         st.session_state.current_navigation_tab = "📞 Outbound Communications Hub"
 
-st.markdown("<br>", unsafe_allow_html=True)
-
-# 🔐 AUTHENTICATION GATE & BACKUP LOGIN PANEL
+# ----------------------------------------------------
+# 🔐 AUTHENTICATION GATE & MODERN LOGIN PANEL
+# ----------------------------------------------------
 if not st.session_state.logged_in:
-    st.markdown("### 🔒 Secure Portal Authentication")
+    # Use clean columns layout to center the login form card perfectly on wide screens
+    _, center_col, _ = st.columns([1, 1.4, 1])
     
-    with st.form("portal_fallback_login"):
-        st.info("💡 Link session dropped or bare URL detected. Please enter your database credentials to unlock the terminal.")
-        input_user = st.text_input("Username / Operator ID")
-        input_pass = st.text_input("Security Password", type="password")
-        btn_login = st.form_submit_button("Verify & Unlock Portal", use_container_width=True)
+    with center_col:
+        st.markdown("""
+            <div class="login-container">
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <div style="font-size: 45px; margin-bottom: 10px;">🔒</div>
+                    <h2 style="color: #0f172a; font-weight: 800; margin: 0; font-size: 1.6rem;">Secure Terminal Access</h2>
+                    <p style="color: #64748b; font-size: 0.9rem; margin-top: 5px;">Enter credentials to unlock logistics dashboard</p>
+                </div>
+        """, unsafe_allow_html=True)
         
-        if btn_login:
-            if input_user and input_pass:
-                try:
-                    ud = supabase.table("app_users").select("*").eq("username", input_user.strip()).eq("password", input_pass.strip()).execute().data
-                    if ud:
-                        st.session_state.logged_in = True
-                        st.session_state.username = ud[0]["username"]
-                        st.session_state.full_name = ud[0]["full_name"]
-                        st.session_state.role = ud[0]["role"]
-                        st.session_state.last_activity = time.time()
-                        st.success("✅ Access Granted! Synchronizing workspace context...")
-                        time.sleep(0.6)
-                        st.rerun()
-                    else:
-                        st.error("❌ Invalid Username or Password. Authentication rejected.")
-                except Exception as ex:
-                    st.error(f"Database Node Error: {ex}")
-            else:
-                st.warning("Please fill out both fields to execute secure verification.")
+        with st.form("portal_fallback_login"):
+            input_user = st.text_input("Username / Operator ID", placeholder="Enter your ID")
+            input_pass = st.text_input("Security Password", type="password", placeholder="••••••••")
+            btn_login = st.form_submit_button("Verify & Unlock Workspace", use_container_width=True)
+            
+            if btn_login:
+                if input_user and input_pass:
+                    try:
+                        ud = supabase.table("app_users").select("*").eq("username", input_user.strip()).eq("password", input_pass.strip()).execute().data
+                        if ud:
+                            st.session_state.logged_in = True
+                            st.session_state.username = ud[0]["username"]
+                            st.session_state.full_name = ud[0]["full_name"]
+                            st.session_state.role = ud[0]["role"]
+                            st.session_state.last_activity = time.time()
+                            st.success("✅ Access Granted! Loading workspace context...")
+                            time.sleep(0.6)
+                            st.rerun()
+                        else:
+                            st.error("❌ Authentication rejected. Invalid credentials.")
+                    except Exception as ex:
+                        st.error(f"Database Node Error: {ex}")
+                else:
+                    st.warning("Please fill out both tracking fields.")
+                    
+        st.markdown("</div>", unsafe_allow_html=True)
 else:
+    st.markdown("<br>", unsafe_allow_html=True)
     # ----------------------------------------------------
     # ADMIN INGESTION HUB
     # ----------------------------------------------------
@@ -305,10 +327,9 @@ else:
                     try:
                         response = supabase.table("patient_deliveries").upsert(staging_area, on_conflict="article_id").execute()
                         st.balloons()
-                        st.success(f"🎉 **Operation Complete!** Successfully processed and synchronized **{len(staging_area)}** unique records into the cloud server database architectural layer.")
+                        st.success(f"🎉 **Operation Complete!** Successfully processed and synchronized **{len(staging_area)}** unique records into the cloud server database layer.")
                     except Exception as ex:
                         st.error(f"❌ **Batch synchronization exception:** {ex}")
-                        st.info("💡 **Supabase Setup Tip:** If you see an RLS policy error, please disable Row-Level Security (RLS) for the 'patient_deliveries' table in your Supabase Dashboard or use the 'service_role' secret key.")
 
     # ----------------------------------------------------
     # OPERATOR PROVISIONING HUB
@@ -356,7 +377,6 @@ else:
                 if st.button("🔍 Fetch Live Status from PakPost Server", use_container_width=True):
                     with st.spinner(f"Connecting to official PakPost network to trace {target_profile['article_id']}..."):
                         live_status, trace_detail = fetch_live_emtts_status(target_profile['article_id'])
-                        
                         st.metric(label="Latest Detected Status", value=live_status)
                         st.text_area("Full EMTTS Tracking History Logs:", value=trace_detail, height=180)
                 
