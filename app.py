@@ -7,7 +7,7 @@ import time
 import requests
 from bs4 import BeautifulSoup
 
-# 🎛️ Page Structural Settings 
+# 🎛️ Page Structural Settings
 st.set_page_config(
     page_title="SHC & Pak Post | Delivery Portal", 
     page_icon="📮", 
@@ -15,75 +15,94 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 Clean CSS Engine (Saari Hiding/Blocking Rules Khatam)
-st.markdown("""
+# Initialize Dynamic Login State Check Before CSS Injection
+if "logged_in" not in st.session_state: 
+    st.session_state.logged_in = False
+
+# 🎨 Enterprise PyQt6 Style Sheet & Layout Engine
+sidebar_css_rule = ""
+if not st.session_state.logged_in:
+    # Login page pe sidebar ko zameen doze (mukammal khatam) karne ke liye rule
+    sidebar_css_rule = """
+    [data-testid="stSidebar"] { display: none !important; visibility: hidden !important; }
+    [data-testid="collapsedControl"] { display: none !important; visibility: hidden !important; }
+    div[data-testid="stSidebarUserContent"] { display: none !important; }
+    .st-emotion-cache-1jicfl2 { padding-left: 1rem !important; padding-right: 1rem !important; }
+    """
+else:
+    # Login hone ke baad close karne wale saare extra buttons ghayab (Sidebar Locked)
+    sidebar_css_rule = """
+    button[data-testid="stSidebarCollapseButton"] { display: none !important; visibility: hidden !important; }
+    [data-testid="collapsedControl"] { display: none !important; visibility: hidden !important; }
+    """
+
+st.markdown(f"""
     <style>
-    /* 🌐 RESET: Tamam structural bars aur toggles ko default par bahal kar diya hai */
+    /* 🔒 Hide all unwanted default Streamlit structural frames */
+    div[data-testid="stToolbar"] {{ visibility: hidden !important; display: none !important; }}
+    .stDeployButton {{ display: none !important; }}
+    footer {{ visibility: hidden !important; }}
     
-    /* PyQt6 Desktop System Colors (Slate Gray / Dark Metallic Corporate Theme) */
-    .stApp { background-color: #f1f5f9; }
-    body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; }
+    {sidebar_css_rule}
     
-    .brand-title { color: #1e293b; font-weight: 700; font-size: 1.85rem; letter-spacing: -0.03rem; margin-top: 5px; margin-bottom: 2px; }
-    .brand-subtitle { color: #64748b; font-size: 0.95rem; margin-bottom: 25px; font-weight: 500; }
+    /* Hide native input instructions globally */
+    div[data-testid="stInputInstructions"] {{ display: none !important; }}
+    div[data-testid="InputInstructions"] {{ display: none !important; }}
+    small {{ display: none !important; }}
     
-    /* PyQt6 Sharp Container Boxes */
-    div[data-testid="stForm"], .pyqt-panel {
+    /* Native C++ Desktop Application Color Frame */
+    .stApp {{ background-color: #f8fafc; }}
+    body {{ font-family: 'Segoe UI', -apple-system, sans-serif; }}
+    
+    .brand-title {{ color: #0f172a; font-weight: 700; font-size: 1.9rem; letter-spacing: -0.03rem; margin-top: 5px; margin-bottom: 2px; }}
+    .brand-subtitle {{ color: #475569; font-size: 1.0rem; margin-bottom: 25px; font-weight: 500; border-left: 3px solid #2563eb; padding-left: 10px; }}
+    
+    /* Clean Enterprise Boxes */
+    div[data-testid="stForm"], .pyqt-panel {{
         background: #ffffff !important;
-        border-radius: 4px !important;
+        border-radius: 6px !important;
         border: 1px solid #cbd5e1 !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
-        padding: 24px !important;
-    }
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05) !important;
+        padding: 28px !important;
+    }}
     
-    /* Sharp Technical UI Form Labels */
-    label p {
+    /* Auto-Fit Form Design */
+    label p {{
         color: #334155 !important;
         font-weight: 600 !important;
-        font-size: 13px !important;
+        font-size: 12px !important;
         text-transform: uppercase !important;
         letter-spacing: 0.5px !important;
-    }
+    }}
     
-    /* High-contrast Action Buttons (Native Application Style) */
-    div.stButton > button {
+    /* High-contrast Enterprise Buttons */
+    div.stButton > button {{
         background: #1e293b !important;
         color: #ffffff !important;
         border: 1px solid #0f172a !important;
-        border-radius: 3px !important;
-        padding: 6px 18px !important;
+        border-radius: 4px !important;
+        padding: 7px 20px !important;
         font-weight: 600 !important;
         font-size: 13px !important;
-        transition: background 0.1s ease !important;
-    }
-    div.stButton > button:hover {
+    }}
+    div.stButton > button:hover {{
         background: #334155 !important;
         color: #ffffff !important;
-        border-color: #1e293b !important;
-    }
-    div.stButton > button:active {
-        background: #0f172a !important;
-    }
+    }}
     
-    /* Highlighted Nav Toggles */
-    .active-nav-btn div.stButton > button {
+    .active-nav-btn div.stButton > button {{
         background: #2563eb !important;
         border-color: #1d4ed8 !important;
-    }
-    .active-nav-btn div.stButton > button:hover {
-        background: #1d4ed8 !important;
-    }
+    }}
     
-    /* Technical Stats Displays */
-    .big-phone-display { font-family: 'Courier New', monospace; font-size: 32px !important; font-weight: 700 !important; color: #166534 !important; background-color: #f0fdf4; padding: 10px; border-radius: 4px; text-align: center; border: 1px solid #bbf7d0; }
-    .patient-card-header { font-size: 20px !important; font-weight: 700 !important; color: #0f172a; border-left: 4px solid #1e3a8a; padding-left: 10px; margin-bottom: 12px; }
+    .big-phone-display {{ font-family: 'Courier New', monospace; font-size: 32px !important; font-weight: 700 !important; color: #166534 !important; background-color: #f0fdf4; padding: 10px; border-radius: 4px; text-align: center; border: 1px solid #bbf7d0; }}
+    .patient-card-header {{ font-size: 20px !important; font-weight: 700 !important; color: #0f172a; border-left: 4px solid #1e3a8a; padding-left: 10px; margin-bottom: 12px; }}
     </style>
 """, unsafe_allow_html=True)
 
 SESSION_TIMEOUT = 30 * 60  # 🕒 Strict 30 Minutes Inactivity Boundary
 
 # Global Session Keys Initializer
-if "logged_in" not in st.session_state: st.session_state.logged_in = False
 if "username" not in st.session_state: st.session_state.username = ""
 if "full_name" not in st.session_state: st.session_state.full_name = ""
 if "role" not in st.session_state: st.session_state.role = ""
@@ -132,6 +151,7 @@ if not st.session_state.logged_in and "usr" in st.query_params:
             st.session_state.full_name = st.query_params["nm"]
             st.session_state.role = st.query_params["rl"]
             st.session_state.last_activity = param_time
+            st.rerun()
         else:
             st.query_params.clear()
     except:
@@ -146,7 +166,7 @@ if st.session_state.logged_in:
         time.sleep(1)
         st.rerun()
     else:
-        # User dynamic reset logic: counter resets on any live interface refresh or task action
+        # Action performed: Automatic time matrix reset
         st.session_state.last_activity = time.time()
         st.query_params["t"] = str(st.session_state.last_activity)
 
@@ -181,10 +201,10 @@ def fetch_live_emtts_status(article_id):
     except:
         return "⏱️ Timeout Error", "PakPost network nodes timed out."
 
-# Permanent Workspace Sidebar Container
-with st.sidebar:
-    st.markdown("### 🖥️ Enterprise Console")
-    if st.session_state.logged_in:
+# Permanent Workspace Sidebar Container (Only processes if logged in)
+if st.session_state.logged_in:
+    with st.sidebar:
+        st.markdown("### 🖥️ Enterprise Console")
         st.markdown(f"**Operator ID:** `{st.session_state.username}`")
         st.markdown(f"**Name:** {st.session_state.full_name}")
         st.markdown(f"**Privilege Cluster:** `{st.session_state.role.upper()}`")
@@ -193,17 +213,15 @@ with st.sidebar:
             st.session_state.logged_in = False
             st.query_params.clear()
             st.rerun()
-    else:
-        st.markdown("🔒 *Authentication Required*")
 
 st.markdown("<div class='brand-title'>SHC & Pak Post | Free Home Delivery of Medicine</div>", unsafe_allow_html=True)
-st.markdown("<div class='brand-subtitle'>Logistics Tracking & Quality Feedback System</div>", unsafe_allow_html=True)
+st.markdown("<div class='brand-subtitle'>Article Tracking & Patient Feedback Portal</div>", unsafe_allow_html=True)
 
-# Main Authentication Router
+# Main Authentication Router (Beautifully Centered Layout)
 if not st.session_state.logged_in:
-    _, center_col, _ = st.columns([1.2, 1.2, 1.2])
+    _, center_col, _ = st.columns([1, 1.4, 1])
     with center_col:
-        st.markdown("<div style='background-color:#1e293b; color:#ffffff; padding:10px; font-weight:600; font-size:12px; border-radius:4px 4px 0px 0px; border:1px solid #0f172a;'>SECURE PORTAL AUTHENTICATION v2.4</div>", unsafe_allow_html=True)
+        st.markdown("<div style='background-color:#1e293b; color:#ffffff; padding:12px; font-weight:600; font-size:13px; border-radius:6px 6px 0px 0px; border:1px solid #0f172a; text-align:center; letter-spacing:1px;'>SECURE PORTAL AUTHENTICATION</div>", unsafe_allow_html=True)
         with st.form("pyqt_enterprise_login"):
             input_user = st.text_input("OPERATOR ID / USERNAME", placeholder="e.g. shahid_admin")
             input_pass = st.text_input("SECURITY ACCESS PASSWORD", type="password", placeholder="••••••••")
