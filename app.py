@@ -53,7 +53,7 @@ for key in mapping_keys:
     if key not in st.session_state:
         st.session_state[key] = None
 
-# 🎨 Premium UI Engine Styling
+# 🎨 Premium UI Engine Styling (Completely Compact & Anti-Scroll Optimized)
 sidebar_css_rule = ""
 if not st.session_state.logged_in:
     sidebar_css_rule = """
@@ -70,8 +70,8 @@ else:
         display: block !important;
         visibility: visible !important;
         transform: translateX(0%) !important;
-        min-width: 300px !important;
-        max-width: 300px !important;
+        min-width: 260px !important;
+        max-width: 260px !important;
         background: rgba(255, 255, 255, 0.45) !important;
         backdrop-filter: blur(20px) saturate(170%) !important;
         border-right: 2px solid rgba(0, 102, 51, 0.2) !important;
@@ -81,126 +81,143 @@ else:
 
 st.markdown(f"""
     <style>
+    /* Global Compact Reset */
+    .block-container {{ padding-top: 1.0rem !important; padding-bottom: 1.0rem !important; padding-left: 2rem !important; padding-right: 2rem !important; }}
     div[data-testid="stToolbar"] {{ visibility: hidden !important; display: none !important; }}
     .stDeployButton {{ display: none !important; }}
     footer {{ visibility: hidden !important; }}
     {sidebar_css_rule}
     
+    /* Elements Spacing Reduction */
+    [data-testid="stVerticalBlock"] {{ gap: 0.5rem !important; }}
+    div.row-widget.stRadio > div {{ gap: 10px !important; }}
+    
     .stApp {{ background-color: #f4f8f5; }}
-    .brand-title {{ color: #004d26; font-weight: 800; font-size: 2.1rem; margin-bottom: 2px; }}
-    .brand-subtitle {{ color: #3d5a4c; font-size: 1.05rem; margin-bottom: 25px; font-weight: 600; border-left: 4px solid #d4af37; padding-left: 12px; }}
+    .brand-title {{ color: #004d26; font-weight: 800; font-size: 1.6rem; margin-bottom: 1px; line-height: 1.2; }}
+    .brand-subtitle {{ color: #3d5a4c; font-size: 0.9rem; margin-bottom: 12px; font-weight: 600; border-left: 3px solid #d4af37; padding-left: 8px; }}
     
     div[data-testid="stForm"], .pyqt-panel {{
         background: #ffffff !important;
-        border-radius: 8px !important;
+        border-radius: 6px !important;
         border: 1px solid #c2d1c9 !important;
-        box-shadow: 0 6px 12px -2px rgba(0,77,38,0.04) !important;
-        padding: 30px !important;
+        box-shadow: 0 4px 8px -2px rgba(0,77,38,0.04) !important;
+        padding: 15px !important;
     }}
     
     div.stButton > button, div.stDownloadButton > button {{
         background: linear-gradient(180deg, #008040 0%, #006633 100%) !important;
         color: #ffffff !important;
         border: 1px solid #004d26 !important;
-        border-bottom: 4px solid #00331a !important;
-        border-radius: 6px !important;
-        padding: 8px 24px !important;
+        border-bottom: 3px solid #00331a !important;
+        border-radius: 5px !important;
+        padding: 5px 18px !important;
         font-weight: 700;
-        box-shadow: 0px 4px 8px rgba(0,0,0,0.12) !important;
+        font-size: 14px !important;
+        box-shadow: 0px 3px 6px rgba(0,0,0,0.1) !important;
     }}
     
     .active-nav-btn div.stButton > button {{
         background: linear-gradient(180deg, #004d26 0%, #00331a 100%) !important;
         border-bottom: 1px solid #001a0d !important;
-        transform: translateY(2px) !important;
+        transform: translateY(1px) !important;
     }}
     
-    /* 📥 3D DROP-DOWNS & DATE SELECTORS UI ENGINE */
+    /* 📥 3D TYPE SELECTORS MATRIX (RESIZED & COMPACTED) */
     div[data-testid="stSelectbox"] > div[data-baseweb="select"], 
     div[data-testid="stDateInput"] > div {{
         background: #ffffff !important;
         border: 1px solid #cbd5e1 !important;
-        border-bottom: 4px solid #006633 !important;
-        border-radius: 8px !important;
-        box-shadow: 0px 5px 12px rgba(0, 77, 38, 0.06) !important;
-        transition: all 0.2s ease-in-out;
+        border-bottom: 3px solid #006633 !important;
+        border-radius: 6px !important;
+        box-shadow: 0px 3px 8px rgba(0, 77, 38, 0.04) !important;
+        min-height: 34px !important;
     }}
-    div[data-testid="stSelectbox"] > div[data-baseweb="select"]:hover, 
-    div[data-testid="stDateInput"] > div:hover {{
-        transform: translateY(-1px);
-        box-shadow: 0px 7px 15px rgba(0, 102, 51, 0.12) !important;
+    div[data-testid="stSelectbox"] label, div[data-testid="stDateInput"] label, div[data-testid="stTextInput"] label {{
+        margin-bottom: 2px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
     }}
     
-    /* 📱 Premium 3D Clickable Phone Display Button */
+    /* 📱 DECENT & DECENT-SIZED 3D CLICKABLE PHONE DISPLAY */
     .big-phone-display {{ 
         font-family: 'Segoe UI', -apple-system, sans-serif; 
-        font-size: 34px !important; 
-        font-weight: 800 !important; 
+        font-size: 21px !important; 
+        font-weight: 700 !important; 
         color: #ffffff !important; 
         background: linear-gradient(180deg, #10b981 0%, #059669 100%) !important; 
-        padding: 12px; 
-        border-radius: 8px; 
+        padding: 6px 12px; 
+        border-radius: 6px; 
         text-align: center; 
         border: 1px solid #047857; 
-        border-bottom: 5px solid #065f46;
-        box-shadow: 0px 6px 14px rgba(5, 150, 105, 0.3);
-        text-shadow: 1px 2px 3px rgba(0,0,0,0.25);
-        letter-spacing: 2px;
-        margin: 10px 0;
+        border-bottom: 3.5px solid #065f46;
+        box-shadow: 0px 4px 10px rgba(5, 150, 105, 0.2);
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        letter-spacing: 1.5px;
+        margin: 4px 0;
     }}
     
-    /* 🚨 High Visibility Fallback Red 3D Button for Missing Contacts */
+    /* 🚨 DECENT-SIZED HIGH VISIBILITY FALLBACK RED BOX */
     .no-phone-display {{
         font-family: 'Segoe UI', -apple-system, sans-serif; 
-        font-size: 23px !important; 
+        font-size: 15px !important; 
         font-weight: 700 !important; 
         color: #ffffff !important; 
         background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%) !important; 
-        padding: 14px; 
-        border-radius: 8px; 
+        padding: 8px 12px; 
+        border-radius: 6px; 
         text-align: center; 
         border: 1px solid #b91c1c; 
-        border-bottom: 5px solid #991b1b;
-        box-shadow: 0px 6px 14px rgba(220, 38, 38, 0.3);
-        text-shadow: 1px 2px 3px rgba(0,0,0,0.25);
-        margin: 10px 0;
+        border-bottom: 3.5px solid #991b1b;
+        box-shadow: 0px 4px 10px rgba(220, 38, 38, 0.2);
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        margin: 4px 0;
     }}
     
-    /* 🏷️ Premium Left Panel Data Display */
+    /* 🏷️ PRECISE LEFT PANEL DATA CARDS */
     .data-card {{
         background: #ffffff;
-        padding: 18px;
-        border-radius: 8px;
-        border: 1px solid #cbd5e1;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        padding: 10px 14px;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 4px -1px rgba(0,0,0,0.03);
     }}
     .data-row {{
-        margin-bottom: 12px;
-        font-size: 15px;
-        color: #334155;
+        margin-bottom: 6px;
+        font-size: 13px;
+        color: #475569;
+        line-height: 1.3;
     }}
     .data-value {{
-        font-size: 19px !important;
+        font-size: 14.5px !important;
         font-weight: 700 !important;
         color: #004d26;
         background: #f0fdf4;
-        padding: 2px 8px;
+        padding: 1px 6px;
         border-radius: 4px;
         border: 1px solid #bbf7d0;
         display: inline-block;
+        margin-top: 2px;
     }}
     .data-value-alt {{
-        font-size: 19px !important;
+        font-size: 14.5px !important;
         font-weight: 700 !important;
         color: #b45309;
         font-family: monospace;
         background: #fffbeb;
-        padding: 2px 8px;
+        padding: 1px 6px;
         border-radius: 4px;
         border: 1px solid #fef3c7;
         display: inline-block;
+        margin-top: 2px;
     }}
-    .patient-card-header {{ font-size: 22px !important; font-weight: 700 !important; color: #004d26; border-left: 5px solid #d4af37; padding-left: 10px; margin-bottom: 15px; }}
+    .patient-card-header {{ font-size: 17px !important; font-weight: 700 !important; color: #004d26; border-left: 4px solid #d4af37; padding-left: 8px; margin-bottom: 8px; }}
+    
+    /* Sidebar Compactness */
+    .sb-headline {{ font-size: 15px !important; font-weight: 700; color: #004d26; }}
+    .sb-name-tag {{ font-size: 12px; color: #475569; }}
+    .sb-name-bold {{ font-size: 14px !important; font-weight: 700; color: #004d26; }}
+    hr {{ margin: 8px 0 !important; }}
+    h4 {{ margin-top: 8px !important; margin-bottom: 4px !important; font-size: 14px !important; }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -302,7 +319,7 @@ if st.session_state.logged_in:
         st.markdown("<div class='sb-headline'>🖥️ Presented by SHAHID</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='sb-name-tag'>Operator Name: <br><span class='sb-name-bold'>{st.session_state.full_name}</span></div>", unsafe_allow_html=True)
         st.markdown(f"**Role Cluster:** `{st.session_state.role.upper()}`")
-        st.markdown("<br><hr style='border-top:1px solid rgba(0,102,51,0.2);'><br>", unsafe_allow_html=True)
+        st.markdown("<br><hr style='border-top:1px solid rgba(0,102,51,0.2);'>", unsafe_allow_html=True)
         if st.button("Terminate Session 🚪", use_container_width=True):
             st.session_state.logged_in = False
             st.query_params.clear()
@@ -314,7 +331,7 @@ st.markdown("<div class='brand-subtitle'>Secure Audit & Communication Engine</di
 if not st.session_state.logged_in:
     _, center_col, _ = st.columns([1, 1.4, 1])
     with center_col:
-        st.markdown("<div style='background-color:#006633; color:#ffffff; padding:12px; font-weight:700; font-size:13px; border-radius:6px 6px 0px 0px; border:1px solid #004d26; text-align:center;'>SECURE PORTAL AUTHENTICATION</div>", unsafe_allow_html=True)
+        st.markdown("<div style='background-color:#006633; color:#ffffff; padding:8px; font-weight:700; font-size:12px; border-radius:6px 6px 0px 0px; border:1px solid #004d26; text-align:center;'>SECURE PORTAL AUTHENTICATION</div>", unsafe_allow_html=True)
         with st.form("pyqt_enterprise_login"):
             input_user = st.text_input("OPERATOR ID / USERNAME", placeholder="Enter Username")
             input_pass = st.text_input("SECURITY ACCESS PASSWORD", type="password", placeholder="Enter Secure Key")
@@ -405,8 +422,6 @@ else:
                 st.session_state.current_navigation_tab = "📥 Secure Reports Export Center"; st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
     # PAGE 1: INGESTION
     if st.session_state.current_navigation_tab == "📊 Administrative Ingestion Engine" and st.session_state.role == "admin":
         st.markdown("### 📥 Bulk Logistics Ingestion Engine")
@@ -465,29 +480,38 @@ else:
 
     # PAGE 3: OUTBOUND HUB
     elif st.session_state.current_navigation_tab == "📞 Outbound Communications Hub":
-        st.markdown("### 📞 Outbound Communications Desk")
         
-        # 📥 3D TYPE SELECTORS MATRIX (Date, Office, Patient Selector)
-        query_date = st.date_input("Filter Manifest Records by Booking Date:", datetime.date.today())
+        # 📥 SLEEK 3D MATRIX REGION
+        sel_col1, sel_col2, sel_col3 = st.columns([1, 1.2, 1.8])
+        
+        with sel_col1:
+            query_date = st.date_input("Select Booking Date:", datetime.date.today())
         
         try: raw_date_recs = supabase.table("patient_deliveries").select("*").eq("booking_date", str(query_date)).execute().data
         except: raw_date_recs = []
             
-        if not raw_date_recs: st.info("No logs found matching this calendar timestamp.")
+        if not raw_date_recs: 
+            st.info("No logs found matching this calendar timestamp.")
         else:
             unique_offices = sorted(list(set([str(r.get('booking_office', 'Lahore GPO')).strip() for r in raw_date_recs])))
             unique_offices.insert(0, "All Offices")
             
-            filter_col1, filter_col2 = st.columns(2)
-            with filter_col1: selected_office = st.selectbox("🏥 Filter by Booking Office / GPO Node:", unique_offices)
-            with filter_col2: search_term = st.text_input("🔎 Smart Search (Name, Article ID, or MRN):").strip().lower()
+            with sel_col2: 
+                selected_office = st.selectbox("Booking Office Node:", unique_offices)
                 
             filtered_by_office = raw_date_recs if selected_office == "All Offices" else [r for r in raw_date_recs if str(r.get('booking_office')).strip() == selected_office]
+            
+            # Smart Inline Filter Matrix
+            with sel_col3:
+                search_term = st.text_input("Smart Filter (Name / Article ID / MRN):").strip().lower()
+                
             if search_term:
                 final_recs = [r for r in filtered_by_office if search_term in str(r.get('patient_name','')).lower() or search_term in str(r.get('article_id','')).lower() or search_term in str(r.get('mrn_no','')).lower()]
-            else: final_recs = filtered_by_office
+            else: 
+                final_recs = filtered_by_office
 
-            if not final_recs: st.warning("No records matched filters.")
+            if not final_recs: 
+                st.warning("No records matched filters.")
             else:
                 options_list = [f"{r['patient_name']} (MRN: {r.get('mrn_no', 'N/A')}) - [{r['status']}]" for r in final_recs]
                 if st.session_state.selected_profile_index >= len(options_list): st.session_state.selected_profile_index = 0
@@ -501,23 +525,23 @@ else:
                 with l_panel:
                     st.markdown(f"<div class='patient-card-header'>👤 {target_profile['patient_name']}</div>", unsafe_allow_html=True)
                     
-                    # 🏷️ UPGRADED LEFT PANEL DETAILS: BADA AUR NUMAYAN TEXT CORES
+                    # 🏷️ PRECISE CARDS LAYOUT
                     st.markdown(f"""
                         <div class='data-card'>
-                            <div class='data-row'>🔢 <b>MRN Number:</b><br><span class='data-value'>{target_profile.get('mrn_no', 'N/A')}</span></div>
-                            <div class='data-row'>📦 <b>Consignment ID (Article):</b><br><span class='data-value-alt'>{target_profile['article_id']}</span></div>
-                            <div class='data-row'>🏥 <b>Booking GPO Station:</b><br><span style='font-size:18px; font-weight:600; color:#1e293b;'>{target_profile.get('booking_office', 'Unknown GPO')}</span></div>
-                            <div class='data-row'>🏠 <b>Address:</b><br><span style='font-size:17px; font-weight:600; color:#1e293b; background:#f8fafc; padding:6px; display:block; border-radius:4px; border:1px solid #e2e8f0; margin-top:4px;'>{target_profile['address']}</span></div>
+                            <div class='data-row'>🔢 <b>MRN Number:</b> <span class='data-value'>{target_profile.get('mrn_no', 'N/A')}</span></div>
+                            <div class='data-row'>📦 <b>Consignment ID:</b> <span class='data-value-alt'>{target_profile['article_id']}</span></div>
+                            <div class='data-row'>🏥 <b>GPO Station:</b> <span style='font-size:14px; font-weight:600; color:#1e293b;'>{target_profile.get('booking_office', 'Unknown GPO')}</span></div>
+                            <div class='data-row'>🏠 <b>Address:</b> <span style='font-size:13px; font-weight:600; color:#1e293b; background:#f8fafc; padding:3px 6px; display:inline-block; border-radius:4px; border:1px solid #e2e8f0; margin-top:2px;'>{target_profile['address']}</span></div>
                         </div>
                     """, unsafe_allow_html=True)
                     
-                    st.markdown("#### 🌐 Pakistan Post Live EMTTS Tracking")
+                    st.markdown("#### 🌐 EMTTS Tracking Engine")
                     opt_col1, opt_col2 = st.columns(2)
-                    with opt_col1: data_mode = st.radio("Display Transformation:", ["Fetch Live (Raw Mode)", "Fetch Snipped Data (Mapped Mode)"])
-                    with opt_col2: report_scope = st.radio("Reporting Scope Evaluation:", ["Only Last Status", "All Statuses (Full History)"])
+                    with opt_col1: data_mode = st.radio("Mode Mapping:", ["Fetch Live (Raw)", "Fetch Snipped (Mapped)"])
+                    with opt_col2: report_scope = st.radio("History Scope:", ["Only Last Status", "Full History"])
                     
-                    if st.button("🔍 Fetch Live Status from PakPost Server", use_container_width=True):
-                        with st.spinner("Connecting to EMTTS Logistics..."):
+                    if st.button("🔍 Query PakPost Servers", use_container_width=True):
+                        with st.spinner("Connecting to EMTTS..."):
                             data, err = fetch_live_emtts_status(target_profile['article_id'])
                             if err: st.error(err)
                             elif data and data["history"]:
@@ -530,11 +554,11 @@ else:
                                 is_last_rts = "return" in last_status_lower or "rts" in last_status_lower
                                 
                                 if is_historical_anomaly and not (is_last_delivered or is_last_rts):
-                                    st.markdown("<div style='background-color:#dc2626; color:white; padding:14px; border-radius:6px; font-weight:800; text-align:center;'>⚠️ ANOMALY DETECTED: Marked Delivered/RTS in history but NOT currently!</div>", unsafe_allow_html=True)
+                                    st.markdown("<div style='background-color:#dc2626; color:white; padding:8px; border-radius:4px; font-weight:700; text-align:center; font-size:12px;'>⚠️ ANOMALY DETECTED: Marked Delivered/RTS in history but NOT currently!</div>", unsafe_allow_html=True)
                                 
-                                if is_last_delivered: st.success(f"✅ FINAL STATUS: {last_entry['status']} ({last_entry['datetime']})")
-                                elif is_last_rts: st.error(f"❌ FINAL STATUS: {last_entry['status']} ({last_entry['datetime']})")
-                                else: st.info(f"📍 CURRENT STATUS: {last_entry['status']} ({last_entry['office']})")
+                                if is_last_delivered: st.success(f"✅ {last_entry['status']} ({last_entry['datetime']})")
+                                elif is_last_rts: st.error(f"❌ {last_entry['status']} ({last_entry['datetime']})")
+                                else: st.info(f"📍 {last_entry['status']} ({last_entry['office']})")
 
                                 use_mapped = (data_mode == "Fetch Snipped Data (Mapped Mode)")
                                 if report_scope == "All Statuses (Full History)":
@@ -544,22 +568,19 @@ else:
                                     final_status_str = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
                                     st.metric(label="Latest Status", value=final_status_str)
 
-                    st.markdown("#### 🎴 DIAL THIS PHONE NUMBER FROM LANDLINE:")
+                    st.markdown("#### 🎴 DIAL THIS PHONE NUMBER:")
                     
-                    # 📱 SMART PHONE NUMBER FORMATTING ENGINE & FALLBACK ENGINE
+                    # 📱 OPTIMIZED PHONE NUMBER BADGE (DECENTLY PROPORTIONED)
                     raw_phone = str(target_profile.get('phone_number', '')).strip()
-                    
                     if not raw_phone or raw_phone.lower() in ['none', 'nan', 'null', ''] or len(raw_phone) < 5:
-                        # Fallback: Agar number na ho ya invalid ho
                         st.markdown("<div class='no-phone-display'>⚠️ No Contact Number Available</div>", unsafe_allow_html=True)
                     else:
-                        # Formatting: Shuru me khud 0 lagana agar mojud na ho
                         if not raw_phone.startswith('0') and raw_phone.isdigit():
                             raw_phone = '0' + raw_phone
                         st.markdown(f"<div class='big-phone-display'>{raw_phone}</div>", unsafe_allow_html=True)
                 
                 with r_panel:
-                    st.markdown("#### 📝 Live Quality Verification & Audit Questionnaire")
+                    st.markdown("#### 📝 Verification Audit Questionnaire")
                     is_delivered = st.radio("Has the consignee physically received the delivery?", ["Select Assessment Option", "Yes", "No"])
                     payload_buffer = {}
                     
@@ -575,7 +596,6 @@ else:
                     if st.button("💾 Finalize Session & Commit Logs", use_container_width=True):
                         if is_delivered == "Select Assessment Option": st.error("Select verification response.")
                         else:
-                            # 🏷️ EMBED OPERATOR NAME DIGITAL STAMP
                             payload_buffer["operator_stamp"] = st.session_state.full_name
                             try:
                                 supabase.table("patient_deliveries").update(payload_buffer).eq("id", target_profile["id"]).execute()
@@ -586,7 +606,7 @@ else:
                                 st.rerun()
                             except Exception as e: st.error(f"Sync error: {e}")
 
-    # PAGE 4: SECURE DATA EXPORT NODE & CLOUD BACKUP CONTROLS
+    # PAGE 4: SECURE DATA EXPORT NODE
     elif st.session_state.current_navigation_tab == "📥 Secure Reports Export Center":
         st.markdown("### 📥 Secure Data Export & Cloud Records Center")
         st.info("💡 Note: Saara real-time backup pehle hi cloud storage data-nodes par fully updated aur safe hai.")
@@ -596,12 +616,9 @@ else:
                 all_records = supabase.table("patient_deliveries").select("*").execute().data
             if all_records:
                 df_export = pd.DataFrame(all_records)
-                
-                # Check mapping data architecture safety for operator stamps
                 if "operator_stamp" not in df_export.columns:
                     df_export["operator_stamp"] = "Unassigned Logs"
                 
-                # Apply Security Access Filtration Clearances
                 if st.session_state.role == "admin":
                     st.markdown("#### 🛠️ Admin Export Panel (Full Ledger Control)")
                     distinct_operators = list(df_export["operator_stamp"].dropna().unique())
