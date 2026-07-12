@@ -62,7 +62,6 @@ if not st.session_state.logged_in:
     .st-emotion-cache-1jicfl2 { padding-left: 1rem !important; padding-right: 1rem !important; }
     """
 else:
-    # Premium Frosted Glass (Glassmorphism) with Craft Engraving Aesthetics
     sidebar_css_rule = """
     button[data-testid="stSidebarCollapseButton"] { display: none !important; visibility: hidden !important; }
     [data-testid="collapsedControl"] { display: none !important; visibility: hidden !important; }
@@ -85,7 +84,6 @@ else:
 
 st.markdown(f"""
     <style>
-    /* 🔒 Hide unwanted default frames */
     div[data-testid="stToolbar"] {{ visibility: hidden !important; display: none !important; }}
     .stDeployButton {{ display: none !important; }}
     footer {{ visibility: hidden !important; }}
@@ -96,14 +94,12 @@ st.markdown(f"""
     div[data-testid="InputInstructions"] {{ display: none !important; }}
     small {{ display: none !important; }}
     
-    /* Native App Color Frame - ep.gov.pk Inspired */
     .stApp {{ background-color: #f4f8f5; }}
     body {{ font-family: 'Segoe UI', -apple-system, sans-serif; }}
     
     .brand-title {{ color: #004d26; font-weight: 800; font-size: 2.1rem; letter-spacing: -0.04rem; margin-top: 5px; margin-bottom: 2px; text-shadow: 0px 1px 1px rgba(0,0,0,0.05); }}
     .brand-subtitle {{ color: #3d5a4c; font-size: 1.05rem; margin-bottom: 25px; font-weight: 600; border-left: 4px solid #d4af37; padding-left: 12px; }}
     
-    /* Clean Panels */
     div[data-testid="stForm"], .pyqt-panel {{
         background: #ffffff !important;
         border-radius: 8px !important;
@@ -120,12 +116,11 @@ st.markdown(f"""
         letter-spacing: 0.5px !important;
     }}
     
-    /* 🚀 Advanced PySide6 / Win11 Native 3D Button Style Engine */
     div.stButton > button, div.stDownloadButton > button {{
         background: linear-gradient(180deg, #008040 0%, #006633 100%) !important;
         color: #ffffff !important;
         border: 1px solid #004d26 !important;
-        border-bottom: 4px solid #00331a !important; /* Thick 3D Lip */
+        border-bottom: 4px solid #00331a !important;
         border-radius: 6px !important;
         padding: 8px 24px !important;
         font-weight: 700 !important;
@@ -141,14 +136,12 @@ st.markdown(f"""
         border-color: #004d26 !important;
     }}
     
-    /* 3D Pressed Mechanical Feedback */
     div.stButton > button:active, div.stDownloadButton > button:active {{
         border-bottom: 1px solid #00331a !important;
         transform: translateY(3px) !important;
         box-shadow: 0px 1px 3px rgba(0,0,0,0.2) !important;
     }}
     
-    /* Special Navigation Active Tab State */
     .active-nav-btn div.stButton > button {{
         background: linear-gradient(180deg, #004d26 0%, #00331a 100%) !important;
         border-bottom: 1px solid #001a0d !important;
@@ -156,7 +149,6 @@ st.markdown(f"""
         box-shadow: inset 0px 3px 6px rgba(0,0,0,0.4) !important;
     }}
     
-    /* Sidebar Specific Styling elements */
     .sb-headline {{ color: #004d26; font-weight: 800; font-size: 1.15rem; border-bottom: 2px solid rgba(0,102,51,0.2); padding-bottom: 6px; margin-bottom: 15px; }}
     .sb-name-tag {{ font-size: 1.05rem; color: #1e293b; font-weight: 500; margin-bottom: 5px; }}
     .sb-name-bold {{ color: #b48608; font-weight: 800; font-size: 1.2rem; text-shadow: 0px 1px 0px rgba(255,255,255,0.8); }}
@@ -176,7 +168,6 @@ except Exception as e:
     st.error(f"Database core failure: {e}")
     st.stop()
 
-# 🔄 POWER LOSS/DISCONNECTION TRACKING ENGINE
 def save_operator_state():
     if st.session_state.logged_in and st.session_state.username:
         state_payload = {
@@ -195,7 +186,6 @@ def fetch_operator_state(username):
     except: return None
     return None
 
-# Helper to load column indexes based on state memory
 def calculate_mapped_index(df_cols, session_key, alternative_match_string):
     saved_val = st.session_state.get(session_key)
     if saved_val in df_cols:
@@ -205,7 +195,6 @@ def calculate_mapped_index(df_cols, session_key, alternative_match_string):
             return idx
     return 0
 
-# ⏱️ Smart Inactivity Verification Control
 if st.session_state.logged_in:
     if time.time() - st.session_state.last_activity > SESSION_TIMEOUT:
         st.session_state.logged_in = False
@@ -220,35 +209,58 @@ if st.session_state.logged_in:
 if st.session_state.logged_in and st.session_state.current_navigation_tab is None:
     st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine" if st.session_state.role == "admin" else "📞 Outbound Communications Hub"
 
-# Real-time Web Tracker for PakPost EMTTS Nodes
+# Improved Robust Live Tracking Engine with Emulated Payload Context
 def fetch_live_emtts_status(article_id):
     if not article_id or article_id.strip() == "":
         return "⚠️ Invalid Article ID", "No data mapped."
+    
     tracking_url = "https://ep.gov.pk/tracking.asp"
     payload = {'tracking_id': article_id.strip()}
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Origin': 'https://ep.gov.pk',
+        'Referer': 'https://ep.gov.pk/tracking.asp'
+    }
     try:
-        response = requests.post(tracking_url, data=payload, headers=headers, timeout=15)
-        if response.status_code != 200: return "❌ Server Unreachable", "HTTP Error."
+        response = requests.post(tracking_url, data=payload, headers=headers, timeout=20)
+        if response.status_code != 200: 
+            return "❌ Server Unreachable", f"HTTP Error Server Code: {response.status_code}."
+        
         soup = BeautifulSoup(response.text, 'html.parser')
         tables = soup.find_all('table')
-        if len(tables) < 2: return "🔎 Record Not Found", "No tracking records loaded yet."
+        
+        if len(tables) < 2: 
+            # Fallback evaluation context to handle simplified DOMs
+            page_text = soup.get_text()
+            if "not found" in page_text.lower() or "invalid" in page_text.lower():
+                return "🔎 Record Not Found", "No tracking records loaded yet on PakPost network endpoints."
+            return "🔎 Check History", "Data output rendered outside structural tables. Check complete network endpoints manually."
+            
         tracking_logs = []
         for table in tables:
             for row in table.find_all('tr'):
                 cols = [ele.text.strip().replace('\n', ' ').replace('\r', '') for ele in row.find_all(['td', 'th'])]
-                if cols and not any('tracking id' in str(c).lower() for c in cols):
-                    tracking_logs.append(" | ".join([c for c in cols if c]))
+                cleaned_cols = [c for c in cols if c]
+                if cleaned_cols and not any('tracking id' in str(c).lower() for c in cleaned_cols):
+                    tracking_logs.append(" | ".join(cleaned_cols))
+                    
+        if not tracking_logs:
+            return "🔎 Record Not Found", "Server returned tracking structural frames but no logs."
+            
         latest_status = "Data Found"
         for log in tracking_logs:
             if "delivered" in log.lower(): latest_status = "✅ Delivered"; break
             elif "transit" in log.lower() or "dispatched" in log.lower(): latest_status = "🚚 In Transit"; break
             elif "booked" in log.lower(): latest_status = "📦 Booked / Received"; break
-        return latest_status, "\n".join(tracking_logs[:12])
-    except:
-        return "⏱️ Timeout Error", "PakPost network nodes timed out."
+            
+        return latest_status, "\n".join(tracking_logs[:15])
+    except requests.exceptions.Timeout:
+        return "⏱️ Timeout Error", "PakPost network nodes timed out during data synchronization."
+    except Exception as e:
+        return "❌ Script Error", f"Traceback breakdown: {str(e)}"
 
-# Permanent Workspace Sidebar Container (Customized Etched Glass Layout)
 if st.session_state.logged_in:
     with st.sidebar:
         st.markdown("<div class='sb-headline'>🖥️ Enterprise Console</div>", unsafe_allow_html=True)
@@ -263,7 +275,6 @@ if st.session_state.logged_in:
 st.markdown("<div class='brand-title'>📮 SHC & Pak Post | Free Home Delivery of Medicine</div>", unsafe_allow_html=True)
 st.markdown("<div class='brand-subtitle'>Article Tracking & Patient Feedback Portal</div>", unsafe_allow_html=True)
 
-# Main Authentication Router
 if not st.session_state.logged_in:
     _, center_col, _ = st.columns([1, 1.4, 1])
     with center_col:
@@ -385,7 +396,6 @@ else:
         source_file = st.file_uploader("Upload Parcel Manifest Data Sheet (.xlsx or .csv)", type=["xlsx", "csv"])
         
         if source_file is not None:
-            # ⚡ SMART RAM DATAFRAME CACHING ENGINE (Prevents Rerun OOM Crashes on Dropdowns)
             file_key = f"cached_df_{source_file.name}_{source_file.size}"
             if file_key not in st.session_state:
                 with st.spinner("Parsing large manifest matrix into secure cache... Please wait."):
@@ -400,7 +410,6 @@ else:
             else:
                 df = st.session_state[file_key]
             
-            # Smart Memory Extraction logic for dropdown auto-persistence
             idx_article = calculate_mapped_index(df.columns, "map_article", "Article ID")
             idx_name = calculate_mapped_index(df.columns, "map_name", "Name")
             idx_city = calculate_mapped_index(df.columns, "map_city", "City")
@@ -426,7 +435,6 @@ else:
                 idx_dup = calculate_mapped_index(df.columns, "map_dup", c_article)
                 dup_target = st.selectbox("De-duplication Matrix Anchor:", df.columns, index=idx_dup)
 
-            # Instantly update memory configurations
             st.session_state["map_article"] = c_article
             st.session_state["map_name"] = c_name
             st.session_state["map_city"] = c_city
@@ -440,7 +448,6 @@ else:
             if st.button("🚀 Push Verified Records to Cloud Database", use_container_width=True):
                 with st.spinner("Processing Manifest Sequence..."):
                     df_anchored = df.drop_duplicates(subset=[dup_target], keep='first')
-                    
                     duplicate_mask = df_anchored.duplicated(subset=[c_article], keep='first')
                     df_duplicates = df_anchored[duplicate_mask]
                     
@@ -464,23 +471,29 @@ else:
                             "address": str(row[c_address]).strip(),
                             "patient_city": str(row[c_city]).strip(),
                             "mrn_no": str(row[c_mrn]).strip(),
-                            "booking_office": str(row[c_bo]).strip() if c_bo in df.columns else "",
+                            "booking_office": str(row[c_bo]).strip() if c_bo in df.columns else "Unknown GPO",
                             "status": "Pending"
                         })
                     
                     total_records = len(staging_area)
                     if total_records > 0:
                         try:
-                            CHUNK_SIZE = 1000
+                            CHUNK_SIZE = 500  # Smaller chunks to ensure granular percentage accuracy
                             progress_bar = st.progress(0)
                             status_text = st.empty()
                             
                             for i in range(0, total_records, CHUNK_SIZE):
                                 chunk = staging_area[i : i + CHUNK_SIZE]
-                                status_text.text(f"Uploading batch: Processing records {i} to {min(i + CHUNK_SIZE, total_records)}...")
+                                current_percentage = int((i / total_records) * 100)
+                                
+                                # 📈 Real-Time Percentage Display Node Added
+                                status_text.markdown(f"**⚡ Uploading Records Vector: {current_percentage}% Complete** *(Processing entries {i} to {min(i + CHUNK_SIZE, total_records)} of {total_records})*")
+                                
                                 supabase.table("patient_deliveries").upsert(chunk, on_conflict="article_id").execute()
                                 progress_bar.progress(min((i + CHUNK_SIZE) / total_records, 1.0))
                             
+                            status_text.markdown("**🎉 Uploading Records Vector: 100% Completed Successfully!**")
+                            time.sleep(1)
                             status_text.empty()
                             progress_bar.empty()
                             st.balloons()
@@ -493,7 +506,6 @@ else:
                     else:
                         st.info("No records found to push after parsing manifest sequence.")
 
-        # Persistent download link if duplicate records exist in memory
         if st.session_state.duplicate_log_csv is not None:
             st.markdown("---")
             st.markdown("#### 📥 Download Dropped Duplicates Log File")
@@ -518,78 +530,124 @@ else:
                     st.success("New operator mapped to security matrices.")
                 except Exception as e: st.error(f"Mapping rejection: {e}")
 
-    # PAGE 3: MAIN COMMUNICATIONS HUB
+    # PAGE 3: MAIN COMMUNICATIONS HUB (WITH CASCADE FILTERING & SMART GLOBAL SEARCH)
     elif st.session_state.current_navigation_tab == "📞 Outbound Communications Hub":
         st.markdown("### 📞 Outbound Communications Desk")
+        
+        # 🗓️ Filter 1: Universal Booking Date Select
         query_date = st.date_input("Filter Manifest Records by Booking Date:", datetime.date.today())
         
-        try: recs = supabase.table("patient_deliveries").select("*").eq("booking_date", str(query_date)).execute().data
-        except: recs = []
+        # Pull complete data slice for that date to map secondary cascades
+        try: 
+            raw_date_recs = supabase.table("patient_deliveries").select("booking_office, patient_name, mrn_no, article_id, status, id, phone_number, address, patient_city").eq("booking_date", str(query_date)).execute().data
+        except Exception as e: 
+            st.error(f"Failed to scan cloud nodes: {e}")
+            raw_date_recs = []
             
-        if not recs:
+        if not raw_date_recs:
             st.info("No logs found matching this calendar timestamp.")
         else:
-            options_list = [f"{r['patient_name']} (MRN: {r.get('mrn_no', 'N/A')}) - [{r['status']}]" for r in recs]
-            
-            if st.session_state.selected_profile_index >= len(options_list):
-                st.session_state.selected_profile_index = 0
+            # Extract unique Booking Offices for Filter 2
+            unique_offices = sorted(list(set([str(r.get('booking_office', 'Unknown GPO')).strip() for r in raw_date_recs if r.get('booking_office')])))
+            if not unique_offices:
+                unique_offices = ["All Offices"]
+            else:
+                unique_offices.insert(0, "All Offices")
                 
-            selected_key = st.selectbox(
-                "Select Patient Profile to Process:", 
-                options_list, 
-                index=st.session_state.selected_profile_index
-            )
-            
-            current_choice_idx = options_list.index(selected_key)
-            if current_choice_idx != st.session_state.selected_profile_index:
-                st.session_state.selected_profile_index = current_choice_idx
-                save_operator_state()
+            # Layout filtering parameters on top row panel
+            filter_col1, filter_col2 = st.columns([1, 1])
+            with filter_col1:
+                # 🏢 Filter 2: Booking Office Cascade Filter
+                selected_office = st.selectbox("🏥 Filter by Booking Office / GPO Node:", unique_offices)
                 
-            target_profile = recs[st.session_state.selected_profile_index]
-            
-            st.markdown("<hr>", unsafe_allow_html=True)
-            l_panel, r_panel = st.columns(2)
-            
-            with l_panel:
-                st.markdown(f"<div class='patient-card-header'>👤 {target_profile['patient_name']}</div>", unsafe_allow_html=True)
-                st.write(f"🔢 **MRN Number:** `{target_profile.get('mrn_no', 'N/A')}`")
-                st.write(f"📦 **Consignment ID (Article):** `{target_profile['article_id']}`")
-                st.write(f"🏠 **Address:** {target_profile['address']}")
+            # Filter rows based on selected Booking Office
+            if selected_office == "All Offices":
+                filtered_by_office = raw_date_recs
+            else:
+                filtered_by_office = [r for r in raw_date_recs if str(r.get('booking_office')).strip() == selected_office]
                 
-                st.markdown("#### 🌐 Pakistan Post Live EMTTS Tracking")
-                if st.button("🔍 Fetch Live Status from PakPost Server", use_container_width=True):
-                    with st.spinner("Connecting to PakPost network nodes..."):
-                        live_status, trace_detail = fetch_live_emtts_status(target_profile['article_id'])
-                        st.metric(label="Latest Detected Status", value=live_status)
-                        st.text_area("Full EMTTS Tracking History Logs:", value=trace_detail, height=180)
+            with filter_col2:
+                # 🔍 Filter 3: Direct Core Smart Search Input Box (Name/ID/MRN)
+                search_term = st.text_input("🔎 Smart Search (Type Name, Article ID, or MRN Number directly):").strip().lower()
                 
-                st.markdown("#### 🎴 DIAL THIS PHONE NUMBER FROM LANDLINE:")
-                st.markdown(f"<div class='big-phone-display'>{target_profile['phone_number']}</div>", unsafe_allow_html=True)
-            
-            with r_panel:
-                st.markdown("#### 📝 Live Quality Verification & Audit Questionnaire")
-                is_delivered = st.radio("Has the consignee physically received the delivery?", ["Select Assessment Option", "Yes", "No"])
-                payload_buffer = {}
+            # Apply search term logic if present
+            if search_term:
+                final_processed_recs = []
+                for r in filtered_by_office:
+                    name_match = search_term in str(r.get('patient_name', '')).lower()
+                    article_match = search_term in str(r.get('article_id', '')).lower()
+                    mrn_match = search_term in str(r.get('mrn_no', '')).lower()
+                    if name_match or article_match or mrn_match:
+                        final_processed_recs.append(r)
+            else:
+                final_processed_recs = filtered_by_office
+
+            # Display final dynamic selection interface
+            if not final_processed_recs:
+                st.warning("No records matched your specific filter configurations or search criteria.")
+            else:
+                options_list = [f"{r['patient_name']} (MRN: {r.get('mrn_no', 'N/A')}) - [{r['status']}]" for r in final_processed_recs]
                 
-                if is_delivered == "Yes":
-                    payload_buffer["status"] = "Delivered"
-                    payload_buffer["delivery_date"] = str(st.date_input("Delivery Verification Date", datetime.date.today()))
-                    payload_buffer["received_mode"] = st.radio("Delivery Execution Mode:", ["Delivered by postman to home address", "Collected directly from local post office branch"])
-                    payload_buffer["extra_money_charged"] = st.radio("Did the delivery agent request any unauthorized monetary payment/tips?", ["No", "Yes"])
-                elif is_delivered == "No":
-                    payload_buffer["status"] = "Issue / Complaint"
-                    payload_buffer["issue_reason"] = st.selectbox("Select Primary Failure Mode:", ["Wrong Delivery Status on EMTTS", "Incomplete Address / Premises Locked", "Logistics Delay", "Formal Institutional Dispute"])
+                if st.session_state.selected_profile_index >= len(options_list):
+                    st.session_state.selected_profile_index = 0
                     
-                if st.button("💾 Finalize Session & Commit Logs", use_container_width=True):
-                    if is_delivered == "Select Assessment Option":
-                        st.error("Select verification response parameter before finalizing profile entry.")
-                    else:
-                        with st.spinner("Committing logs to cloud infrastructure..."):
-                            try:
-                                supabase.table("patient_deliveries").update(payload_buffer).eq("id", target_profile["id"]).execute()
-                                st.success("Data node updated successfully.")
-                                st.session_state.selected_profile_index += 1
-                                save_operator_state()
-                                time.sleep(0.5)
-                                st.rerun()
-                            except Exception as e: st.error(f"Commit tracking sync error: {e}")
+                selected_key = st.selectbox(
+                    f"Select Patient Profile to Process ({len(options_list)} Records Found):", 
+                    options_list, 
+                    index=st.session_state.selected_profile_index
+                )
+                
+                current_choice_idx = options_list.index(selected_key)
+                if current_choice_idx != st.session_state.selected_profile_index:
+                    st.session_state.selected_profile_index = current_choice_idx
+                    save_operator_state()
+                    
+                target_profile = final_processed_recs[st.session_state.selected_profile_index]
+                
+                st.markdown("<hr>", unsafe_allow_html=True)
+                l_panel, r_panel = st.columns(2)
+                
+                with l_panel:
+                    st.markdown(f"<div class='patient-card-header'>👤 {target_profile['patient_name']}</div>", unsafe_allow_html=True)
+                    st.write(f"🔢 **MRN Number:** `{target_profile.get('mrn_no', 'N/A')}`")
+                    st.write(f"📦 **Consignment ID (Article):** `{target_profile['article_id']}`")
+                    st.write(f"🏥 **Booking GPO Station:** `{target_profile.get('booking_office', 'Unknown GPO')}`")
+                    st.write(f"🏠 **Address:** {target_profile['address']}")
+                    
+                    st.markdown("#### 🌐 Pakistan Post Live EMTTS Tracking")
+                    if st.button("🔍 Fetch Live Status from PakPost Server", use_container_width=True):
+                        with st.spinner("Connecting to PakPost network nodes..."):
+                            live_status, trace_detail = fetch_live_emtts_status(target_profile['article_id'])
+                            st.metric(label="Latest Detected Status", value=live_status)
+                            st.text_area("Full EMTTS Tracking History Logs:", value=trace_detail, height=180)
+                    
+                    st.markdown("#### 🎴 DIAL THIS PHONE NUMBER FROM LANDLINE:")
+                    st.markdown(f"<div class='big-phone-display'>{target_profile['phone_number']}</div>", unsafe_allow_html=True)
+                
+                with r_panel:
+                    st.markdown("#### 📝 Live Quality Verification & Audit Questionnaire")
+                    is_delivered = st.radio("Has the consignee physically received the delivery?", ["Select Assessment Option", "Yes", "No"])
+                    payload_buffer = {}
+                    
+                    if is_delivered == "Yes":
+                        payload_buffer["status"] = "Delivered"
+                        payload_buffer["delivery_date"] = str(st.date_input("Delivery Verification Date", datetime.date.today()))
+                        payload_buffer["received_mode"] = st.radio("Delivery Execution Mode:", ["Delivered by postman to home address", "Collected directly from local post office branch"])
+                        payload_buffer["extra_money_charged"] = st.radio("Did the delivery agent request any unauthorized monetary payment/tips?", ["No", "Yes"])
+                    elif is_delivered == "No":
+                        payload_buffer["status"] = "Issue / Complaint"
+                        payload_buffer["issue_reason"] = st.selectbox("Select Primary Failure Mode:", ["Wrong Delivery Status on EMTTS", "Incomplete Address / Premises Locked", "Logistics Delay", "Formal Institutional Dispute"])
+                        
+                    if st.button("💾 Finalize Session & Commit Logs", use_container_width=True):
+                        if is_delivered == "Select Assessment Option":
+                            st.error("Select verification response parameter before finalizing profile entry.")
+                        else:
+                            with st.spinner("Committing logs to cloud infrastructure..."):
+                                try:
+                                    supabase.table("patient_deliveries").update(payload_buffer).eq("id", target_profile["id"]).execute()
+                                    st.success("Data node updated successfully.")
+                                    st.session_state.selected_profile_index += 1
+                                    save_operator_state()
+                                    time.sleep(0.5)
+                                    st.rerun()
+                                except Exception as e: st.error(f"Commit tracking sync error: {e}")
