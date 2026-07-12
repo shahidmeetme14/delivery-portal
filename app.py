@@ -57,21 +57,24 @@ if "full_name" not in st.session_state:
 if "role" not in st.session_state:
     st.session_state.role = ""
 
-# --- SECURE GATEWAY WORKFLOW ---
+# --- SECURE GATEWAY WORKFLOW (FORM WITH ENTER KEY SUPPORT) ---
 if not st.session_state.logged_in:
-    # Centering the login card using columns layout
     _, center_col, _ = st.columns([1, 1.5, 1])
     
     with center_col:
         st.markdown("<br><br>", unsafe_allow_html=True)
-        with st.container(border=True):
+        
+        # Wrapped inside st.form so pressing Enter submits the credentials automatically
+        with st.form("secure_login_form", clear_on_submit=False):
             st.markdown("<h2 style='text-align: center; color: #0f172a; font-family: sans-serif; margin-bottom: 25px;'>📮 Portal Authentication</h2>", unsafe_allow_html=True)
             
             username_input = st.text_input("Username", placeholder="Enter username")
             password_input = st.text_input("Password", type="password", placeholder="Enter password")
             
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("Authenticate Session 🚀", use_container_width=True):
+            submit_login = st.form_submit_button("Authenticate Session 🚀", use_container_width=True)
+            
+            if submit_login:
                 if username_input and password_input:
                     try:
                         user_query = supabase.table("app_users").select("*").eq("username", username_input.strip()).execute()
@@ -100,26 +103,9 @@ if not st.session_state.logged_in:
                         else:
                             st.error("Invalid Username or Password! Please verify credentials.")
                     except Exception as auth_err:
-                        st.error(f"Authentication Server Offline or Table Column Mismatch: {auth_err}")
+                        st.error(f"Authentication Fault (Check RLS Policies or Schema): {auth_err}")
                 else:
                     st.warning("Please complete all fields.")
-            
-            # Diagnostic tools for Admin Setup
-            st.markdown("---")
-            with st.expander("🛠️ Database Admin Initialization Tools"):
-                st.write("If you are running this for the first time, click below to inject the default Admin user into Supabase:")
-                if st.button("Inject Admin User ('shahid') into Database"):
-                    try:
-                        res = supabase.table("app_users").upsert({
-                            "username": "shahid",
-                            "password": "shahid@2341",
-                            "full_name": "Shahid Hussain",
-                            "role": "admin"
-                        }, on_conflict="username").execute()
-                        st.success("Successfully written to Supabase! Try logging in now.")
-                    except Exception as seed_err:
-                        st.error(f"Supabase Insertion Failed: {seed_err}")
-                        st.info("Tip: Check if your table has columns named exactly: 'username', 'password', 'full_name', and 'role'.")
 
     st.stop()
 
