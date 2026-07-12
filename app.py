@@ -46,7 +46,7 @@ if "show_recovery_prompt" not in st.session_state: st.session_state.show_recover
 if "cached_recovery_data" not in st.session_state: st.session_state.cached_recovery_data = {}
 if "duplicate_log_csv" not in st.session_state: st.session_state.duplicate_log_csv = None
 
-# 🎨 Enterprise PyQt6 Style Sheet & Layout Engine
+# 🎨 Pakistan Post Green Enterprise Style Sheet & Layout Engine
 sidebar_css_rule = ""
 if not st.session_state.logged_in:
     sidebar_css_rule = """
@@ -83,12 +83,12 @@ st.markdown(f"""
     div[data-testid="InputInstructions"] {{ display: none !important; }}
     small {{ display: none !important; }}
     
-    /* Native C++ Desktop Application Color Frame */
-    .stApp {{ background-color: #f8fafc; }}
+    /* Native Pakistan Post Green Color Frame */
+    .stApp {{ background-color: #fcfefe; }}
     body {{ font-family: 'Segoe UI', -apple-system, sans-serif; }}
     
-    .brand-title {{ color: #0f172a; font-weight: 700; font-size: 1.9rem; letter-spacing: -0.03rem; margin-top: 5px; margin-bottom: 2px; }}
-    .brand-subtitle {{ color: #475569; font-size: 1.0rem; margin-bottom: 25px; font-weight: 500; border-left: 3px solid #2563eb; padding-left: 10px; }}
+    .brand-title {{ color: #004d26; font-weight: 700; font-size: 1.9rem; letter-spacing: -0.03rem; margin-top: 5px; margin-bottom: 2px; }}
+    .brand-subtitle {{ color: #334155; font-size: 1.0rem; margin-bottom: 25px; font-weight: 500; border-left: 3px solid #006633; padding-left: 10px; }}
     
     /* Clean Enterprise Boxes */
     div[data-testid="stForm"], .pyqt-panel {{
@@ -108,28 +108,30 @@ st.markdown(f"""
         letter-spacing: 0.5px !important;
     }}
     
-    /* High-contrast Enterprise Buttons */
+    /* High-contrast Pakistan Post Buttons */
     div.stButton > button {{
-        background: #1e293b !important;
+        background: #006633 !important;
         color: #ffffff !important;
-        border: 1px solid #0f172a !important;
+        border: 1px solid #004d26 !important;
         border-radius: 4px !important;
         padding: 7px 20px !important;
         font-weight: 600 !important;
         font-size: 13px !important;
     }}
     div.stButton > button:hover {{
-        background: #334155 !important;
+        background: #004d26 !important;
         color: #ffffff !important;
+        border-color: #00331a !important;
     }}
     
     .active-nav-btn div.stButton > button {{
-        background: #2563eb !important;
-        border-color: #1d4ed8 !important;
+        background: #004d26 !important;
+        border-color: #00331a !important;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.2) !important;
     }}
     
     .big-phone-display {{ font-family: 'Courier New', monospace; font-size: 32px !important; font-weight: 700 !important; color: #166534 !important; background-color: #f0fdf4; padding: 10px; border-radius: 4px; text-align: center; border: 1px solid #bbf7d0; }}
-    .patient-card-header {{ font-size: 20px !important; font-weight: 700 !important; color: #0f172a; border-left: 4px solid #1e3a8a; padding-left: 10px; margin-bottom: 12px; }}
+    .patient-card-header {{ font-size: 20px !important; font-weight: 700 !important; color: #004d26; border-left: 4px solid #006633; padding-left: 10px; margin-bottom: 12px; }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -205,12 +207,11 @@ def fetch_live_emtts_status(article_id):
     except:
         return "⏱️ Timeout Error", "PakPost network nodes timed out."
 
-# Permanent Workspace Sidebar Container
+# Permanent Workspace Sidebar Container (Customized Layout)
 if st.session_state.logged_in:
     with st.sidebar:
         st.markdown("### 🖥️ Enterprise Console")
-        st.markdown(f"**Operator ID:** `{st.session_state.username}`")
-        st.markdown(f"**Name:** {st.session_state.full_name}")
+        st.markdown(f"**Logged in as:** {st.session_state.full_name}")
         st.markdown(f"**Privilege Cluster:** `{st.session_state.role.upper()}`")
         st.markdown("---")
         if st.button("Terminate Session 🚪", use_container_width=True):
@@ -218,16 +219,16 @@ if st.session_state.logged_in:
             st.query_params.clear()
             st.rerun()
 
-st.markdown("<div class='brand-title'>SHC & Pak Post | Free Home Delivery of Medicine</div>", unsafe_allow_html=True)
+st.markdown("<div class='brand-title'>📮 SHC & Pak Post | Free Home Delivery of Medicine</div>", unsafe_allow_html=True)
 st.markdown("<div class='brand-subtitle'>Article Tracking & Patient Feedback Portal</div>", unsafe_allow_html=True)
 
 # Main Authentication Router
 if not st.session_state.logged_in:
     _, center_col, _ = st.columns([1, 1.4, 1])
     with center_col:
-        st.markdown("<div style='background-color:#1e293b; color:#ffffff; padding:12px; font-weight:600; font-size:13px; border-radius:6px 6px 0px 0px; border:1px solid #0f172a; text-align:center; letter-spacing:1px;'>SECURE PORTAL AUTHENTICATION</div>", unsafe_allow_html=True)
+        st.markdown("<div style='background-color:#006633; color:#ffffff; padding:12px; font-weight:600; font-size:13px; border-radius:6px 6px 0px 0px; border:1px solid #004d26; text-align:center; letter-spacing:1px;'>SECURE PORTAL AUTHENTICATION</div>", unsafe_allow_html=True)
         with st.form("pyqt_enterprise_login"):
-            input_user = st.text_input("OPERATOR ID / USERNAME", placeholder="Enter Username")
+            input_user = st.text_input("OPERATOR ID / USERNAME", placeholder="e.g. shahid_admin")
             input_pass = st.text_input("SECURITY ACCESS PASSWORD", type="password", placeholder="••••••••")
             btn_login = st.form_submit_button("UNLOCK TERMINAL", use_container_width=True)
             
@@ -399,15 +400,32 @@ else:
                             "booking_office": str(row[c_bo]).strip() if c_bo in df.columns else "",
                             "status": "Pending"
                         })
-                    try:
-                        supabase.table("patient_deliveries").upsert(staging_area, on_conflict="article_id").execute()
-                        st.balloons()
-                        st.success(f"🎉 Synchronized {len(staging_area)} clean logs across cloud nodes.")
-                        
-                        if st.session_state.duplicate_log_csv is not None:
-                            st.warning(f"⚠️ {len(df_duplicates)} duplicate Article IDs were filtered out to avoid database crash.")
-                    except Exception as ex:
-                        st.error(f"❌ Batch sync exception: {ex}")
+                    
+                    # ⚡ CHUNK INGESTION ENGINE: Prevents statement timeouts on huge files (e.g. 11.8MB)
+                    total_records = len(staging_area)
+                    if total_records > 0:
+                        try:
+                            CHUNK_SIZE = 1000
+                            progress_bar = st.progress(0)
+                            status_text = st.empty()
+                            
+                            for i in range(0, total_records, CHUNK_SIZE):
+                                chunk = staging_area[i : i + CHUNK_SIZE]
+                                status_text.text(f"Uploading batch: Processing records {i} to {min(i + CHUNK_SIZE, total_records)}...")
+                                supabase.table("patient_deliveries").upsert(chunk, on_conflict="article_id").execute()
+                                progress_bar.progress(min((i + CHUNK_SIZE) / total_records, 1.0))
+                            
+                            status_text.empty()
+                            progress_bar.empty()
+                            st.balloons()
+                            st.success(f"🎉 Synchronized {total_records} clean logs across cloud nodes successfully in chunks.")
+                            
+                            if st.session_state.duplicate_log_csv is not None:
+                                st.warning(f"⚠️ {len(df_duplicates)} duplicate Article IDs were filtered out to avoid database crash.")
+                        except Exception as ex:
+                            st.error(f"❌ Batch chunking exception: {ex}")
+                    else:
+                        st.info("No records found to push after parsing manifest sequence.")
 
         # Persistent download link if duplicate records exist in memory
         if st.session_state.duplicate_log_csv is not None:
