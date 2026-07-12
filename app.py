@@ -5,7 +5,7 @@ import datetime
 import io
 import time
 
-# 🎛️ Page Setup & Shell Initializer
+# 🎛️ Page Structural Settings
 st.set_page_config(
     page_title="SHC & Pak Post | Delivery Portal", 
     page_icon="📮", 
@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 Premium C++ Style Tactile UI Engine (3D Glossy Buttons & Micro-Animations)
+# 🎨 Premium C++ Style Tactile UI Engine (Clean Casing & Dark Mechanical Slate Theme)
 st.markdown("""
     <style>
     /* 🚫 Clutter Removal Protocol */
@@ -34,32 +34,32 @@ st.markdown("""
     
     /* 🧱 Ultra-Crisp Mechanical 3D Navigation & Utility Buttons CSS */
     div.stButton > button {
-        background: linear-gradient(180deg, #1e40af 0%, #1e3a8a 100%) !important;
-        color: #ffffff !important;
-        border: 1px solid #172554 !important;
+        background: linear-gradient(180deg, #475569 0%, #1e293b 100%) !important; /* Sleek Premium Slate Gray */
+        color: #f8fafc !important;
+        border: 1px solid #0f172a !important;
         border-radius: 6px !important;
-        padding: 12px 24px !important;
-        font-weight: 700 !important;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        box-shadow: 0 4px 0 #172554, 0 8px 12px rgba(0, 0, 0, 0.15) !important;
-        transition: all 0.1s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        padding: 10px 22px !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        text-transform: none !important; /* Preserves natural casing for premium clean readability */
+        box-shadow: 0 4px 0 #0f172a, 0 6px 10px rgba(0, 0, 0, 0.12) !important;
+        transition: all 0.05s ease-in-out !important;
     }
     div.stButton > button:hover {
-        background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%) !important;
+        background: linear-gradient(180deg, #64748b 0%, #334155 100%) !important;
         transform: translateY(-1px) !important;
-        box-shadow: 0 5px 0 #172554, 0 10px 15px rgba(0, 0, 0, 0.2) !important;
+        box-shadow: 0 5px 0 #0f172a, 0 8px 12px rgba(0, 0, 0, 0.18) !important;
     }
     div.stButton > button:active {
         transform: translateY(3px) !important;
-        box-shadow: 0 1px 0 #172554, 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 1px 0 #0f172a, 0 2px 4px rgba(0, 0, 0, 0.1) !important;
     }
     
-    /* Highlighted State Override for Selected Active Tab Button */
+    /* Highlighted State Override for Selected Active Tab Button (Deep Blue/Teal Accent) */
     .active-nav-btn div.stButton > button {
-        background: linear-gradient(180deg, #155e75 0%, #115e59 100%) !important;
-        border-color: #042f2e !important;
-        box-shadow: 0 4px 0 #042f2e, 0 8px 12px rgba(0, 0, 0, 0.2) !important;
+        background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%) !important;
+        border-color: #1e3a8a !important;
+        box-shadow: 0 4px 0 #172554, 0 6px 10px rgba(37, 99, 235, 0.2) !important;
     }
     
     /* Danger/Logout Button Override Specs */
@@ -92,7 +92,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ⏳ SECURITY LOCKS & INTERVAL THRESHOLDS
-TIMEOUT_LIMIT = 45 * 60  # 45 Minutes Context Security
+TIMEOUT_LIMIT = 45 * 60  
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -101,7 +101,7 @@ if "last_activity" not in st.session_state:
 if "last_saved_entry" not in st.session_state:
     st.session_state.last_saved_entry = None
 if "current_navigation_tab" not in st.session_state:
-    st.session_state.current_navigation_tab = "📞 Outbound Communications Hub"
+    st.session_state.current_navigation_tab = None
 
 # Establish Secure Gateway Instance Connect
 @st.cache_resource
@@ -125,6 +125,9 @@ if not st.session_state.logged_in and "session_token" in st.query_params:
             st.session_state.full_name = ud[0]["full_name"]
             st.session_state.role = ud[0]["role"]
             st.session_state.last_activity = time.time()
+            # Dynamic Route Protection on Refresh
+            if st.session_state.current_navigation_tab is None:
+                st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine" if ud[0]["role"] == "admin" else "📞 Outbound Communications Hub"
     except:
         pass
 
@@ -136,6 +139,10 @@ if st.session_state.logged_in:
         st.warning("🔄 Session expired due to 45 minutes of inactivity. Please re-authenticate.")
     else:
         st.session_state.last_activity = time.time()
+
+# Ensure navigation tab is never dangling empty
+if st.session_state.logged_in and st.session_state.current_navigation_tab is None:
+    st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine" if st.session_state.role == "admin" else "📞 Outbound Communications Hub"
 
 # --- MODAL ACTION INTERFACE ---
 @st.dialog("🔐 Change System Access Password")
@@ -178,7 +185,6 @@ if not st.session_state.logged_in:
             
             if submit_action:
                 if user_in and pass_in:
-                    # Render sequential pulsing animated sequence dots container immediately
                     pulse_container = st.empty()
                     pulse_container.markdown("<div class='processing-pulse'>PROCESSING COMPILING LEDGERS . . . . .</div>", unsafe_allow_html=True)
                     
@@ -191,6 +197,9 @@ if not st.session_state.logged_in:
                             st.session_state.role = user_query.data[0]["role"]
                             st.session_state.last_activity = time.time()
                             st.query_params["session_token"] = user_query.data[0]["username"]
+                            
+                            # Hard redirect based on identity context upon first form entry
+                            st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine" if user_query.data[0]["role"] == "admin" else "📞 Outbound Communications Hub"
                             
                             pulse_container.success("Access Authorized!")
                             time.sleep(0.6)
@@ -229,7 +238,6 @@ st.markdown("<div class='brand-subtitle'>Logistics Tracking & Quality Feedback S
 if st.session_state.role == "admin":
     nc1, nc2, nc3 = st.columns(3)
     
-    # Tab 1 Selector
     with nc1:
         t1_class = "active-nav-btn" if st.session_state.current_navigation_tab == "📊 Administrative Ingestion Engine" else ""
         st.markdown(f"<div class='{t1_class}'>", unsafe_allow_html=True)
@@ -238,7 +246,6 @@ if st.session_state.role == "admin":
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
         
-    # Tab 2 Selector
     with nc2:
         t2_class = "active-nav-btn" if st.session_state.current_navigation_tab == "👥 Operator Matrix & Security Audit Logs" else ""
         st.markdown(f"<div class='{t2_class}'>", unsafe_allow_html=True)
@@ -247,7 +254,6 @@ if st.session_state.role == "admin":
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
         
-    # Tab 3 Selector
     with nc3:
         t3_class = "active-nav-btn" if st.session_state.current_navigation_tab == "📞 Outbound Communications Hub" else ""
         st.markdown(f"<div class='{t3_class}'>", unsafe_allow_html=True)
@@ -256,7 +262,6 @@ if st.session_state.role == "admin":
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 else:
-    # Standard terminal employees lock step view layout option mapping directly to communication desk operations
     st.session_state.current_navigation_tab = "📞 Outbound Communications Hub"
     st.markdown("<div class='active-nav-btn'>", unsafe_allow_html=True)
     st.button("📞 Outbound Communications Hub", use_container_width=True, disabled=True)
@@ -306,7 +311,7 @@ if st.session_state.current_navigation_tab == "📊 Administrative Ingestion Eng
                     "address": str(row[c_address]).strip(),
                     "patient_city": str(row[c_city]).strip(),
                     "mrn_no": str(row[c_mrn]).strip(),
-                    "booking_office": str(row[c_bo]).strip(),
+                    "booking_office": str(row[row[c_bo]]).strip() if c_bo in df.columns else "",
                     "status": "Pending"
                 })
             
@@ -321,7 +326,7 @@ if st.session_state.current_navigation_tab == "📊 Administrative Ingestion Eng
 # ----------------------------------------------------
 elif st.session_state.current_navigation_tab == "👥 Operator Matrix & Security Audit Logs" and st.session_state.role == "admin":
     st.markdown("### 👥 Operational Account Provisioning Center")
-    uc1, uc2 = st.columns(2)
+    uc1, _ = st.columns(2)
     with uc1:
         st.markdown("#### ➕ Provision New Operator Account")
         nf = st.text_input("Operator Full Name")
@@ -340,7 +345,6 @@ elif st.session_state.current_navigation_tab == "👥 Operator Matrix & Security
 elif st.session_state.current_navigation_tab == "📞 Outbound Communications Hub":
     st.markdown("### 📞 Outbound Communications Desk")
     
-    # Quick Correction Panel Area for Modifications Tracker Console
     if st.session_state.last_saved_entry:
         with st.expander("✏️ Quick-Correction Panel (Modify Last Saved Entry)", expanded=True):
             st.info(f"Modify configuration variables for your last updated record: **{st.session_state.last_saved_entry['name']}**")
