@@ -53,7 +53,7 @@ for key in mapping_keys:
     if key not in st.session_state:
         st.session_state[key] = None
 
-# 🎨 Premium UI Engine Styling (Compact Page Reset)
+# 🎨 Premium UI Engine Styling (Fixed Double-Braces Syntax)
 sidebar_css_rule = ""
 if not st.session_state.logged_in:
     sidebar_css_rule = """
@@ -86,7 +86,7 @@ st.markdown(f"""
     div[data-testid="stToolbar"] {{ visibility: hidden !important; display: none !important; }}
     .stDeployButton {{ display: none !important; }}
     
-    /* 🛠️ GITHUB / EMAIL BADGE REMOVAL */
+    /* 🛠️ GITHUB / EMAIL WATERMARK REMOVAL */
     footer {{ visibility: hidden !important; display: none !important; }}
     [data-testid="stViewerBadge"] {{ display: none !important; visibility: hidden !important; }}
     .viewerBadge {{ display: none !important; }}
@@ -101,7 +101,7 @@ st.markdown(f"""
     .brand-title {{ color: #004d26; font-weight: 800; font-size: 1.6rem; margin-bottom: 1px; line-height: 1.2; }}
     .brand-subtitle {{ color: #3d5a4c; font-size: 0.9rem; margin-bottom: 12px; font-weight: 600; border-left: 3px solid #d4af37; padding-left: 8px; }}
     
-    /* 🛠️ LOGIN CONTAINER CUT FIX: Fluid Auto-Sizing */
+    /* 🛠️ LOGIN CONTAINER CUT FIX: Full Fluid Compatibility */
     div[data-testid="stForm"], .pyqt-panel {{
         background: #ffffff !important;
         border-radius: 6px !important;
@@ -228,16 +228,16 @@ st.markdown(f"""
     hr {{ margin: 8px 0 !important; }}
     h4 {{ margin-top: 8px !important; margin-bottom: 4px !important; font-size: 14px !important; }}
 
-    /* ✨ PROFESSIONAL OFFICIAL MANIFESTO PRINT STYLE */
-    @media print {
-        body * { visibility: hidden !important; }
-        .print-manifest-card, .print-manifest-card * { visibility: visible !important; }
-        .print-manifest-card {
+    /* ✨ PROFESSIONAL OFFICIAL MANIFESTO PRINT STYLE (Fixed Braces) */
+    @media print {{
+        body * {{ visibility: hidden !important; }}
+        .print-manifest-card, .print-manifest-card * {{ visibility: visible !important; }}
+        .print-manifest-card {{
             position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important;
             border: 2px solid #004d26 !important; padding: 25px !important; font-family: 'Arial', sans-serif !important;
             background: #fff !important; color: #000 !important; border-radius: 8px !important;
-        }
-    }
+        }}
+    }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -349,7 +349,6 @@ st.markdown("<div class='brand-title'>📮 SHC & Pak Post | Delivery System</div
 st.markdown("<div class='brand-subtitle'>Secure Audit & Communication Engine</div>", unsafe_allow_html=True)
 
 if not st.session_state.logged_in:
-    # Fix Layout columns grid sizing to prevent clipping
     _, center_col, _ = st.columns([0.8, 1.4, 0.8])
     with center_col:
         st.markdown("<div style='background-color:#006633; color:#ffffff; padding:10px; font-weight:700; font-size:13px; border-radius:6px 6px 0px 0px; border:1px solid #004d26; text-align:center;'>SECURE PORTAL AUTHENTICATION</div>", unsafe_allow_html=True)
@@ -442,10 +441,8 @@ else:
                 st.session_state.current_navigation_tab = "📥 Secure Reports Export Center"; st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
 
-    # PAGE 1: INGESTION & REAL-TIME ALERTS FOR ADMIN
+    # PAGE 1: HYBRID INGESTION (Saves directly to Supabase Storage Bucket to prevent DB limit issues)
     if st.session_state.current_navigation_tab == "📊 Administrative Ingestion Engine" and st.session_state.role == "admin":
-        
-        # 🚨 LIVE ADMIN BRIBERY ALERTS 
         st.markdown("### 🚨 Critical Security Red-Flag Alerts")
         try:
             flagged_recs = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes").execute().data
@@ -458,8 +455,11 @@ else:
             pass
             
         st.markdown("---")
-        st.markdown("### 📥 Bulk Logistics Ingestion Engine")
+        st.markdown("### 📥 Bulk Logistics Ingestion Engine (Free Storage Mode)")
+        
+        target_upload_date = st.date_input("Assign Target Booking Date for Sheet:", datetime.date.today())
         source_file = st.file_uploader("Upload Parcel Manifest Sheet", type=["xlsx", "csv"])
+        
         if source_file is not None:
             file_key = f"cached_df_{source_file.name}_{source_file.size}"
             if file_key not in st.session_state:
@@ -480,7 +480,7 @@ else:
                 c_city = st.selectbox("City Column:", df.columns, index=calculate_mapped_index(df.columns, "map_city", "City"))
                 c_bo = st.selectbox("Booking Office Column:", df.columns, index=calculate_mapped_index(df.columns, "map_bo", "Booking Office"))
 
-            if st.button("🚀 Push Verified Records to Cloud Database", use_container_width=True):
+            if st.button("🚀 Push Sheet to Supabase Free Cloud Storage", use_container_width=True):
                 staging_area = []
                 for _, row in df.iterrows():
                     staging_area.append({
@@ -494,10 +494,27 @@ else:
                         "booking_office": str(row[c_bo]).strip() if c_bo in df.columns else "Lahore GPO",
                         "status": "Pending"
                     })
+                
+                # Convert normalized data into compressed CSV bytes
+                clean_df = pd.DataFrame(staging_area)
+                csv_buffer = io.BytesIO()
+                clean_df.to_csv(csv_buffer, index=False)
+                csv_bytes = csv_buffer.getvalue()
+                
+                filename = f"manifest_{str(target_upload_date)}.csv"
                 try:
-                    supabase.table("patient_deliveries").upsert(staging_area, on_conflict="article_id").execute()
-                    st.success("🎉 Records uploaded smoothly onto cloud datastore nodes!")
-                except Exception as ex: st.error(f"Upload error: {ex}")
+                    # Clear out if file exists and rewrite smoothly
+                    try: supabase.storage.from_("manifests").remove([filename])
+                    except: pass
+                    
+                    supabase.storage.from_("manifests").upload(
+                        path=filename,
+                        file=csv_bytes,
+                        file_options={"content-type": "text/csv"}
+                    )
+                    st.success(f"🎉 Manifest backup file saved into free cloud bucket node as '{filename}'!")
+                except Exception as ex: 
+                    st.error(f"Cloud Bucket Storage Connection Error: {ex}. Make sure bucket named 'manifests' is created inside Supabase Dashboard.")
 
     # PAGE 2: OPERATOR MATRIX
     elif st.session_state.current_navigation_tab == "👥 Operator Matrix & Security Audit Logs" and st.session_state.role == "admin":
@@ -512,7 +529,7 @@ else:
                     st.success("Operator registered successfully!")
                 except Exception as e: st.error(f"Error: {e}")
 
-    # PAGE 3: OUTBOUND HUB
+    # PAGE 3: OUTBOUND HUB (Hybrid File Extraction + Live Table Overlay)
     elif st.session_state.current_navigation_tab == "📞 Outbound Communications Hub":
         
         sel_col1, sel_col2, sel_col3 = st.columns([1, 1.2, 1.8])
@@ -520,12 +537,37 @@ else:
         with sel_col1:
             query_date = st.date_input("Select Booking Date:", datetime.date.today())
         
-        try: raw_date_recs = supabase.table("patient_deliveries").select("*").eq("booking_date", str(query_date)).execute().data
-        except: raw_date_recs = []
+        # Load raw data safely from the Cloud Storage Bucket file
+        raw_date_recs = []
+        filename = f"manifest_{str(query_date)}.csv"
+        try:
+            storage_file_bytes = supabase.storage.from_("manifests").download(filename)
+            if storage_file_bytes:
+                raw_date_recs = pd.read_csv(io.BytesIO(storage_file_bytes)).to_dict(orient="records")
+        except:
+            raw_date_recs = []
             
         if not raw_date_recs: 
-            st.info("No logs found matching this calendar timestamp.")
+            st.info("No logistics manifest backup file found in cloud bucket matching this calendar date.")
         else:
+            # Check DB for any existing actions to overlay processed entries live
+            try:
+                db_recs = supabase.table("patient_deliveries").select("*").eq("booking_date", str(query_date)).execute().data
+                db_map = {r['article_id']: r for r in db_recs} if db_recs else {}
+            except:
+                db_map = {}
+
+            # Overlay real-time statuses from DB onto master records
+            for record in raw_date_recs:
+                art_id = str(record['article_id']).strip()
+                if art_id in db_map:
+                    record['id'] = db_map[art_id]['id']
+                    record['status'] = db_map[art_id]['status']
+                    record['extra_money_charged'] = db_map[art_id].get('extra_money_charged', 'No')
+                    record['operator_stamp'] = db_map[art_id].get('operator_stamp', '')
+                else:
+                    record['id'] = None # Flag for new insertion
+
             unique_offices = sorted(list(set([str(r.get('booking_office', 'Lahore GPO')).strip() for r in raw_date_recs])))
             unique_offices.insert(0, "All Offices")
             
@@ -626,16 +668,28 @@ else:
                         if is_delivered == "Select Assessment Option": st.error("Select verification response.")
                         else:
                             payload_buffer["operator_stamp"] = st.session_state.full_name
+                            payload_buffer["article_id"] = target_profile["article_id"]
+                            payload_buffer["patient_name"] = target_profile["patient_name"]
+                            payload_buffer["mrn_no"] = target_profile.get('mrn_no', '')
+                            payload_buffer["booking_office"] = target_profile.get('booking_office', 'Lahore GPO')
+                            payload_buffer["booking_date"] = target_profile["booking_date"]
+                            payload_buffer["address"] = target_profile["address"]
+                            payload_buffer["phone_number"] = target_profile["phone_number"]
+                            
                             try:
-                                supabase.table("patient_deliveries").update(payload_buffer).eq("id", target_profile["id"]).execute()
-                                st.success("Updated with operator identity stamp!")
+                                if target_profile.get("id"):
+                                    supabase.table("patient_deliveries").update(payload_buffer).eq("id", target_profile["id"]).execute()
+                                else:
+                                    supabase.table("patient_deliveries").upsert(payload_buffer, on_conflict="article_id").execute()
+                                    
+                                st.success("Updated cleanly with operator identity stamp!")
                                 st.session_state.selected_profile_index += 1
                                 save_operator_state()
                                 time.sleep(0.5)
                                 st.rerun()
                             except Exception as e: st.error(f"Sync error: {e}")
 
-                    # 🖨️ HIGH-END BEAUTIFUL MANIFESTO PRINTING LAYOUT
+                    # 🖨️ HIGH-END OFFICIAL MANIFESTO DOCUMENT PRINT SYSTEM
                     st.markdown("---")
                     if st.button("🖨️ Print Official Manifesto Document", use_container_width=True):
                         st.markdown(f"""
@@ -682,7 +736,7 @@ else:
                                 <table style="width:100%; font-size:13px;">
                                     <tr>
                                         <td><b>Physical Delivery Status:</b> {payload_buffer.get('status', target_profile['status'])}</td>
-                                        <td><b>Extra Tips/Charges Flagged:</b> {payload_buffer.get('extra_money_charged', 'No Flagged Logs')}</td>
+                                        <td><b>Extra Tips/Charges Flagged:</b> {payload_buffer.get('extra_money_charged', target_profile.get('extra_money_charged', 'No'))}</td>
                                     </tr>
                                     <tr>
                                         <td colspan="2" style="padding-top:8px;"><b>Verified Officer Stamp:</b> {st.session_state.full_name} (System Operator)</td>
