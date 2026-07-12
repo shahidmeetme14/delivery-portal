@@ -72,12 +72,12 @@ st.markdown("""
 
 TIMEOUT_LIMIT = 45 * 60  
 
-# ✨ Safe Initialization Layer to completely kill AttributeError
+# Safely initialize variables to completely stop the AttributeError
 if "logged_in" not in st.session_state: st.session_state.logged_in = False
 if "last_activity" not in st.session_state: st.session_state.last_activity = time.time()
 if "current_navigation_tab" not in st.session_state: st.session_state.current_navigation_tab = None
-if "full_name" not in st.session_state: st.session_state.full_name = "Guest User"
-if "role" not in st.session_state: st.session_state.role = "guest"
+if "full_name" not in st.session_state: st.session_state.full_name = ""
+if "role" not in st.session_state: st.session_state.role = ""
 
 @st.cache_resource
 def init_connection():
@@ -91,10 +91,6 @@ except Exception as e:
 
 # 🌐 REAL WEB SCRAPER FOR PAKISTAN POST EMTTS
 def fetch_live_emtts_status(article_id):
-    """
-    Connects directly to the Pakistan Post EMTTS tracker system 
-    and extracts the current shipment log data.
-    """
     if not article_id or article_id.strip() == "":
         return "⚠️ Invalid Article ID", "No data mapped."
     
@@ -106,7 +102,6 @@ def fetch_live_emtts_status(article_id):
     
     try:
         response = requests.post(tracking_url, data=payload, headers=headers, timeout=15)
-        
         if response.status_code != 200:
             return "❌ Server Unreachable", f"Pak Post server returned HTTP Status {response.status_code}."
         
@@ -160,8 +155,6 @@ if not st.session_state.logged_in and "session_token" in st.query_params:
 if st.session_state.logged_in:
     if time.time() - st.session_state.last_activity > TIMEOUT_LIMIT:
         st.session_state.logged_in = False
-        st.session_state.full_name = "Guest User"
-        st.session_state.role = "guest"
         st.query_params.clear()
         st.warning("🔄 Session expired due to inactivity.")
     else:
@@ -170,7 +163,7 @@ if st.session_state.logged_in:
 if st.session_state.logged_in and st.session_state.current_navigation_tab is None:
     st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine" if st.session_state.role == "admin" else "📞 Outbound Communications Hub"
 
-# Sidebar Workspace Layout (Protected with Conditional State View)
+# Sidebar Workspace Layout (Wrapped in Conditional check to stop crashes)
 with st.sidebar:
     if st.session_state.logged_in:
         st.markdown(f"👤 **Logged in as:**<br><b style='font-size:15px; color:#1e3a8a;'>{st.session_state.full_name}</b>", unsafe_allow_html=True)
@@ -178,13 +171,10 @@ with st.sidebar:
         st.markdown("---")
         if st.button("Logout 🚪", use_container_width=True):
             st.session_state.logged_in = False
-            st.session_state.full_name = "Guest User"
-            st.session_state.role = "guest"
             st.query_params.clear()
             st.rerun()
     else:
-        st.markdown("🔒 **Portal Session Locked**", unsafe_allow_html=True)
-        st.info("Please access this application via your verified authorization secure terminal link.")
+        st.markdown("🔒 **Session Locked**<br>Please use your custom secure link.", unsafe_allow_html=True)
 
 st.markdown("<div class='brand-title'>SHC & Pak Post | Free Home Delivery of Medicine</div>", unsafe_allow_html=True)
 st.markdown("<div class='brand-subtitle'>Logistics Tracking & Quality Feedback System</div>", unsafe_allow_html=True)
@@ -214,8 +204,7 @@ if st.session_state.role == "admin":
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 else:
-    if st.session_state.logged_in:
-        st.session_state.current_navigation_tab = "📞 Outbound Communications Hub"
+    st.session_state.current_navigation_tab = "📞 Outbound Communications Hub"
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -278,7 +267,6 @@ else:
                         response = supabase.table("patient_deliveries").upsert(staging_area, on_conflict="article_id").execute()
                         st.balloons()
                         st.success(f"🎉 **Operation Complete!** Successfully processed and synchronized **{len(staging_area)}** unique records into the cloud server database architectural layer.")
-                        st.toast("Presented by SHAHID", icon="ℹ️")
                     except Exception as ex:
                         st.error(f"❌ **Batch synchronization exception:** {ex}")
                         st.info("💡 **Supabase Setup Tip:** If you see an RLS policy error, please disable Row-Level Security (RLS) for the 'patient_deliveries' table in your Supabase Dashboard or use the 'service_role' secret key.")
@@ -325,7 +313,6 @@ else:
                 st.write(f"📦 **Consignment ID (Article):** `{target_profile['article_id']}`")
                 st.write(f"🏠 **Address:** {target_profile['address']}")
                 
-                # --- LIVE SCRAPER MODULE ACTIVE DISPLAY ---
                 st.markdown("#### 🌐 Pakistan Post Live EMTTS Tracking")
                 if st.button("🔍 Fetch Live Status from PakPost Server", use_container_width=True):
                     with st.spinner(f"Connecting to official PakPost network to trace {target_profile['article_id']}..."):
