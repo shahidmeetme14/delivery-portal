@@ -1,4 +1,4 @@
 supabase
 pandas
-openpyxl
 requests
+beautifulsoup4
