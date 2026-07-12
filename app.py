@@ -72,7 +72,7 @@ st.markdown("""
 
 TIMEOUT_LIMIT = 45 * 60  
 
-# Safely initialize variables to completely stop the AttributeError
+# 🔐 Safe Core Initialization State
 if "logged_in" not in st.session_state: st.session_state.logged_in = False
 if "last_activity" not in st.session_state: st.session_state.last_activity = time.time()
 if "current_navigation_tab" not in st.session_state: st.session_state.current_navigation_tab = None
@@ -139,7 +139,7 @@ def fetch_live_emtts_status(article_id):
     except Exception as e:
         return "⚠️ Integration Link Broken", f"Failed to crawl tracking engine data: {str(e)}"
 
-# Cookie Session Hydration
+# Cookie Session Hydration (Token Link Reader)
 if not st.session_state.logged_in and "session_token" in st.query_params:
     try:
         preserved_user = st.query_params["session_token"]
@@ -163,7 +163,7 @@ if st.session_state.logged_in:
 if st.session_state.logged_in and st.session_state.current_navigation_tab is None:
     st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine" if st.session_state.role == "admin" else "📞 Outbound Communications Hub"
 
-# Sidebar Workspace Layout (Wrapped in Conditional check to stop crashes)
+# Sidebar Workspace Layout
 with st.sidebar:
     if st.session_state.logged_in:
         st.markdown(f"👤 **Logged in as:**<br><b style='font-size:15px; color:#1e3a8a;'>{st.session_state.full_name}</b>", unsafe_allow_html=True)
@@ -174,7 +174,7 @@ with st.sidebar:
             st.query_params.clear()
             st.rerun()
     else:
-        st.markdown("🔒 **Session Locked**<br>Please use your custom secure link.", unsafe_allow_html=True)
+        st.markdown("🔒 **Session Status: Locked**", unsafe_allow_html=True)
 
 st.markdown("<div class='brand-title'>SHC & Pak Post | Free Home Delivery of Medicine</div>", unsafe_allow_html=True)
 st.markdown("<div class='brand-subtitle'>Logistics Tracking & Quality Feedback System</div>", unsafe_allow_html=True)
@@ -204,12 +204,42 @@ if st.session_state.role == "admin":
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 else:
-    st.session_state.current_navigation_tab = "📞 Outbound Communications Hub"
+    if st.session_state.logged_in:
+        st.session_state.current_navigation_tab = "📞 Outbound Communications Hub"
 
 st.markdown("<br>", unsafe_allow_html=True)
 
+# ----------------------------------------------------
+# 🔐 AUTHENTICATION GATE & BACKUP LOGIN PANEL
+# ----------------------------------------------------
 if not st.session_state.logged_in:
-    st.warning("⚠️ Access Denied. Please use your custom authentication system link to log in.")
+    st.markdown("### 🔒 Secure Portal Authentication")
+    
+    with st.form("portal_fallback_login"):
+        st.info("💡 Link session dropped or bare URL detected. Please enter your database credentials to unlock the terminal.")
+        input_user = st.text_input("Username / Operator ID")
+        input_pass = st.text_input("Security Password", type="password")
+        btn_login = st.form_submit_button("Verify & Unlock Portal", use_container_width=True)
+        
+        if btn_login:
+            if input_user and input_pass:
+                try:
+                    ud = supabase.table("app_users").select("*").eq("username", input_user.strip()).eq("password", input_pass.strip()).execute().data
+                    if ud:
+                        st.session_state.logged_in = True
+                        st.session_state.username = ud[0]["username"]
+                        st.session_state.full_name = ud[0]["full_name"]
+                        st.session_state.role = ud[0]["role"]
+                        st.session_state.last_activity = time.time()
+                        st.success("✅ Access Granted! Synchronizing workspace context...")
+                        time.sleep(0.6)
+                        st.rerun()
+                    else:
+                        st.error("❌ Invalid Username or Password. Authentication rejected.")
+                except Exception as ex:
+                    st.error(f"Database Node Error: {ex}")
+            else:
+                st.warning("Please fill out both fields to execute secure verification.")
 else:
     # ----------------------------------------------------
     # ADMIN INGESTION HUB
