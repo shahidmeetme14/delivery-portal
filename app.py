@@ -115,6 +115,22 @@ st.markdown(f"""
         transform: translateY(2px) !important;
     }}
     
+    /* 📥 3D DROP-DOWNS & DATE SELECTORS UI ENGINE */
+    div[data-testid="stSelectbox"] > div[data-baseweb="select"], 
+    div[data-testid="stDateInput"] > div {{
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        border-bottom: 4px solid #006633 !important;
+        border-radius: 8px !important;
+        box-shadow: 0px 5px 12px rgba(0, 77, 38, 0.06) !important;
+        transition: all 0.2s ease-in-out;
+    }}
+    div[data-testid="stSelectbox"] > div[data-baseweb="select"]:hover, 
+    div[data-testid="stDateInput"] > div:hover {{
+        transform: translateY(-1px);
+        box-shadow: 0px 7px 15px rgba(0, 102, 51, 0.12) !important;
+    }}
+    
     /* 📱 Premium 3D Clickable Phone Display Button */
     .big-phone-display {{ 
         font-family: 'Segoe UI', -apple-system, sans-serif; 
@@ -130,6 +146,23 @@ st.markdown(f"""
         box-shadow: 0px 6px 14px rgba(5, 150, 105, 0.3);
         text-shadow: 1px 2px 3px rgba(0,0,0,0.25);
         letter-spacing: 2px;
+        margin: 10px 0;
+    }}
+    
+    /* 🚨 High Visibility Fallback Red 3D Button for Missing Contacts */
+    .no-phone-display {{
+        font-family: 'Segoe UI', -apple-system, sans-serif; 
+        font-size: 23px !important; 
+        font-weight: 700 !important; 
+        color: #ffffff !important; 
+        background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%) !important; 
+        padding: 14px; 
+        border-radius: 8px; 
+        text-align: center; 
+        border: 1px solid #b91c1c; 
+        border-bottom: 5px solid #991b1b;
+        box-shadow: 0px 6px 14px rgba(220, 38, 38, 0.3);
+        text-shadow: 1px 2px 3px rgba(0,0,0,0.25);
         margin: 10px 0;
     }}
     
@@ -433,6 +466,8 @@ else:
     # PAGE 3: OUTBOUND HUB
     elif st.session_state.current_navigation_tab == "📞 Outbound Communications Hub":
         st.markdown("### 📞 Outbound Communications Desk")
+        
+        # 📥 3D TYPE SELECTORS MATRIX (Date, Office, Patient Selector)
         query_date = st.date_input("Filter Manifest Records by Booking Date:", datetime.date.today())
         
         try: raw_date_recs = supabase.table("patient_deliveries").select("*").eq("booking_date", str(query_date)).execute().data
@@ -510,7 +545,18 @@ else:
                                     st.metric(label="Latest Status", value=final_status_str)
 
                     st.markdown("#### 🎴 DIAL THIS PHONE NUMBER FROM LANDLINE:")
-                    st.markdown(f"<div class='big-phone-display'>{target_profile['phone_number']}</div>", unsafe_allow_html=True)
+                    
+                    # 📱 SMART PHONE NUMBER FORMATTING ENGINE & FALLBACK ENGINE
+                    raw_phone = str(target_profile.get('phone_number', '')).strip()
+                    
+                    if not raw_phone or raw_phone.lower() in ['none', 'nan', 'null', ''] or len(raw_phone) < 5:
+                        # Fallback: Agar number na ho ya invalid ho
+                        st.markdown("<div class='no-phone-display'>⚠️ No Contact Number Available</div>", unsafe_allow_html=True)
+                    else:
+                        # Formatting: Shuru me khud 0 lagana agar mojud na ho
+                        if not raw_phone.startswith('0') and raw_phone.isdigit():
+                            raw_phone = '0' + raw_phone
+                        st.markdown(f"<div class='big-phone-display'>{raw_phone}</div>", unsafe_allow_html=True)
                 
                 with r_panel:
                     st.markdown("#### 📝 Live Quality Verification & Audit Questionnaire")
