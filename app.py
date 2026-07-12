@@ -3,8 +3,8 @@ from supabase import create_client, Client
 import pandas as pd
 import datetime
 
-# Page Configuration
-st.set_page_config(page_title="Presented by SHAHID", layout="wide", initial_sidebar_state="expanded")
+# Page Configuration with Official Title
+st.set_page_config(page_title="SHC & Pak Post - Free Home Delivery of Medicine", layout="wide", initial_sidebar_state="expanded")
 
 # Custom CSS for Large Text (For Landline dialing convenience)
 st.markdown("""
@@ -12,10 +12,10 @@ st.markdown("""
     .big-phone { font-size: 32px !important; font-weight: bold !important; color: #d32f2f !important; background-color: #ffebee; padding: 10px; border-radius: 5px; text-align: center; border: 2px dashed #d32f2f; }
     .patient-header { font-size: 24px !important; font-weight: bold !important; color: #1e3a8a; }
     </style>
-""", unsafe_index=True)
+""", unsafe_allow_html=True)
 
-st.title("Presented by SHAHID")
-st.subheader("🏥 Patient Delivery Feedback & Tracking Portal")
+st.title("🏛️ SHC & Pak Post")
+st.subheader("Free Home Delivery of Medicine - Tracking & Feedback Portal")
 
 # Connect to Supabase Locker
 @st.cache_resource
@@ -41,7 +41,6 @@ with tab1:
     uploaded_file = st.file_uploader("Apni Excel (.xlsx) ya CSV File Drop Karein", type=["xlsx", "csv"])
     
     if uploaded_file is not None:
-        # Read the sheet safely
         try:
             if uploaded_file.name.endswith('.xlsx'):
                 df = pd.read_excel(uploaded_file)
@@ -57,7 +56,6 @@ with tab1:
         st.subheader("🛠️ Smart Column Mapping & Duplicate Clean Room")
         st.write("Apni sheet ke mutabiq sahi columns select karein:")
         
-        # Dynamic drop downs so user can map fields easily
         col1, col2, col3 = st.columns(3)
         with col1:
             c_article = st.selectbox("1. Article / Tracking ID Column:", df.columns)
@@ -79,13 +77,11 @@ with tab1:
             
             st.warning(f"Total Rows: {initial_rows} | Unique Rows: {final_rows} | Duplicates Deleted: {duplicates_removed}")
             
-            # Prepare rows for database migration
             progress_bar = st.progress(0)
             status_text = st.empty()
             
             records_to_insert = []
             for index, row in df_cleaned.iterrows():
-                # Format date cleanly
                 raw_date = row[c_date]
                 formatted_date = str(datetime.date.today())
                 try:
@@ -102,7 +98,6 @@ with tab1:
                     "status": "Pending"
                 })
             
-            # Batch Uploading to Supabase (Chunks of 200 rows for high speed and stability)
             chunk_size = 200
             total_records = len(records_to_insert)
             success_count = 0
@@ -110,7 +105,6 @@ with tab1:
             for i in range(0, total_records, chunk_size):
                 chunk = records_to_insert[i:i + chunk_size]
                 try:
-                    # using upsert to prevent unique key constraint crashes if same file is re-uploaded
                     supabase.table("patient_deliveries").upsert(chunk, on_conflict="article_id").execute()
                     success_count += len(chunk)
                     progress = min(success_count / total_records, 1.0)
@@ -119,7 +113,7 @@ with tab1:
                 except Exception as upload_error:
                     st.error(f"Chunk upload error: {upload_error}")
             
-            st.success(f"🎉 Mubarak Ho Shahid Bhai! {success_count} unique records database me save ho chuke hain.")
+            st.success(f"🎉 System Updated! {success_count} unique records database me save ho chuke hain.")
 
 # ----------------------------------------------------
 # 2. STAFF WORKSPACE: CALLING & FEEDBACK FORM
@@ -127,10 +121,8 @@ with tab1:
 with tab2:
     st.header("📞 Landline Dialing & Feedback Hub")
     
-    # Select Date to call
     target_date = st.date_input("Kis Date Ki Booking Ka Data Nikalna Hai?", datetime.date.today())
     
-    # Fetch data from Supabase for specific date
     try:
         response = supabase.table("patient_deliveries").select("*").eq("booking_date", str(target_date)).execute()
         records = response.data
@@ -143,15 +135,12 @@ with tab2:
     else:
         st.success(f"Is date ke total **{len(records)}** patients mile hain.")
         
-        # Create a clean patient selector dropdown
         patient_options = {f"{r['patient_name']} (Article: {r['article_id']}) - [{r['status']}]": r for r in records}
         selected_patient_str = st.selectbox("Call Karne Ke Liye Patient Select Karein:", list(patient_options.keys()))
         
         patient_data = patient_options[selected_patient_str]
-        
         st.markdown("---")
         
-        # Split Layout: Left side Details & EMTTS, Right side Call Feedback Form
         left_col, right_col = st.columns([1, 1])
         
         with left_col:
@@ -164,29 +153,20 @@ with tab2:
             st.markdown(f"<div class='big-phone'>{patient_data['phone_number']}</div>", unsafe_allow_html=True)
             
             st.markdown("---")
-            # EMTTS Live Tracker Fetch Mock Implementation
             st.subheader("🌐 EMTTS Live Tracking Integration")
             if st.button("Fetch Live Status (EMTTS)"):
                 with st.spinner("Connecting to EMTTS Tracking Systems..."):
-                    # This simulates hitting the postal tracking server dynamically
-                    # We can replace this URL with the exact automated API endpoint if needed later
                     simulated_status = "DELIVERED" if "1" in str(patient_data['id']) else "IN-TRANSIT / OUT FOR DELIVERY"
                     st.info(f"EMTTS Response System: **{simulated_status}**")
-                    st.caption("Live status successfully parsed from postal trace database.")
         
         with right_col:
             st.subheader("📝 Live Call Feedback Questionnaire")
             
-            # Question 1: Medicine Delivered?
             delivered = st.radio("1. Kya patient ko medicine deliver ho gayi hai?", ["Select Option", "Yes", "No"], index=0)
-            
-            # Feedback sub-logic flows dynamically based on selections
             feedback_payload = {}
             
             if delivered == "Yes":
                 feedback_payload["status"] = "Delivered"
-                
-                # Sub fields for YES
                 del_date = st.date_input("Medicine kis din mili? (Delivery Date)", datetime.date.today())
                 feedback_payload["delivery_date"] = str(del_date)
                 
@@ -208,8 +188,6 @@ with tab2:
                     
             elif delivered == "No":
                 feedback_payload["status"] = "Issue / Complaint"
-                
-                # Sub fields for NO
                 issue = st.selectbox("Wajah/Issue select karein:", [
                     "Wrong Delivery Status on EMTTS (System delivered show kar raha par mili nahi)",
                     "Address Not Found / Locked House (Ghr band tha ya address galat tha)",
@@ -224,9 +202,8 @@ with tab2:
                     st.error("Meharbani kar ke pehle 'Yes' ya 'No' chunien!")
                 else:
                     try:
-                        # Update record back to Supabase locker instantly
                         supabase.table("patient_deliveries").update(feedback_payload).eq("id", patient_data["id"]).execute()
-                        st.success("🎉 Data successfully saved backend pe! List me state update ho gayi hai.")
+                        st.success("🎉 Data successfully saved backend pe!")
                         st.balloons()
                     except Exception as save_err:
                         st.error(f"Error saving feedback: {save_err}")
