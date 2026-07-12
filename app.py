@@ -15,9 +15,36 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Initialize Dynamic Login State Check Before CSS Injection
+# 🔄 URL HYDRATION ENGINE (Executed First to Prevent Refresh Layout Memory Glitch)
+SESSION_TIMEOUT = 30 * 60  # 🕒 Strict 30 Minutes Inactivity Boundary
+
 if "logged_in" not in st.session_state: 
     st.session_state.logged_in = False
+
+if not st.session_state.logged_in and "usr" in st.query_params:
+    try:
+        param_time = float(st.query_params.get("t", 0))
+        if time.time() - param_time < SESSION_TIMEOUT:
+            st.session_state.logged_in = True
+            st.session_state.username = st.query_params["usr"]
+            st.session_state.full_name = st.query_params["nm"]
+            st.session_state.role = st.query_params["rl"]
+            st.session_state.last_activity = param_time
+        else:
+            st.query_params.clear()
+    except:
+        pass
+
+# Initialize Global App States
+if "username" not in st.session_state: st.session_state.username = ""
+if "full_name" not in st.session_state: st.session_state.full_name = ""
+if "role" not in st.session_state: st.session_state.role = ""
+if "last_activity" not in st.session_state: st.session_state.last_activity = time.time()
+if "current_navigation_tab" not in st.session_state: st.session_state.current_navigation_tab = None
+if "selected_profile_index" not in st.session_state: st.session_state.selected_profile_index = 0
+if "show_recovery_prompt" not in st.session_state: st.session_state.show_recovery_prompt = False
+if "cached_recovery_data" not in st.session_state: st.session_state.cached_recovery_data = {}
+if "duplicate_log_csv" not in st.session_state: st.session_state.duplicate_log_csv = None
 
 # 🎨 Enterprise PyQt6 Style Sheet & Layout Engine
 sidebar_css_rule = ""
@@ -29,9 +56,17 @@ if not st.session_state.logged_in:
     .st-emotion-cache-1jicfl2 { padding-left: 1rem !important; padding-right: 1rem !important; }
     """
 else:
+    # Force expand sidebar and lock down structural shifting
     sidebar_css_rule = """
     button[data-testid="stSidebarCollapseButton"] { display: none !important; visibility: hidden !important; }
     [data-testid="collapsedControl"] { display: none !important; visibility: hidden !important; }
+    section[data-testid="stSidebar"] {
+        display: block !important;
+        visibility: visible !important;
+        transform: translateX(0%) !important;
+        min-width: 280px !important;
+        max-width: 280px !important;
+    }
     """
 
 st.markdown(f"""
@@ -98,18 +133,6 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-SESSION_TIMEOUT = 30 * 60  # 🕒 Strict 30 Minutes Inactivity Boundary
-
-# Global Session Keys Initializer
-if "username" not in st.session_state: st.session_state.username = ""
-if "full_name" not in st.session_state: st.session_state.full_name = ""
-if "role" not in st.session_state: st.session_state.role = ""
-if "last_activity" not in st.session_state: st.session_state.last_activity = time.time()
-if "current_navigation_tab" not in st.session_state: st.session_state.current_navigation_tab = None
-if "selected_profile_index" not in st.session_state: st.session_state.selected_profile_index = 0
-if "show_recovery_prompt" not in st.session_state: st.session_state.show_recovery_prompt = False
-if "cached_recovery_data" not in st.session_state: st.session_state.cached_recovery_data = {}
-
 @st.cache_resource
 def init_connection():
     return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
@@ -138,22 +161,6 @@ def fetch_operator_state(username):
         if res: return res[0]
     except: return None
     return None
-
-# Hydrate parameters from URL if matching signature exists (Survives Refresh)
-if not st.session_state.logged_in and "usr" in st.query_params:
-    try:
-        param_time = float(st.query_params.get("t", 0))
-        if time.time() - param_time < SESSION_TIMEOUT:
-            st.session_state.logged_in = True
-            st.session_state.username = st.query_params["usr"]
-            st.session_state.full_name = st.query_params["nm"]
-            st.session_state.role = st.query_params["rl"]
-            st.session_state.last_activity = param_time
-            st.rerun()
-        else:
-            st.query_params.clear()
-    except:
-        pass
 
 # ⏱️ Smart Inactivity Verification Control
 if st.session_state.logged_in:
@@ -361,10 +368,20 @@ else:
             if st.button("🚀 Push Verified Records to Cloud Database", use_container_width=True):
                 with st.spinner("Processing Manifest Sequence..."):
                     # Step A: User anchored deduplication
-                    cleaned_records = df.drop_duplicates(subset=[dup_target], keep='first')
+                    df_anchored = df.drop_duplicates(subset=[dup_target], keep='first')
                     
-                    # Step B: Strict Unique Constraint Safeguard for Supabase Single-Batch operations
-                    cleaned_records = cleaned_records.drop_duplicates(subset=[c_article], keep='first')
+                    # Step B: Identify and extract conflicting records based on duplicate Article IDs
+                    duplicate_mask = df_anchored.duplicated(subset=[c_article], keep='first')
+                    df_duplicates = df_anchored[duplicate_mask]
+                    
+                    # Store duplicates log in session memory if any are found
+                    if not df_duplicates.empty:
+                        st.session_state.duplicate_log_csv = df_duplicates.to_csv(index=False).encode('utf-8')
+                    else:
+                        st.session_state.duplicate_log_csv = None
+                    
+                    # Final clean records for database upsert
+                    cleaned_records = df_anchored[~duplicate_mask]
                     
                     staging_area = []
                     for _, row in cleaned_records.iterrows():
@@ -386,8 +403,23 @@ else:
                         supabase.table("patient_deliveries").upsert(staging_area, on_conflict="article_id").execute()
                         st.balloons()
                         st.success(f"🎉 Synchronized {len(staging_area)} clean logs across cloud nodes.")
+                        
+                        if st.session_state.duplicate_log_csv is not None:
+                            st.warning(f"⚠️ {len(df_duplicates)} duplicate Article IDs were filtered out to avoid database crash.")
                     except Exception as ex:
                         st.error(f"❌ Batch sync exception: {ex}")
+
+        # Persistent download link if duplicate records exist in memory
+        if st.session_state.duplicate_log_csv is not None:
+            st.markdown("---")
+            st.markdown("#### 📥 Download Dropped Duplicates Log File")
+            st.download_button(
+                label="📥 Download Skipped Duplicates (CSV)",
+                data=st.session_state.duplicate_log_csv,
+                file_name=f"skipped_duplicates_{datetime.date.today()}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
 
     # PAGE 2: OPERATOR ACCOUNT MANAGEMENT
     elif st.session_state.current_navigation_tab == "👥 Operator Matrix & Security Audit Logs" and st.session_state.role == "admin":
