@@ -4,24 +4,41 @@ import pandas as pd
 import datetime
 import io
 
-# Page Configuration
+# Premium UI & Page Configuration
 st.set_page_config(
-    page_title="SHC & Pak Post - Free Home Delivery of Medicine", 
+    page_title="SHC & Pak Post | Delivery Portal", 
     page_icon="📮", 
     layout="wide", 
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
+# Modern Custom CSS Styling Injection
 st.markdown("""
     <style>
-    .big-phone { font-size: 32px !important; font-weight: bold !important; color: #d32f2f !important; background-color: #ffebee; padding: 10px; border-radius: 5px; text-align: center; border: 2px dashed #d32f2f; }
-    .patient-header { font-size: 24px !important; font-weight: bold !important; color: #1e3a8a; }
-    .login-box { max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ccc; border-radius: 10px; background-color: #f9f9f9; }
+    /* Main Layout Aesthetics */
+    .stApp { background-color: #f8fafc; }
+    
+    /* Modern Dashboard Header */
+    .main-title { color: #1e3a8a; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 2.5rem; letter-spacing: -0.05rem; margin-bottom: 5px; }
+    .sub-title { color: #64748b; font-size: 1.1rem; margin-bottom: 30px; font-weight: 400; }
+    
+    /* Elegant Login Card Styling */
+    .login-container { max-width: 450px; margin: 80px auto; padding: 40px; background: #ffffff; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; }
+    .login-header { text-align: center; font-size: 1.8rem; font-weight: 700; color: #0f172a; margin-bottom: 25px; }
+    
+    /* Phone Number Display Box */
+    .big-phone-display { font-size: 34px !important; font-weight: 800 !important; color: #dc2626 !important; background-color: #fef2f2; padding: 15px; border-radius: 12px; text-align: center; border: 2px dashed #f87171; letter-spacing: 2px; box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06); }
+    .patient-card-header { font-size: 26px !important; font-weight: 700 !important; color: #1e3a8a; border-left: 5px solid #2563eb; padding-left: 10px; margin-bottom: 15px; }
+    
+    /* Customizing Streamlit Tabs */
+    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
+    .stTabs [data-baseweb="tab"] { background-color: #ffffff; border: 1px solid #e2e8f0; padding: 10px 20px; border-radius: 8px; font-weight: 600; color: #475569; transition: all 0.3s ease; }
+    .stTabs [data-baseweb="tab"]:hover { color: #2563eb; border-color: #bfdbfe; background-color: #eff6ff; }
+    .stTabs [data-baseweb="tab"][aria-selected="true"] { background-color: #2563eb !important; color: white !important; border-color: #2563eb !important; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
     </style>
 """, unsafe_allow_html=True)
 
-# Connect to Supabase
+# Establish Database Connection
 @st.cache_resource
 def init_connection():
     url = st.secrets["SUPABASE_URL"]
@@ -31,26 +48,24 @@ def init_connection():
 try:
     supabase: Client = init_connection()
 except Exception as e:
-    st.error("Database connection failed. Check your Secrets.")
+    st.error(f"Database connection failed: {e}")
     st.stop()
 
-# Master System: Auto-seed primary admin with Full Name directly from code
+# Auto-seed/Update Principal Admin Profile dynamically
 def auto_seed_admin():
     try:
-        res = supabase.table("app_users").select("*").eq("username", "shahid").execute()
-        if not res.data:
-            supabase.table("app_users").insert({
-                "username": "shahid",
-                "password": "shahid@2341",
-                "full_name": "Shahid Hussain",
-                "role": "admin"
-            }).execute()
+        supabase.table("app_users").upsert({
+            "username": "shahid",
+            "password": "shahid@2341",
+            "full_name": "Shahid Hussain",
+            "role": "admin"
+        }, on_conflict="username").execute()
     except:
         pass
 
 auto_seed_admin()
 
-# --- SECURITY & SESSION STATES INITIALIZATION ---
+# Initialize Session Infrastructure
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "username" not in st.session_state:
@@ -60,318 +75,322 @@ if "full_name" not in st.session_state:
 if "role" not in st.session_state:
     st.session_state.role = ""
 
-# --- LOGIN SCREEN WORKFLOW ---
+# --- SECURE GATEWAY WORKFLOW ---
 if not st.session_state.logged_in:
-    st.title("📮 SHC & Pak Post")
-    st.subheader("Free Home Delivery of Medicine - Portal Gateway")
+    st.markdown("<div class='login-container'>", unsafe_allow_html=True)
+    st.markdown("<div class='login-header'>📮 Portal Authentication</div>", unsafe_allow_html=True)
     
-    st.markdown("<div class='login-box'>", unsafe_allow_html=True)
-    st.write("### 🔐 Secure System Login")
-    user_input = st.text_input("Username:")
-    pass_input = st.text_input("Password:", type="password")
+    username_input = st.text_input("Username")
+    password_input = st.text_input("Password", type="password")
     
-    if st.button("Access Portal 🚀"):
-        if user_input and pass_input:
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("Authenticate Session 🚀", use_container_width=True):
+        if username_input and password_input:
             try:
-                user_res = supabase.table("app_users").select("*").eq("username", user_input.strip()).execute()
+                user_query = supabase.table("app_users").select("*").eq("username", username_input.strip()).execute()
                 
-                if user_res.data and user_res.data[0]["password"] == pass_input.strip():
-                    # Set Session Credentials (Storing Full Name dynamically)
+                if user_query.data and user_query.data[0]["password"] == password_input.strip():
                     st.session_state.logged_in = True
-                    st.session_state.username = user_res.data[0]["username"]
-                    st.session_state.full_name = user_res.data[0]["full_name"]
-                    st.session_state.role = user_res.data[0]["role"]
+                    st.session_state.username = user_query.data[0]["username"]
+                    st.session_state.full_name = user_query.data[0]["full_name"]
+                    st.session_state.role = user_query.data[0]["role"]
                     
-                    # Track Client IP and Device Environment
+                    # Capture Client Audit Data
                     try:
                         headers = st.context.headers
-                        ip_address = headers.get("X-Forwarded-For", "127.0.0.1").split(",")[0]
-                        device_info = headers.get("User-Agent", "Unknown Hardware/Browser")
+                        ip_addr = headers.get("X-Forwarded-For", "127.0.0.1").split(",")[0]
+                        dev_info = headers.get("User-Agent", "Unknown Hardware/Browser")
                     except:
-                        ip_address = "Local/Proxy IP"
-                        device_info = "Secure Core Browser"
+                        ip_addr = "Local Gateway"
+                        dev_info = "Secure API Browser Agent"
                     
-                    # Log login event permanently
+                    # Log Event to Database
                     supabase.table("user_logins").insert({
                         "username": st.session_state.username,
-                        "ip_address": ip_address,
-                        "device_info": device_info
+                        "ip_address": ip_addr,
+                        "device_info": dev_info
                     }).execute()
                     
-                    st.success(f"Khushamdeed {st.session_state.full_name}! App open ho rahi hai...")
+                    st.success("Session verified successfully!")
                     st.rerun()
                 else:
-                    st.error("Ghalat Username ya Password! Dubara koshish karein.")
+                    st.error("Invalid Username or Password! Please verify credentials.")
             except Exception as auth_err:
-                st.error(f"Authentication Server Connection Error: {auth_err}")
+                st.error(f"Authentication Server Offline: {auth_err}")
         else:
-            st.warning("Meharbani kar ke dono khane pur karein.")
+            st.warning("Please complete all fields.")
     st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
 
-# --- MAIN APP REGION (RUNS ONLY AFTER VERIFIED LOGIN) ---
+# --- POST-AUTHENTICATION APPLICATION SPACE ---
 with st.sidebar:
-    st.markdown(f"👤 Logged in as: **{st.session_state.full_name}**")
-    st.write(f"🎖️ **Role:** `{st.session_state.role.upper()}`")
+    st.markdown(f"👤 Logged in as:<br><b style='font-size:16px; color:#1e3a8a;'>{st.session_state.full_name}</b>", unsafe_allow_html=True)
+    st.markdown(f"🎖️ Privileges: `{st.session_state.role.upper()}`")
     st.markdown("---")
     
-    # Self Password Update Module
-    st.write("🔒 **Mera Password Badlein**")
-    new_self_pass = st.text_input("Naya Password Likhein:", type="password", key="self_p")
-    if st.button("Update My Password"):
-        if new_self_pass:
+    # Self Account Maintenance Module
+    st.markdown("⚙️ **Change Profile Password**")
+    new_secret = st.text_input("New Password:", type="password", key="self_p_chg")
+    if st.button("Apply New Password", use_container_width=True):
+        if new_secret:
             try:
-                supabase.table("app_users").update({"password": new_self_pass.strip()}).eq("username", st.session_state.username).execute()
-                st.success("Aap ka password tabdeel ho gaya hai!")
-            except Exception as p_err:
-                st.error(f"Error: {p_err}")
+                supabase.table("app_users").update({"password": new_secret.strip()}).eq("username", st.session_state.username).execute()
+                st.success("Password updated successfully!")
+            except Exception as e:
+                st.error(f"Update rejected: {e}")
                 
-    st.markdown("---")
-    if st.button("Sign Out 🚪"):
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    if st.button("Terminate Session 🚪", use_container_width=True):
         st.session_state.logged_in = False
         st.session_state.username = ""
         st.session_state.full_name = ""
         st.session_state.role = ""
         st.rerun()
 
-st.title("📮 SHC & Pak Post")
-st.subheader("Free Home Delivery of Medicine - Tracking & Feedback Portal")
+# Main Workspace Headers
+st.markdown("<div class='main-title'>📮 SHC & Pak Post Workspace</div>", unsafe_allow_html=True)
+st.markdown("<div class='sub-title'>Free Home Delivery of Medicine — Logistics Tracking & Quality Feedback System</div>", unsafe_allow_html=True)
 
-# Setup App View Permissions based on User Classification Roles
+# Role Based Tab Architecture Setup
 if st.session_state.role == "admin":
-    main_tabs = st.tabs(["📊 Admin Panel (Upload & Backup)", "👥 User Manager & Security Logs", "📞 Staff Workspace (Landline Calling)"])
+    tabs = st.tabs(["📊 Administrative Ingestion Engine", "👥 Operator Matrix & Security Audit Logs", "📞 Outbound Communications Hub"])
 else:
-    main_tabs = st.tabs(["📞 Staff Workspace (Landline Calling)"])
+    tabs = st.tabs(["📞 Outbound Communications Hub"])
 
 # ----------------------------------------------------
-# TAB: ADMIN PANEL (ONLY VISIBLE TO ADMIN)
+# MODULE 1: ADMINISTRATIVE INGESTION ENGINE (ADMIN ONLY)
 # ----------------------------------------------------
 if st.session_state.role == "admin":
-    with main_tabs[0]:
-        st.header("📥 Bulk Data Ingestion Engine")
-        uploaded_file = st.file_uploader("Apni Excel (.xlsx) ya CSV File Drop Karein", type=["xlsx", "csv"])
+    with tabs[0]:
+        st.markdown("### 📥 Bulk Logistics Ingestion Engine")
+        source_file = st.file_uploader("Upload Parcel Manifest Data Sheet (.xlsx or .csv)", type=["xlsx", "csv"])
         
-        if uploaded_file is not None:
+        if source_file is not None:
             try:
-                if uploaded_file.name.endswith('.xlsx'):
-                    df = pd.read_excel(uploaded_file)
-                else:
-                    df = pd.read_csv(uploaded_file)
-                st.success("File read ho gayi hai!")
-                st.dataframe(df.head(3))
-            except Exception as e:
-                st.error(f"File Error: {e}")
+                df = pd.read_excel(source_file) if source_file.name.endswith('.xlsx') else pd.read_csv(source_file)
+                st.success("Manifest source data read successfully!")
+                st.dataframe(df.head(3), use_container_width=True)
+            except Exception as file_err:
+                st.error(f"Failed to read manifest file: {file_err}")
                 st.stop()
                 
             st.markdown("---")
-            st.subheader("🛠️ Smart Column Mapping & Duplicate Clean Room")
+            st.markdown("### 🛠️ Schema Mapping & Clean Room Validation")
             
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                c_article = st.selectbox("1. Article / Tracking ID Column:", df.columns)
-                c_name = st.selectbox("2. Patient Name Column:", df.columns)
-            with col2:
-                c_phone = st.selectbox("3. Phone Number Column:", df.columns)
-                c_date = st.selectbox("4. Booking Date Column:", df.columns)
-            with col3:
-                c_address = st.selectbox("5. Physical Address Column:", df.columns)
-                dup_target = st.selectbox("🎯 Duplicate Boundary Target:", df.columns, index=df.columns.get_loc(c_article))
+            mc1, mc2, mc3 = st.columns(3)
+            with mc1:
+                c_article = st.selectbox("1. Article / Consignment ID Column:", df.columns)
+                c_name = st.selectbox("2. Consignee / Patient Name Column:", df.columns)
+            with mc2:
+                c_phone = st.selectbox("3. Dedicated Contact Number Column:", df.columns)
+                c_date = st.selectbox("4. Registry/Booking Date Column:", df.columns)
+            with mc3:
+                c_address = st.selectbox("5. Delivery Destination Address Column:", df.columns)
+                dup_target = st.selectbox("🎯 Unique Integrity Key (De-duplication Target):", df.columns, index=df.columns.get_loc(c_article))
 
-            if st.button("🚀 Process & Save Clean Data To Cloud"):
-                initial_rows = len(df)
-                df_cleaned = df.drop_duplicates(subset=[dup_target], keep='first')
-                final_rows = len(df_cleaned)
+            if st.button("🚀 Push Verified Records to Cloud Database", use_container_width=True):
+                total_initial = len(df)
+                cleaned_records = df.drop_duplicates(subset=[dup_target], keep='first')
+                total_final = len(cleaned_records)
                 
-                records_to_insert = []
-                for index, row in df_cleaned.iterrows():
-                    raw_date = row[c_date]
-                    formatted_date = str(datetime.date.today())
+                staging_area = []
+                for _, row in cleaned_records.iterrows():
+                    raw_dt = row[c_date]
+                    final_dt = str(datetime.date.today())
                     try:
-                        formatted_date = pd.to_datetime(raw_date).strftime('%Y-%m-%d')
+                        final_dt = pd.to_datetime(raw_dt).strftime('%Y-%m-%d')
                     except:
                         pass
                         
-                    records_to_insert.append({
+                    staging_area.append({
                         "article_id": str(row[c_article]).strip(),
                         "patient_name": str(row[c_name]).strip(),
                         "phone_number": str(row[c_phone]).strip(),
-                        "booking_date": formatted_date,
+                        "booking_date": final_dt,
                         "address": str(row[c_address]).strip(),
                         "status": "Pending"
                     })
                 
-                chunk_size = 200
-                total_records = len(records_to_insert)
-                success_count = 0
+                batch_size = 200
+                total_staged = len(staging_area)
+                uploaded_count = 0
                 
-                for i in range(0, total_records, chunk_size):
-                    chunk = records_to_insert[i:i + chunk_size]
+                for idx in range(0, total_staged, batch_size):
+                    batch = staging_area[idx:idx + batch_size]
                     try:
-                        supabase.table("patient_deliveries").upsert(chunk, on_conflict="article_id").execute()
-                        success_count += len(chunk)
-                    except Exception as upload_error:
-                        st.error(f"Upload error: {upload_error}")
+                        supabase.table("patient_deliveries").upsert(batch, on_conflict="article_id").execute()
+                        uploaded_count += len(batch)
+                    except Exception as upload_err:
+                        st.error(f"Batch execution exception: {upload_err}")
                 
-                st.success(f"🎉 Cloud Matrix Sync Complete! {success_count} Records Uploaded.")
+                st.success(f"🎉 Synchronized! Ingested {uploaded_count} unique entries. Removed {total_initial - total_final} structural duplicates.")
 
-        # Master Backup Button
+        # Infrastructure Master Backup Component
         st.markdown("---")
-        st.subheader("💾 Master Cloud Data Backup Extraction")
-        if st.button("🔄 Fetch Live Cloud Database Backup"):
+        st.markdown("### 💾 Core Storage Extraction & Ledger Backup")
+        if st.button("🔄 Initialize Live Master System Export", use_container_width=True):
             try:
-                res = supabase.table("patient_deliveries").select("*").execute()
-                if res.data:
-                    backup_df = pd.DataFrame(res.data)
-                    buffer = io.BytesIO()
-                    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                        backup_df.to_excel(writer, index=False, sheet_name='Master_Report')
-                    buffer.seek(0)
+                export_query = supabase.table("patient_deliveries").select("*").execute()
+                if export_query.data:
+                    export_df = pd.DataFrame(export_query.data)
+                    binary_buffer = io.BytesIO()
+                    with pd.ExcelWriter(binary_buffer, engine='openpyxl') as xl_writer:
+                        export_df.to_excel(xl_writer, index=False, sheet_name='Master_System_Ledger')
+                    binary_buffer.seek(0)
                     
                     st.download_button(
-                        label="📥 Download Master Excel Backup File",
-                        data=buffer,
-                        file_name=f"SHC_PakPost_Master_Backup_{datetime.date.today()}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        label="📥 Download Master Backup Ledger Spreadsheet (.xlsx)",
+                        data=binary_buffer,
+                        file_name=f"SHC_PakPost_SystemMasterBackup_{datetime.date.today()}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True
                     )
-            except Exception as e:
-                st.error(f"Backup Error: {e}")
+            except Exception as backup_ex:
+                st.error(f"Backup engine execution error: {backup_ex}")
 
-    # ----------------------------------------------------
-    # TAB: USER MANAGER & AUDIT LOGS (ADMIN ONLY)
-    # ----------------------------------------------------
-    with main_tabs[1]:
-        st.header("👥 System User Management Engine")
+# ----------------------------------------------------
+# MODULE 2: OPERATOR MATRIX & SECURITY AUDIT LOGS (ADMIN ONLY)
+# ----------------------------------------------------
+if st.session_state.role == "admin":
+    with tabs[1]:
+        st.markdown("### 👥 Operational Account Provisioning Center")
         
         uc1, uc2 = st.columns([1, 1])
         with uc1:
-            st.write("### ➕ Add New Staff Account")
-            new_full_name = st.text_input("Staff Pora Naam (Full Name):", key="new_f_name")
-            new_u = st.text_input("Staff Username (For Login):", key="new_u_name")
-            new_p = st.text_input("Staff Password:", type="password", key="new_u_p")
+            st.markdown("#### ➕ Provision New Operator Account")
+            new_fname_input = st.text_input("Operator Real Name (Full Name)", key="cr_f")
+            new_user_input = st.text_input("Operational Username (Login ID)", key="cr_u")
+            new_pass_input = st.text_input("Assigned Initial Password", type="password", key="cr_p")
             
-            if st.button("Create Account"):
-                if new_full_name and new_u and new_p:
+            if st.button("Register Operator Account", use_container_width=True):
+                if new_fname_input and new_user_input and new_pass_input:
                     try:
                         supabase.table("app_users").insert({
-                            "username": new_u.strip(), 
-                            "password": new_p.strip(), 
-                            "full_name": new_full_name.strip(),
+                            "username": new_user_input.strip(),
+                            "password": new_pass_input.strip(),
+                            "full_name": new_fname_input.strip(),
                             "role": "staff"
                         }).execute()
-                        st.success(f"Account for `{new_full_name}` successfully create ho gaya!")
-                    except Exception as e:
-                        st.error(f"Error account banane me (Username unique hona chahiye): {e}")
+                        st.success(f"Account for '{new_fname_input}' provisioned successfully.")
+                    except Exception as reg_err:
+                        st.error(f"Failed to create account (Username must be globally unique): {reg_err}")
                 else:
-                    st.warning("Meharbani kar ke saare khane pur karein!")
+                    st.warning("All input fields are mandatory.")
         
         with uc2:
-            st.write("### 🔧 Administrative Password Override")
+            st.markdown("#### 🔧 Administrative Access Override Console")
             try:
-                all_users = supabase.table("app_users").select("username", "full_name").execute()
-                user_map = {f"{u['full_name']} ({u['username']})": u['username'] for u in all_users.data if u['username'] != 'shahid'}
+                user_fetch = supabase.table("app_users").select("username", "full_name").execute()
+                operator_dictionary = {f"{usr['full_name']} ({usr['username']})": usr['username'] for usr in user_fetch.data if usr['username'] != 'shahid'}
                 
-                if user_map:
-                    selected_display = st.selectbox("Select User:", list(user_map.keys()))
-                    selected_u = user_map[selected_display]
-                    override_p = st.text_input("Naya Password Lagayein:", type="password", key="over_p")
+                if operator_dictionary:
+                    target_display = st.selectbox("Select Target Account:", list(operator_dictionary.keys()))
+                    target_username = operator_dictionary[target_display]
+                    override_password = st.text_input("Enter Override Password:", type="password", key="adm_ovr_p")
                     
-                    if st.button("Force Change Password"):
-                        supabase.table("app_users").update({"password": override_p.strip()}).eq("username", selected_u).execute()
-                        st.success(f"`{selected_display}` ka password change kar diya gaya.")
+                    if st.button("Execute Hard Password Reset", use_container_width=True):
+                        supabase.table("app_users").update({"password": override_password.strip()}).eq("username", target_username).execute()
+                        st.success(f"Access keys overridden for operational profile: {target_display}")
                 else:
-                    st.info("Baqi koi user system me registered nahi hai.")
+                    st.info("No external operational profiles detected in cluster.")
             except:
-                st.write("Users load nahi ho sakay.")
+                st.write("Failed to initialize user directory context.")
 
         st.markdown("---")
-        st.write("### 🛡️ Live Security Audit & Device Logs")
+        st.markdown("### 🛡️ Real-time Hardware Session Audit & Network Logs")
         try:
-            log_res = supabase.table("user_logins").select("*").order("login_time", desc=True).limit(50).execute()
-            if log_res.data:
-                log_df = pd.DataFrame(log_res.data)
-                log_df = log_df[["username", "ip_address", "device_info", "login_time"]]
-                st.dataframe(log_df, use_container_width=True)
+            audit_query = supabase.table("user_logins").select("*").order("login_time", desc=True).limit(50).execute()
+            if audit_query.data:
+                audit_df = pd.DataFrame(audit_query.data)
+                audit_df = audit_df[["username", "ip_address", "device_info", "login_time"]]
+                st.dataframe(audit_df, use_container_width=True)
             else:
-                st.info("Abhi tak koi login tracking logs save nahi hoye.")
-        except Exception as log_err:
-            st.error(f"Logs load karne me masla: {log_err}")
+                st.info("System tracking logs are currently empty.")
+        except Exception as audit_ex:
+            st.error(f"Audit log streaming fault: {audit_ex}")
 
 # ----------------------------------------------------
-# TAB: STAFF WORKSPACE (VISIBLE TO BOTH ADMIN & STAFF)
+# MODULE 3: OUTBOUND COMMUNICATIONS & FEEDBACK HUB
 # ----------------------------------------------------
-staff_tab_index = 2 if st.session_state.role == "admin" else 0
-with main_tabs[staff_tab_index]:
-    st.header("📞 Landline Dialing & Feedback Hub")
-    target_date = st.date_input("Kis Date Ki Booking Ka Data Nikalna Hai?", datetime.date.today())
+staff_view_idx = 2 if st.session_state.role == "admin" else 0
+with tabs[staff_view_idx]:
+    st.markdown("### 📞 Outbound Communications Desk")
+    query_date = st.date_input("Filter Manifest Records by Registry/Booking Date:", datetime.date.today())
     
     try:
-        response = supabase.table("patient_deliveries").select("*").eq("booking_date", str(target_date)).execute()
-        records = response.data
-    except Exception as fetch_err:
-        st.error(f"Data loading failed: {fetch_err}")
-        records = []
+        manifest_response = supabase.table("patient_deliveries").select("*").eq("booking_date", str(query_date)).execute()
+        active_records = manifest_response.data
+    except Exception as api_err:
+        st.error(f"Outbound manifest pull failed: {api_err}")
+        active_records = []
         
-    if not records:
-        st.info(f"Is tareekh ({target_date}) ka koi data database me mojood nahi hai.")
+    if not active_records:
+        st.info("No patient manifest data matches the selected booking date context.")
     else:
-        st.success(f"Total {len(records)} patients mile hain.")
-        patient_options = {f"{r['patient_name']} (Article: {r['article_id']}) - [{r['status']}]": r for r in records}
-        selected_patient_str = st.selectbox("Patient Select Karein:", list(patient_options.keys()))
+        st.success(f"Located {len(active_records)} records matching current date parameters.")
+        manifest_mapping = {f"{rec['patient_name']} (Consignment: {rec['article_id']}) - [{rec['status']}]": rec for rec in active_records}
+        selected_manifest_key = st.selectbox("Select Target Operational Profile to Process:", list(manifest_mapping.keys()))
         
-        patient_data = patient_options[selected_patient_str]
-        st.markdown("---")
+        target_profile = manifest_mapping[selected_manifest_key]
+        st.markdown("<hr>", unsafe_allow_html=True)
         
-        left_col, right_col = st.columns([1, 1])
-        with left_col:
-            st.markdown(f"<p class='patient-header'>👤 Patient Name: {patient_data['patient_name']}</p>", unsafe_allow_html=True)
-            st.write(f"📦 **Article ID:** {patient_data['article_id']}")
-            st.write(f"🏠 **Address:** {patient_data['address']}")
-            st.write(f"📅 **Booking Date:** {patient_data['booking_date']}")
-            st.markdown("### 🎴 DIAL THIS NUMBER FROM LANDLINE:")
-            st.markdown(f"<div class='big-phone'>{patient_data['phone_number']}</div>", unsafe_allow_html=True)
+        l_panel, r_panel = st.columns([1, 1])
+        with l_panel:
+            st.markdown(f"<div class='patient-card-header'>👤 {target_profile['patient_name']}</div>", unsafe_allow_html=True)
+            st.write(f"📦 **Consignment/Article ID:** `{target_profile['article_id']}`")
+            st.write(f"🏠 **Destination Address:** {target_profile['address']}")
+            st.write(f"📅 **Booking Manifest Date:** {target_profile['booking_date']}")
+            
+            st.markdown("#### 🎴 DIAL THIS PHONE NUMBER FROM LANDLINE:")
+            st.markdown(f"<div class='big-phone-display'>{target_profile['phone_number']}</div>", unsafe_allow_html=True)
             
             st.markdown("---")
-            st.subheader("🌐 EMTTS Live Tracking Integration")
-            if st.button("Fetch Live Status (EMTTS)"):
-                with st.spinner("Connecting..."):
-                    simulated_status = "DELIVERED" if "1" in str(patient_data['id']) else "IN-TRANSIT / OUT FOR DELIVERY"
-                    st.info(f"EMTTS Response System: **{simulated_status}**")
+            st.markdown("#### 🌐 Real-time EMTTS Tracking Infrastructure Interface")
+            if st.button("Query Live EMTTS Server Gateway", use_container_width=True):
+                with st.spinner("Connecting to tracking engine arrays..."):
+                    emtts_mock = "DELIVERED" if "1" in str(target_profile['id']) else "IN-TRANSIT / OUT FOR DELIVERY"
+                    st.info(f"EMTTS Database Callback Response: **{emtts_mock}**")
         
-        with right_col:
-            st.subheader("📝 Live Call Feedback Questionnaire")
-            delivered = st.radio("1. Kya medicine deliver ho gayi hai?", ["Select Option", "Yes", "No"], index=0)
-            feedback_payload = {}
+        with r_panel:
+            st.markdown("#### 📝 Live Quality Verification & Audit Questionnaire")
+            is_delivered = st.radio("1. Has the consignee physically received the delivery?", ["Select Assessment Option", "Yes", "No"], index=0)
+            payload_buffer = {}
             
-            if delivered == "Yes":
-                feedback_payload["status"] = "Delivered"
-                del_date = st.date_input("Delivery Date", datetime.date.today())
-                feedback_payload["delivery_date"] = str(del_date)
-                mode = st.radio("Delivery Mode?", ["Postman ne ghr aakar di", "Post office bula kar di medicine"])
-                feedback_payload["received_mode"] = mode
-                extra_money = st.radio("Postman ne paise to nahi mange?", ["No", "Yes"])
-                feedback_payload["extra_money_charged"] = extra_money
+            if is_delivered == "Yes":
+                payload_buffer["status"] = "Delivered"
+                actual_del_date = st.date_input("Delivery Verification Date", datetime.date.today())
+                payload_buffer["delivery_date"] = str(actual_del_date)
                 
-                if extra_money == "Yes":
-                    st.error("🚨 Corruption Tracker Active.")
-                    feedback_payload["postman_name"] = st.text_input("Postman Ka Naam:")
-                    feedback_payload["postman_number"] = st.text_input("Postman Contact:")
-                    feedback_payload["post_office_name"] = st.text_input("Post Office:")
+                delivery_method = st.radio("Delivery Execution Mode:", ["Delivered by postman to home address", "Collected directly from local post office branch"])
+                payload_buffer["received_mode"] = delivery_method
+                
+                illegal_tariff = st.radio("Did the delivery agent request any unauthorized monetary payment/tips?", ["No", "Yes"])
+                payload_buffer["extra_money_charged"] = illegal_tariff
+                
+                if illegal_tariff == "Yes":
+                    st.error("🚨 CORRUPTION TRACKING PROTOCOL ACTIVATED. Enter delivery agent parameters instantly.")
+                    payload_buffer["postman_name"] = st.text_input("Delivery Agent (Postman) Name:")
+                    payload_buffer["postman_number"] = st.text_input("Delivery Agent Contact Details:")
+                    payload_buffer["post_office_name"] = st.text_input("Originating Post Office Branch:")
                     
-            elif delivered == "No":
-                feedback_payload["status"] = "Issue / Complaint"
-                issue = st.selectbox("Wajah/Issue:", [
-                    "Wrong Delivery Status on EMTTS", "Address Not Found / Locked House", "Delay in Delivery", "Register Formal Complaint"
+            elif is_delivered == "No":
+                payload_buffer["status"] = "Issue / Complaint"
+                root_cause = st.selectbox("Select Primary Delivery Discrepancy Failure Mode:", [
+                    "Wrong Delivery Status on EMTTS (System states delivered but physically unreceived)", 
+                    "Incomplete Address / Premises Locked", 
+                    "Logistics Delay (Item currently stuck or delayed in transit)", 
+                    "Formal Institutional Dispute (Escalate to senior command)"
                 ])
-                feedback_payload["issue_reason"] = issue
+                payload_buffer["issue_reason"] = root_cause
                 
             st.markdown("---")
-            if st.button("💾 Save Call Feedback"):
-                if delivered == "Select Option":
-                    st.error("Pehle 'Yes' ya 'No' chunien!")
+            if st.button("💾 Finalize Session & Commit Logs", use_container_width=True):
+                if is_delivered == "Select Assessment Option":
+                    st.error("Submission rejected. You must provide a verification response ('Yes' or 'No').")
                 else:
                     try:
-                        supabase.table("patient_deliveries").update(feedback_payload).eq("id", patient_data["id"]).execute()
-                        st.success("🎉 Data successfully saved backend pe!")
+                        supabase.table("patient_deliveries").update(payload_buffer).eq("id", target_profile["id"]).execute()
+                        st.success("Transaction verified. Records committed to live cloud node.")
                         st.balloons()
-                    except Exception as save_err:
-                        st.error(f"Error saving feedback: {save_err}")
+                    except Exception as commit_ex:
+                        st.error(f"Database write exception encountered: {commit_ex}")
