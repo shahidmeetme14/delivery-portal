@@ -223,8 +223,8 @@ if not st.session_state.logged_in:
     with center_col:
         st.markdown("<div style='background-color:#1e293b; color:#ffffff; padding:12px; font-weight:600; font-size:13px; border-radius:6px 6px 0px 0px; border:1px solid #0f172a; text-align:center; letter-spacing:1px;'>SECURE PORTAL AUTHENTICATION</div>", unsafe_allow_html=True)
         with st.form("pyqt_enterprise_login"):
-            input_user = st.text_input("OPERATOR ID / USERNAME", placeholder="e.g. shahid_admin")
-            input_pass = st.text_input("SECURITY ACCESS PASSWORD", type="password", placeholder="••••••••")
+            input_user = st.text_input("OPERATOR ID / USERNAME", placeholder="Enter Username")
+            input_pass = st.text_input("SECURITY ACCESS PASSWORD", type="password", placeholder="Enter Password")
             btn_login = st.form_submit_button("UNLOCK TERMINAL", use_container_width=True)
             
             if btn_login:
