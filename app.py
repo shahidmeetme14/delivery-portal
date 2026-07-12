@@ -30,10 +30,13 @@ if "cached_recovery_data" not in st.session_state: st.session_state.cached_recov
 # 🎨 PAKISTAN POST OFFICIAL THEME ENGINE (RED & GOLD) + UI CORRECTIONS
 st.markdown("""
     <style>
-    /* Global Styles */
-    .block-container { padding-top: 1.0rem !important; padding-bottom: 1.0rem !important; }
+    /* Global Styles & Header Cut Fix */
+    .block-container { 
+        padding-top: 4.0rem !important; /* Fixed header vertical cutoff issue */
+        padding-bottom: 2.0rem !important; 
+    }
     
-    /* 🔒 HIDING STREAMLIT FOOTER, GITHUB BADGES AND MENUS COMPLETELY */
+    /* 🔒 HIDING STREAMLIT FOOTER & GITHUB LINKS COMPLETELY */
     #MainMenu {visibility: hidden !important;}
     footer {visibility: hidden !important;}
     div[data-testid="stDecoration"] {visibility: hidden !important;}
@@ -44,33 +47,22 @@ st.markdown("""
     /* Pakistan Post Brand Palette */
     .stApp { background-color: #fcf8f8; }
     .brand-title { color: #b71c1c; font-weight: 800; font-size: 1.8rem; margin-bottom: 1px; }
-    .brand-subtitle { color: #d4af37; font-size: 1.0rem; margin-bottom: 15px; font-weight: 700; border-left: 4px solid #b71c1c; padding-left: 8px; }
+    .brand-subtitle { color: #d4af37; font-size: 1.0rem; margin-bottom: 25px; font-weight: 700; border-left: 4px solid #b71c1c; padding-left: 8px; }
     
-    /* Centered Non-Cutting Login Box */
-    .login-container {
-        max-width: 450px;
-        margin: 60px auto !important;
+    /* Native Form Styling for Reliable Boxing */
+    div[data-testid="stForm"] {
         background: #ffffff !important;
         border-radius: 8px !important;
         border-top: 5px solid #b71c1c !important;
-        border-left: 1px solid #e0e0e0 !important;
-        border-right: 1px solid #e0e0e0 !important;
-        border-bottom: 3px solid #d4af37 !important;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.08) !important;
+        border-left: 1px solid #e2e8f0 !important;
+        border-right: 1px solid #e2e8f0 !important;
+        border-bottom: 3.5px solid #d4af37 !important;
+        box-shadow: 0 10px 25px rgba(183, 28, 28, 0.06) !important;
         padding: 25px !important;
     }
     
-    /* Standardized Forms & Panels */
-    div[data-testid="stForm"], .pyqt-panel {
-        background: #ffffff !important;
-        border-radius: 6px !important;
-        border: 1px solid #dcdcdc !important;
-        box-shadow: 0 4px 10px rgba(183, 28, 28, 0.03) !important;
-        padding: 15px !important;
-    }
-    
     /* Buttons Customization (PakPost Red) */
-    div.stButton > button, div.stDownloadButton > button {
+    div.stButton > button, div.stDownloadButton > button, .stFormSubmitButton -> button {
         background: linear-gradient(180deg, #d32f2f 0%, #b71c1c 100%) !important;
         color: #ffffff !important;
         border: 1px solid #7f0000 !important;
@@ -177,30 +169,36 @@ if st.session_state.logged_in:
 st.markdown("<div class='brand-title'>📮 PAKISTAN POST | DATA AUDIT SYSTEM</div>", unsafe_allow_html=True)
 st.markdown("<div class='brand-subtitle'>Lahore GPO Operational Core Dashboard</div>", unsafe_allow_html=True)
 
-# 🔐 LOGIN BOX (FIXED CUT-OFF)
+# 🔐 LOGIN HUB (FIXED COLS + FORM OVERLAY)
 if not st.session_state.logged_in and not st.session_state.show_recovery_prompt:
-    st.markdown("<div class='login-container'>", unsafe_allow_html=True)
-    st.markdown("<h4 style='text-align:center; color:#b71c1c; margin-top:0;'>SECURE TERMINAL LOGIN</h4>", unsafe_allow_html=True)
-    input_user = st.text_input("OPERATOR USERNAME / ID")
-    input_pass = st.text_input("SECURITY PASSWORD", type="password")
-    btn_login = st.button("UNLOCK HUB", use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    if btn_login:
-        if input_user and input_pass:
-            ud = supabase.table("app_users").select("*").eq("username", input_user.strip()).eq("password", input_pass.strip()).execute().data
-            if ud:
-                recovery_data = fetch_operator_state(ud[0]["username"])
-                st.session_state.username = ud[0]["username"]
-                st.session_state.full_name = ud[0]["full_name"]
-                st.session_state.role = ud[0]["role"]
-                if recovery_data:
-                    st.session_state.cached_recovery_data = recovery_data
-                    st.session_state.show_recovery_prompt = True
-                else:
-                    st.session_state.logged_in = True
-                st.rerun()
-            else: st.error("Invalid secure credentials.")
+    # Grid column block layout to center container without HTML breaking
+    col1, col2, col3 = st.columns([1, 1.3, 1])
+    
+    with col2:
+        with st.form(key="login_secure_form"):
+            st.markdown("<h4 style='text-align:center; color:#b71c1c; margin-top:0; font-weight:700;'>SECURE TERMINAL LOGIN</h4>", unsafe_allow_html=True)
+            input_user = st.text_input("OPERATOR USERNAME / ID")
+            input_pass = st.text_input("SECURITY PASSWORD", type="password")
+            btn_login = st.form_submit_button("UNLOCK HUB", use_container_width=True)
+            
+            if btn_login:
+                if input_user and input_pass:
+                    ud = supabase.table("app_users").select("*").eq("username", input_user.strip()).eq("password", input_pass.strip()).execute().data
+                    if ud:
+                        recovery_data = fetch_operator_state(ud[0]["username"])
+                        st.session_state.username = ud[0]["username"]
+                        st.session_state.full_name = ud[0]["full_name"]
+                        st.session_state.role = ud[0]["role"]
+                        if recovery_data:
+                            st.session_state.cached_recovery_data = recovery_data
+                            st.session_state.show_recovery_prompt = True
+                        else:
+                            st.session_state.logged_in = True
+                        st.rerun()
+                    else: 
+                        st.error("Invalid secure credentials.")
 
 elif st.session_state.show_recovery_prompt:
     st.warning("⚠️ Unexpected system shutdown detected. Last active state is secure.")
