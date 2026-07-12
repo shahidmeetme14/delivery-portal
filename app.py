@@ -22,7 +22,6 @@ if "logged_in" not in st.session_state:
 # 🎨 Enterprise PyQt6 Style Sheet & Layout Engine
 sidebar_css_rule = ""
 if not st.session_state.logged_in:
-    # Login page pe sidebar ko zameen doze (mukammal khatam) karne ke liye rule
     sidebar_css_rule = """
     [data-testid="stSidebar"] { display: none !important; visibility: hidden !important; }
     [data-testid="collapsedControl"] { display: none !important; visibility: hidden !important; }
@@ -30,7 +29,6 @@ if not st.session_state.logged_in:
     .st-emotion-cache-1jicfl2 { padding-left: 1rem !important; padding-right: 1rem !important; }
     """
 else:
-    # Login hone ke baad close karne wale saare extra buttons ghayab (Sidebar Locked)
     sidebar_css_rule = """
     button[data-testid="stSidebarCollapseButton"] { display: none !important; visibility: hidden !important; }
     [data-testid="collapsedControl"] { display: none !important; visibility: hidden !important; }
@@ -166,7 +164,6 @@ if st.session_state.logged_in:
         time.sleep(1)
         st.rerun()
     else:
-        # Action performed: Automatic time matrix reset
         st.session_state.last_activity = time.time()
         st.query_params["t"] = str(st.session_state.last_activity)
 
@@ -201,7 +198,7 @@ def fetch_live_emtts_status(article_id):
     except:
         return "⏱️ Timeout Error", "PakPost network nodes timed out."
 
-# Permanent Workspace Sidebar Container (Only processes if logged in)
+# Permanent Workspace Sidebar Container
 if st.session_state.logged_in:
     with st.sidebar:
         st.markdown("### 🖥️ Enterprise Console")
@@ -217,14 +214,14 @@ if st.session_state.logged_in:
 st.markdown("<div class='brand-title'>SHC & Pak Post | Free Home Delivery of Medicine</div>", unsafe_allow_html=True)
 st.markdown("<div class='brand-subtitle'>Article Tracking & Patient Feedback Portal</div>", unsafe_allow_html=True)
 
-# Main Authentication Router (Beautifully Centered Layout)
+# Main Authentication Router
 if not st.session_state.logged_in:
     _, center_col, _ = st.columns([1, 1.4, 1])
     with center_col:
         st.markdown("<div style='background-color:#1e293b; color:#ffffff; padding:12px; font-weight:600; font-size:13px; border-radius:6px 6px 0px 0px; border:1px solid #0f172a; text-align:center; letter-spacing:1px;'>SECURE PORTAL AUTHENTICATION</div>", unsafe_allow_html=True)
         with st.form("pyqt_enterprise_login"):
             input_user = st.text_input("OPERATOR ID / USERNAME", placeholder="Enter Username")
-            input_pass = st.text_input("SECURITY ACCESS PASSWORD", type="password", placeholder="Enter Password")
+            input_pass = st.text_input("SECURITY ACCESS PASSWORD", type="password", placeholder="••••••••")
             btn_login = st.form_submit_button("UNLOCK TERMINAL", use_container_width=True)
             
             if btn_login:
@@ -262,7 +259,6 @@ if not st.session_state.logged_in:
                 else:
                     st.warning("All authentication fields must be filled.")
 
-# 🔄 Crash Recovery Selector Pop-up Interface
 elif st.session_state.show_recovery_prompt:
     _, alert_box, _ = st.columns([1, 2, 1])
     with alert_box:
@@ -305,7 +301,6 @@ elif st.session_state.show_recovery_prompt:
                 st.rerun()
 
 else:
-    # Navigation Matrix For Admins
     if st.session_state.role == "admin":
         nc1, nc2, nc3 = st.columns(3)
         with nc1:
@@ -365,7 +360,12 @@ else:
 
             if st.button("🚀 Push Verified Records to Cloud Database", use_container_width=True):
                 with st.spinner("Processing Manifest Sequence..."):
+                    # Step A: User anchored deduplication
                     cleaned_records = df.drop_duplicates(subset=[dup_target], keep='first')
+                    
+                    # Step B: Strict Unique Constraint Safeguard for Supabase Single-Batch operations
+                    cleaned_records = cleaned_records.drop_duplicates(subset=[c_article], keep='first')
+                    
                     staging_area = []
                     for _, row in cleaned_records.iterrows():
                         final_dt = str(datetime.date.today())
