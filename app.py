@@ -125,7 +125,6 @@ if not st.session_state.logged_in and "session_token" in st.query_params:
             st.session_state.full_name = ud[0]["full_name"]
             st.session_state.role = ud[0]["role"]
             st.session_state.last_activity = time.time()
-            # Dynamic Route Protection on Refresh
             if st.session_state.current_navigation_tab is None:
                 st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine" if ud[0]["role"] == "admin" else "📞 Outbound Communications Hub"
     except:
@@ -198,7 +197,6 @@ if not st.session_state.logged_in:
                             st.session_state.last_activity = time.time()
                             st.query_params["session_token"] = user_query.data[0]["username"]
                             
-                            # Hard redirect based on identity context upon first form entry
                             st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine" if user_query.data[0]["role"] == "admin" else "📞 Outbound Communications Hub"
                             
                             pulse_container.success("Access Authorized!")
@@ -311,7 +309,7 @@ if st.session_state.current_navigation_tab == "📊 Administrative Ingestion Eng
                     "address": str(row[c_address]).strip(),
                     "patient_city": str(row[c_city]).strip(),
                     "mrn_no": str(row[c_mrn]).strip(),
-                    "booking_office": str(row[row[c_bo]]).strip() if c_bo in df.columns else "",
+                    "booking_office": str(row[c_bo]).strip() if c_bo in df.columns else "",
                     "status": "Pending"
                 })
             
