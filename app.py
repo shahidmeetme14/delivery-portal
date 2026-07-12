@@ -7,7 +7,7 @@ import time
 import requests
 from bs4 import BeautifulSoup
 
-# 🎛️ Page Structural Settings (Forcing Sidebar State Naturally)
+# 🎛️ Page Structural Settings 
 st.set_page_config(
     page_title="SHC & Pak Post | Delivery Portal", 
     page_icon="📮", 
@@ -15,28 +15,16 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 PyQt6 / C++ Enterprise Desktop Style CSS Engine
+# 🎨 Clean CSS Engine (Saari Hiding/Blocking Rules Khatam)
 st.markdown("""
     <style>
-    /* Hide unnecessary default Streamlit top bars */
-    div[data-testid="stToolbar"] { visibility: hidden !important; }
-    .stDeployButton { display: none !important; }
-    footer { visibility: hidden !important; }
-    
-    /* 🔓 SIDEBAR RESET: Force default toggle buttons to be completely visible so you can open it manually */
-    button[data-testid="stSidebarCollapseButton"] { visibility: visible !important; display: block !important; }
-    [data-testid="collapsedControl"] { visibility: visible !important; display: block !important; }
-    
-    /* Hide native input hints globally (Press Enter to submit) */
-    div[data-testid="stInputInstructions"] { display: none !important; }
-    div[data-testid="InputInstructions"] { display: none !important; }
-    small { display: none !important; }
+    /* 🌐 RESET: Tamam structural bars aur toggles ko default par bahal kar diya hai */
     
     /* PyQt6 Desktop System Colors (Slate Gray / Dark Metallic Corporate Theme) */
     .stApp { background-color: #f1f5f9; }
     body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; }
     
-    .brand-title { color: #1e293b; font-weight: 700; font-size: 1.85rem; letter-spacing: -0.03rem; margin-top: -25px; margin-bottom: 2px; }
+    .brand-title { color: #1e293b; font-weight: 700; font-size: 1.85rem; letter-spacing: -0.03rem; margin-top: 5px; margin-bottom: 2px; }
     .brand-subtitle { color: #64748b; font-size: 0.95rem; margin-bottom: 25px; font-weight: 500; }
     
     /* PyQt6 Sharp Container Boxes */
@@ -158,7 +146,7 @@ if st.session_state.logged_in:
         time.sleep(1)
         st.rerun()
     else:
-        # Operator performed an action or interaction. Reset internal timer node.
+        # User dynamic reset logic: counter resets on any live interface refresh or task action
         st.session_state.last_activity = time.time()
         st.query_params["t"] = str(st.session_state.last_activity)
 
