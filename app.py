@@ -34,7 +34,7 @@ except Exception as e:
     st.error("Database connection failed. Check your Secrets.")
     st.stop()
 
-# Master System: Auto-seed primary admin if table is empty
+# Master System: Auto-seed primary admin with Full Name directly from code
 def auto_seed_admin():
     try:
         res = supabase.table("app_users").select("*").eq("username", "shahid").execute()
@@ -42,6 +42,7 @@ def auto_seed_admin():
             supabase.table("app_users").insert({
                 "username": "shahid",
                 "password": "shahid@2341",
+                "full_name": "Shahid Hussain",
                 "role": "admin"
             }).execute()
     except:
@@ -54,6 +55,8 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "username" not in st.session_state:
     st.session_state.username = ""
+if "full_name" not in st.session_state:
+    st.session_state.full_name = ""
 if "role" not in st.session_state:
     st.session_state.role = ""
 
@@ -70,13 +73,13 @@ if not st.session_state.logged_in:
     if st.button("Access Portal 🚀"):
         if user_input and pass_input:
             try:
-                # Validate from cloud database
                 user_res = supabase.table("app_users").select("*").eq("username", user_input.strip()).execute()
                 
                 if user_res.data and user_res.data[0]["password"] == pass_input.strip():
-                    # Set Session Credentials
+                    # Set Session Credentials (Storing Full Name dynamically)
                     st.session_state.logged_in = True
                     st.session_state.username = user_res.data[0]["username"]
+                    st.session_state.full_name = user_res.data[0]["full_name"]
                     st.session_state.role = user_res.data[0]["role"]
                     
                     # Track Client IP and Device Environment
@@ -95,7 +98,7 @@ if not st.session_state.logged_in:
                         "device_info": device_info
                     }).execute()
                     
-                    st.success(f"Khushamdeed {st.session_state.username}! App open ho rahi hai...")
+                    st.success(f"Khushamdeed {st.session_state.full_name}! App open ho rahi hai...")
                     st.rerun()
                 else:
                     st.error("Ghalat Username ya Password! Dubara koshish karein.")
@@ -107,9 +110,8 @@ if not st.session_state.logged_in:
     st.stop()
 
 # --- MAIN APP REGION (RUNS ONLY AFTER VERIFIED LOGIN) ---
-# Sidebar controls
 with st.sidebar:
-    st.write(f"👤 **User:** `{st.session_state.username}`")
+    st.markdown(f"👤 Logged in as: **{st.session_state.full_name}**")
     st.write(f"🎖️ **Role:** `{st.session_state.role.upper()}`")
     st.markdown("---")
     
@@ -128,6 +130,7 @@ with st.sidebar:
     if st.button("Sign Out 🚪"):
         st.session_state.logged_in = False
         st.session_state.username = ""
+        st.session_state.full_name = ""
         st.session_state.role = ""
         st.rerun()
 
@@ -242,27 +245,39 @@ if st.session_state.role == "admin":
         uc1, uc2 = st.columns([1, 1])
         with uc1:
             st.write("### ➕ Add New Staff Account")
-            new_u = st.text_input("Staff Username:")
+            new_full_name = st.text_input("Staff Pora Naam (Full Name):", key="new_f_name")
+            new_u = st.text_input("Staff Username (For Login):", key="new_u_name")
             new_p = st.text_input("Staff Password:", type="password", key="new_u_p")
+            
             if st.button("Create Account"):
-                if new_u and new_p:
+                if new_full_name and new_u and new_p:
                     try:
-                        supabase.table("app_users").insert({"username": new_u.strip(), "password": new_p.strip(), "role": "staff"}).execute()
-                        st.success(f"Account `{new_u}` successfully create ho gaya!")
+                        supabase.table("app_users").insert({
+                            "username": new_u.strip(), 
+                            "password": new_p.strip(), 
+                            "full_name": new_full_name.strip(),
+                            "role": "staff"
+                        }).execute()
+                        st.success(f"Account for `{new_full_name}` successfully create ho gaya!")
                     except Exception as e:
                         st.error(f"Error account banane me (Username unique hona chahiye): {e}")
+                else:
+                    st.warning("Meharbani kar ke saare khane pur karein!")
         
         with uc2:
             st.write("### 🔧 Administrative Password Override")
             try:
-                all_users = supabase.table("app_users").select("username").execute()
-                user_list = [u['username'] for u in all_users.data if u['username'] != 'shahid']
-                if user_list:
-                    selected_u = st.selectbox("Select User:", user_list)
+                all_users = supabase.table("app_users").select("username", "full_name").execute()
+                user_map = {f"{u['full_name']} ({u['username']})": u['username'] for u in all_users.data if u['username'] != 'shahid'}
+                
+                if user_map:
+                    selected_display = st.selectbox("Select User:", list(user_map.keys()))
+                    selected_u = user_map[selected_display]
                     override_p = st.text_input("Naya Password Lagayein:", type="password", key="over_p")
+                    
                     if st.button("Force Change Password"):
                         supabase.table("app_users").update({"password": override_p.strip()}).eq("username", selected_u).execute()
-                        st.success(f"`{selected_u}` ka password change kar diya gaya.")
+                        st.success(f"`{selected_display}` ka password change kar diya gaya.")
                 else:
                     st.info("Baqi koi user system me registered nahi hai.")
             except:
@@ -274,7 +289,6 @@ if st.session_state.role == "admin":
             log_res = supabase.table("user_logins").select("*").order("login_time", desc=True).limit(50).execute()
             if log_res.data:
                 log_df = pd.DataFrame(log_res.data)
-                # Format Columns nicely
                 log_df = log_df[["username", "ip_address", "device_info", "login_time"]]
                 st.dataframe(log_df, use_container_width=True)
             else:
