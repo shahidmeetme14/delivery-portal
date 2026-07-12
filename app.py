@@ -3,8 +3,13 @@ from supabase import create_client, Client
 import pandas as pd
 import datetime
 
-# Page Configuration with Official Title
-st.set_page_config(page_title="SHC & Pak Post - Free Home Delivery of Medicine", layout="wide", initial_sidebar_state="expanded")
+# Page Configuration with Official Title and Postal Icon
+st.set_page_config(
+    page_title="SHC & Pak Post - Free Home Delivery of Medicine", 
+    page_icon="📮", 
+    layout="wide", 
+    initial_sidebar_state="expanded"
+)
 
 # Custom CSS for Large Text (For Landline dialing convenience)
 st.markdown("""
@@ -14,7 +19,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🏛️ SHC & Pak Post")
+st.title("📮 SHC & Pak Post")
 st.subheader("Free Home Delivery of Medicine - Tracking & Feedback Portal")
 
 # Connect to Supabase Locker
