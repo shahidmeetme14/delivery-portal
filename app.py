@@ -53,7 +53,7 @@ for key in mapping_keys:
     if key not in st.session_state:
         st.session_state[key] = None
 
-# 🎨 Premium UI Engine Styling (Completely Compact & Anti-Scroll Optimized)
+# 🎨 Premium UI Engine Styling (Compact Page Reset)
 sidebar_css_rule = ""
 if not st.session_state.logged_in:
     sidebar_css_rule = """
@@ -122,7 +122,7 @@ st.markdown(f"""
         transform: translateY(1px) !important;
     }}
     
-    /* 📥 3D TYPE SELECTORS MATRIX (RESIZED & COMPACTED) */
+    /* 📥 3D TYPE SELECTORS MATRIX */
     div[data-testid="stSelectbox"] > div[data-baseweb="select"], 
     div[data-testid="stDateInput"] > div {{
         background: #ffffff !important;
@@ -138,7 +138,7 @@ st.markdown(f"""
         font-weight: 600 !important;
     }}
     
-    /* 📱 DECENT & DECENT-SIZED 3D CLICKABLE PHONE DISPLAY */
+    /* 📱 DECENT-SIZED 3D CLICKABLE PHONE DISPLAY */
     .big-phone-display {{ 
         font-family: 'Segoe UI', -apple-system, sans-serif; 
         font-size: 21px !important; 
@@ -156,7 +156,7 @@ st.markdown(f"""
         margin: 4px 0;
     }}
     
-    /* 🚨 DECENT-SIZED HIGH VISIBILITY FALLBACK RED BOX */
+    /* 🚨 FALLBACK RED BOX */
     .no-phone-display {{
         font-family: 'Segoe UI', -apple-system, sans-serif; 
         font-size: 15px !important; 
@@ -316,9 +316,9 @@ def fetch_live_emtts_status(article_id):
 
 if st.session_state.logged_in:
     with st.sidebar:
-        st.markdown("<div class='sb-headline'>🖥️ Presented by SHAHID</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='sb-name-tag'>Operator Name: <br><span class='sb-name-bold'>{st.session_state.full_name}</span></div>", unsafe_allow_html=True)
-        st.markdown(f"**Role Cluster:** `{st.session_state.role.upper()}`")
+        st.markdown("<div class='sb-headline'>Presented by SHAHID</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='sb-name-tag'>Name: <br><span class='sb-name-bold'>{st.session_state.full_name}</span></div>", unsafe_allow_html=True)
+        st.markdown(f"**user:** `{st.session_state.role.upper()}`")
         st.markdown("<br><hr style='border-top:1px solid rgba(0,102,51,0.2);'>", unsafe_allow_html=True)
         if st.button("Terminate Session 🚪", use_container_width=True):
             st.session_state.logged_in = False
@@ -379,7 +379,7 @@ elif st.session_state.show_recovery_prompt:
                 st.rerun()
 
 else:
-    # 🔘 NAVIGATION MATRIX BAR
+    # 🔘 ORIGINAL BUTTON NAMES AND GRIDS bahal kar diye hain
     cols_count = 4 if st.session_state.role == "admin" else 2
     nc = st.columns(cols_count)
     
@@ -387,38 +387,38 @@ else:
         with nc[0]:
             t1 = "active-nav-btn" if st.session_state.current_navigation_tab == "📊 Administrative Ingestion Engine" else ""
             st.markdown(f"<div class='{t1}'>", unsafe_allow_html=True)
-            if st.button("📊 Ingestion Engine", use_container_width=True): 
+            if st.button("📊 Administrative Ingestion Engine", use_container_width=True): 
                 st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine"; st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
         with nc[1]:
             t2 = "active-nav-btn" if st.session_state.current_navigation_tab == "👥 Operator Matrix & Security Audit Logs" else ""
             st.markdown(f"<div class='{t2}'>", unsafe_allow_html=True)
-            if st.button("👥 Operator Matrix", use_container_width=True): 
+            if st.button("👥 Operator Matrix & Security Audit Logs", use_container_width=True): 
                 st.session_state.current_navigation_tab = "👥 Operator Matrix & Security Audit Logs"; st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
         with nc[2]:
             t3 = "active-nav-btn" if st.session_state.current_navigation_tab == "📞 Outbound Communications Hub" else ""
             st.markdown(f"<div class='{t3}'>", unsafe_allow_html=True)
-            if st.button("📞 Communications Desk", use_container_width=True): 
+            if st.button("📞 Outbound Communications Hub", use_container_width=True): 
                 st.session_state.current_navigation_tab = "📞 Outbound Communications Hub"; st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
         with nc[3]:
             t4 = "active-nav-btn" if st.session_state.current_navigation_tab == "📥 Secure Reports Export Center" else ""
             st.markdown(f"<div class='{t4}'>", unsafe_allow_html=True)
-            if st.button("📥 Export Center & Backup", use_container_width=True): 
+            if st.button("📥 Secure Reports Export Center", use_container_width=True): 
                 st.session_state.current_navigation_tab = "📥 Secure Reports Export Center"; st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
     else:
         with nc[0]:
             t1 = "active-nav-btn" if st.session_state.current_navigation_tab == "📞 Outbound Communications Hub" else ""
             st.markdown(f"<div class='{t1}'>", unsafe_allow_html=True)
-            if st.button("📞 Communications Desk", use_container_width=True): 
+            if st.button("📞 Outbound Communications Hub", use_container_width=True): 
                 st.session_state.current_navigation_tab = "📞 Outbound Communications Hub"; st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
         with nc[1]:
             t2 = "active-nav-btn" if st.session_state.current_navigation_tab == "📥 Secure Reports Export Center" else ""
             st.markdown(f"<div class='{t2}'>", unsafe_allow_html=True)
-            if st.button("📥 My Exports & Backup", use_container_width=True): 
+            if st.button("📥 Secure Reports Export Center", use_container_width=True): 
                 st.session_state.current_navigation_tab = "📥 Secure Reports Export Center"; st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
 
@@ -481,7 +481,6 @@ else:
     # PAGE 3: OUTBOUND HUB
     elif st.session_state.current_navigation_tab == "📞 Outbound Communications Hub":
         
-        # 📥 SLEEK 3D MATRIX REGION
         sel_col1, sel_col2, sel_col3 = st.columns([1, 1.2, 1.8])
         
         with sel_col1:
@@ -501,7 +500,6 @@ else:
                 
             filtered_by_office = raw_date_recs if selected_office == "All Offices" else [r for r in raw_date_recs if str(r.get('booking_office')).strip() == selected_office]
             
-            # Smart Inline Filter Matrix
             with sel_col3:
                 search_term = st.text_input("Smart Filter (Name / Article ID / MRN):").strip().lower()
                 
@@ -525,7 +523,6 @@ else:
                 with l_panel:
                     st.markdown(f"<div class='patient-card-header'>👤 {target_profile['patient_name']}</div>", unsafe_allow_html=True)
                     
-                    # 🏷️ PRECISE CARDS LAYOUT
                     st.markdown(f"""
                         <div class='data-card'>
                             <div class='data-row'>🔢 <b>MRN Number:</b> <span class='data-value'>{target_profile.get('mrn_no', 'N/A')}</span></div>
@@ -547,30 +544,31 @@ else:
                             elif data and data["history"]:
                                 history_list = data["history"]
                                 last_entry = history_list[-1]
-                                last_status_lower = last_entry["status"].lower()
                                 
-                                is_historical_anomaly = any("delivered" in h["status"].lower() or "return" in h["status"].lower() or "rts" in h["status"].lower() for h in history_list[:-1])
-                                is_last_delivered = "delivered" in last_status_lower
-                                is_last_rts = "return" in last_status_lower or "rts" in last_status_lower
+                                # 🔍 SCAN FULL HISTORY FOR ALERTS (AS REQUESTED)
+                                history_has_delivered = any("delivered" in h["status"].lower() for h in history_list)
+                                history_has_rts = any("return" in h["status"].lower() or "rts" in h["status"].lower() for h in history_list)
                                 
-                                if is_historical_anomaly and not (is_last_delivered or is_last_rts):
-                                    st.markdown("<div style='background-color:#dc2626; color:white; padding:8px; border-radius:4px; font-weight:700; text-align:center; font-size:12px;'>⚠️ ANOMALY DETECTED: Marked Delivered/RTS in history but NOT currently!</div>", unsafe_allow_html=True)
-                                
-                                if is_last_delivered: st.success(f"✅ {last_entry['status']} ({last_entry['datetime']})")
-                                elif is_last_rts: st.error(f"❌ {last_entry['status']} ({last_entry['datetime']})")
-                                else: st.info(f"📍 {last_entry['status']} ({last_entry['office']})")
+                                if history_has_delivered:
+                                    st.success(f"✅ Delivered Status Found in Tracking Path! Last Status: {last_entry['status']} ({last_entry['datetime']})")
+                                elif history_has_rts:
+                                    st.error(f"❌ RTS / Return Status Found in Tracking Path! Last Status: {last_entry['status']} ({last_entry['datetime']})")
+                                else:
+                                    st.info(f"📍 Current Status Log: {last_entry['status']} ({last_entry['office']})")
 
-                                use_mapped = (data_mode == "Fetch Snipped Data (Mapped Mode)")
-                                if report_scope == "All Statuses (Full History)":
+                                # 📋 RENDER CONDITIONAL MATRIX RESULTS
+                                use_mapped = (data_mode == "Fetch Snipped (Mapped)")
+                                
+                                if report_scope == "Full History":
                                     processed_rows = [{"Event": i+1, "Timestamp": h["datetime"], "Office": h["office"], "Status": map_status(h["status"]) if use_mapped else h["status"]} for i, h in enumerate(history_list)]
                                     st.dataframe(pd.DataFrame(processed_rows), use_container_width=True)
                                 else:
                                     final_status_str = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
-                                    st.metric(label="Latest Status", value=final_status_str)
+                                    st.markdown(f"<div style='font-size:14.5px; font-weight:600; color:#004d26; background:#e8f5e9; padding:6px 12px; border-radius:4px; border:1px solid #c8e6c9;'><b>Latest Status Update:</b> {final_status_str} ({last_entry['datetime']})</div>", unsafe_allow_html=True)
 
                     st.markdown("#### 🎴 DIAL THIS PHONE NUMBER:")
                     
-                    # 📱 OPTIMIZED PHONE NUMBER BADGE (DECENTLY PROPORTIONED)
+                    # 📱 OPTIMIZED PHONE NUMBER BADGE
                     raw_phone = str(target_profile.get('phone_number', '')).strip()
                     if not raw_phone or raw_phone.lower() in ['none', 'nan', 'null', ''] or len(raw_phone) < 5:
                         st.markdown("<div class='no-phone-display'>⚠️ No Contact Number Available</div>", unsafe_allow_html=True)
