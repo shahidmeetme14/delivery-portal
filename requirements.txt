@@ -1,4 +1,6 @@
+streamlit
 supabase
 pandas
 requests
 beautifulsoup4
+openpyxl
