@@ -160,7 +160,8 @@ st.markdown(f"""
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(0,0,0,0.3) !important;
     }}
 
-    /* 🔴 Terminate Session Button - Glossy Red Look styling via Anchor Selector */
+    /* 🔴 Terminate Session Button - Glossy Red Look styling via Anchor Selector & Direct Siblings */
+    div[data-testid="element-container"]:has(.terminate-btn-anchor) + div[data-testid="element-container"] button,
     div:has(> .terminate-btn-anchor) + div.element-container div.stButton > button,
     div:has(> * > .terminate-btn-anchor) + div.element-container div.stButton > button,
     div.terminate-btn-anchor + div.stButton > button {{
@@ -177,6 +178,7 @@ st.markdown(f"""
         font-weight: 700 !important;
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6) !important;
     }}
+    div[data-testid="element-container"]:has(.terminate-btn-anchor) + div[data-testid="element-container"] button:hover,
     div:has(> .terminate-btn-anchor) + div.element-container div.stButton > button:hover,
     div:has(> * > .terminate-btn-anchor) + div.element-container div.stButton > button:hover,
     div.terminate-btn-anchor + div.stButton > button:hover {{
@@ -185,6 +187,7 @@ st.markdown(f"""
         box-shadow: 0 0 20px rgba(255, 59, 48, 0.5), inset 0 1px 4px rgba(255, 255, 255, 0.5) !important;
         transform: translateY(-1px) !important;
     }}
+    div[data-testid="element-container"]:has(.terminate-btn-anchor) + div[data-testid="element-container"] button:active,
     div:has(> .terminate-btn-anchor) + div.element-container div.stButton > button:active,
     div:has(> * > .terminate-btn-anchor) + div.element-container div.stButton > button:active,
     div.terminate-btn-anchor + div.stButton > button:active {{
@@ -335,8 +338,12 @@ st.markdown(f"""
         text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14, 0 0 20px #39ff14 !important;
     }}
     
-    /* 🖨️ Absolute Print Media Optimization */
+    /* 🖨️ Absolute Print Media Optimization (Perfect A4 Portrait Layout) */
     @media print {{
+        @page {{
+            size: A4 portrait !important;
+            margin: 15mm !important; /* Standard clean margin space on A4 sheets */
+        }}
         html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMainViewContainer"], .main, .block-container {{
             height: auto !important;
             overflow: visible !important;
@@ -347,43 +354,69 @@ st.markdown(f"""
             padding: 0 !important;
             margin: 0 !important;
         }}
+        /* Hide all UI elements, sidebars, buttons, headers by default to prevent leaking */
         body * {{ 
             visibility: hidden !important; 
         }}
-        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], .stDeployButton, footer, button, iframe, .stButton {{
+        [data-testid="stSidebar"], 
+        [data-testid="stHeader"], 
+        [data-testid="stToolbar"], 
+        .stDeployButton, 
+        footer, 
+        button, 
+        iframe, 
+        .stButton,
+        [data-testid="collapsedControl"] {{
             display: none !important;
             visibility: hidden !important;
-        }}
-        [data-testid="stExpander"] {{
-            border: none !important;
-            box-shadow: none !important;
-            background: transparent !important;
-            padding: 0 !important;
+            height: 0 !important;
+            width: 0 !important;
             margin: 0 !important;
+            padding: 0 !important;
         }}
+        /* Enable and Re-display ONLY the manifest card and its nested children */
         .print-manifest-card, .print-manifest-card * {{ 
             visibility: visible !important; 
+            display: revert !important;
         }}
-        .print-manifest-card table, .print-manifest-card tr, .print-manifest-card td, .print-manifest-card h2, .print-manifest-card p, .print-manifest-card div, .print-manifest-card span, .print-manifest-card b {{
-            visibility: visible !important;
-        }}
+        /* Anchor the manifest cleanly to the top-left of the physical paper page */
         .print-manifest-card {{ 
             position: absolute !important; 
             left: 0 !important; 
             top: 0 !important; 
             width: 100% !important; 
+            max-width: 180mm !important; /* Fits precisely on standard A4 paper width */
             height: auto !important;
             border: none !important; 
             box-shadow: none !important; 
             background: #ffffff !important;
-            padding: 25px !important;
+            padding: 0px !important; /* Prevents visual offset on layout printing */
             margin: 0 !important;
             box-sizing: border-box !important;
             display: block !important;
             z-index: 9999999 !important;
+            page-break-inside: avoid !important;
         }}
         .print-manifest-card table {{
+            width: 100% !important;
+            table-layout: fixed !important;
+            border-collapse: collapse !important;
+            margin-top: 15px !important;
             page-break-inside: avoid !important;
+        }}
+        .print-manifest-card td {{
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            white-space: normal !important;
+            padding: 8px 10px !important;
+            font-size: 14px !important;
+            color: #000000 !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+        }}
+        /* Force color backgrounds to render properly (e.g. red anomaly box, warning headers) */
+        * {{
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }}
     }}
     </style>
@@ -844,7 +877,7 @@ def communications_view():
                         print_anomaly_box_html = ""
                         if print_historical_anomaly and not (print_last_delivered or print_last_rts):
                             print_anomaly_box_html = """
-                            <div style="background-color: #dc2626; color: #ffffff; padding: 10px; border-radius: 4px; font-weight: bold; font-size: 13px; margin-bottom: 10px; border: 1px solid #b91c1c; word-wrap: break-word; white-space: normal; line-height: 1.4;">
+                            <div class="anomaly-warning-box" style="background-color: #dc2626 !important; color: #ffffff !important; padding: 12px; border-radius: 6px; font-weight: bold; font-size: 13px; margin-bottom: 15px; border: 1px solid #b91c1c; word-wrap: break-word; white-space: normal; line-height: 1.4; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
                                 ⚠️ ANOMALY DETECTED: Marked Delivered/RTS in history but NOT currently!
                             </div>
                             """
