@@ -259,27 +259,27 @@ st.markdown(f"""
     @media print {{
         html, body {{
             height: auto !important;
-            overflow: hidden !important;
+            overflow: visible !important;
             background: #ffffff !important;
             background-color: #ffffff !important;
         }}
         body * {{ 
             visibility: hidden !important; 
         }}
-        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], .stDeployButton, footer, button, iframe, .stButton, .stMarkdown {{
+        /* Fixed: Removed .stMarkdown from display: none to prevent container deletion */
+        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], .stDeployButton, footer, button, iframe, .stButton {{
             display: none !important;
             visibility: hidden !important;
         }}
         .print-manifest-card, .print-manifest-card * {{ 
             visibility: visible !important; 
-            display: block !important;
         }}
         .print-manifest-card table, .print-manifest-card tr, .print-manifest-card td, .print-manifest-card h2, .print-manifest-card p, .print-manifest-card div, .print-manifest-card span, .print-manifest-card b {{
             visibility: visible !important;
-            display: auto !important;
         }}
+        /* Fixed: Changed position to absolute for reliable printing layout overlay */
         .print-manifest-card {{ 
-            position: fixed !important; 
+            position: absolute !important; 
             left: 0 !important; 
             top: 0 !important; 
             width: 100% !important; 
@@ -290,6 +290,7 @@ st.markdown(f"""
             padding: 25px !important;
             margin: 0 !important;
             box-sizing: border-box !important;
+            display: block !important;
         }}
     }}
     </style>
