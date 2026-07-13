@@ -249,11 +249,15 @@ st.markdown(f"""
     }}
     
     @media print {{
-        html, body {{
+        html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMainViewContainer"], .main, .block-container {{
             height: auto !important;
             overflow: visible !important;
+            overflow-x: visible !important;
+            overflow-y: visible !important;
             background: #ffffff !important;
             background-color: #ffffff !important;
+            padding: 0 !important;
+            margin: 0 !important;
         }}
         body * {{ 
             visibility: hidden !important; 
@@ -261,6 +265,13 @@ st.markdown(f"""
         [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], .stDeployButton, footer, button, iframe, .stButton {{
             display: none !important;
             visibility: hidden !important;
+        }}
+        [data-testid="stExpander"] {{
+            border: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
         }}
         .print-manifest-card, .print-manifest-card * {{ 
             visibility: visible !important; 
@@ -924,7 +935,36 @@ def export_center_view():
 # 🗺️ DYNAMIC PORTAL ROUTING ENGINE
 # ==========================================
 
-# 1. Global Header Branding & Complaints Alert Engine (Will render on all sub-pages automatically)
+# 1. Dynamic Native Page Mapping based on Security Context and States
+if not st.session_state.logged_in:
+    # Login Mode - Safe Isolation without navigation links
+    pages_to_display = [
+        st.Page(login_view, title="Authentication Desk", icon="🔒")
+    ]
+elif st.session_state.show_recovery_prompt:
+    # Session Recovery Override State
+    pages_to_display = [
+        st.Page(recovery_view, title="Session Recovery", icon="🔄")
+    ]
+else:
+    # Active Account Operational Matrix Setup
+    if st.session_state.role == "admin":
+        pages_to_display = [
+            st.Page(ingestion_view, title="Ingestion Engine", icon="📊"),
+            st.Page(operator_matrix_view, title="Operator Matrix", icon="👥"),
+            st.Page(communications_view, title="Communications Desk", icon="📞"),
+            st.Page(export_center_view, title="Export Center & Backup", icon="📥")
+        ]
+    else:
+        pages_to_display = [
+            st.Page(communications_view, title="Communications Desk", icon="📞"),
+            st.Page(export_center_view, title="My Exports & Backup", icon="📥")
+        ]
+
+# Initialize Routing (Position set to hidden so default sidebar links don't show)
+selected_navigation_route = st.navigation(pages_to_display, position="hidden")
+
+# 2. Global Header Branding & Complaints Alert Engine (Will render on all sub-pages automatically)
 st.markdown("<div class='brand-title'>📮 SHC & Pak Post | Delivery System</div>", unsafe_allow_html=True)
 st.markdown("<div class='brand-subtitle'>Secure Audit & Communication Engine</div>", unsafe_allow_html=True)
 
@@ -963,13 +1003,29 @@ if st.session_state.logged_in and st.session_state.role == "admin":
         pass
 
 
-# 2. Render Sidebar Session Meta Information & Session Kill Switch
+# 3. Render Sidebar Session Meta Information, Navigation Buttons & Session Kill Switch
 if st.session_state.logged_in:
     with st.sidebar:
         st.markdown("<div class='sb-headline-custom'>🖥️ Enterprise Console</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='sb-login-label'>Logged in as:</div><div class='sb-username-display'>{st.session_state.full_name}</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='sb-privilege-label'>Privilege Cluster: <span>{st.session_state.role.upper()}</span></div>", unsafe_allow_html=True)
-        st.markdown("<br><hr style='border-top:1px solid rgba(212,175,55,0.3);'><br>", unsafe_allow_html=True)
+        
+        # Navigation Portion
+        if not st.session_state.show_recovery_prompt:
+            st.markdown("<br><hr style='border-top: 2px solid rgba(212,175,55,0.4); margin: 10px 0;'><br>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size: 15px; font-weight: 800; color: #d4af37; margin-bottom: 12px; letter-spacing: 1.5px;'>📂 SYSTEM NAVIGATION</div>", unsafe_allow_html=True)
+            
+            for pg in pages_to_display:
+                is_active = (pg == selected_navigation_route)
+                if is_active:
+                    button_label = f"▶️ **{pg.icon} {pg.title}**"
+                else:
+                    button_label = f"{pg.icon} {pg.title}"
+                    
+                if st.button(button_label, use_container_width=True, key=f"nav_btn_{pg.title}"):
+                    st.switch_page(pg)
+                    
+        st.markdown("<br><hr style='border-top: 2px solid rgba(212,175,55,0.4); margin: 10px 0;'><br>", unsafe_allow_html=True)
         if st.button("Terminate Session 🚪", use_container_width=True):
             with st.spinner("Processing session termination..."):
                 st.session_state.logged_in = False
@@ -977,32 +1033,5 @@ if st.session_state.logged_in:
                 st.rerun()
 
 
-# 3. Dynamic Native Page Mapping based on Security Context and States
-if not st.session_state.logged_in:
-    # Login Mode - Safe Isolation without navigation links
-    pages_to_display = [
-        st.Page(login_view, title="Authentication Desk", icon="🔒")
-    ]
-elif st.session_state.show_recovery_prompt:
-    # Session Recovery Override State
-    pages_to_display = [
-        st.Page(recovery_view, title="Session Recovery", icon="🔄")
-    ]
-else:
-    # Active Account Operational Matrix Setup
-    if st.session_state.role == "admin":
-        pages_to_display = [
-            st.Page(ingestion_view, title="Ingestion Engine", icon="📊"),
-            st.Page(operator_matrix_view, title="Operator Matrix", icon="👥"),
-            st.Page(communications_view, title="Communications Desk", icon="📞"),
-            st.Page(export_center_view, title="Export Center & Backup", icon="📥")
-        ]
-    else:
-        pages_to_display = [
-            st.Page(communications_view, title="Communications Desk", icon="📞"),
-            st.Page(export_center_view, title="My Exports & Backup", icon="📥")
-        ]
-
 # 4. Streamlit Routing Engine Execution
-selected_navigation_route = st.navigation(pages_to_display)
 selected_navigation_route.run()
