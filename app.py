@@ -4,13 +4,12 @@ import pandas as pd
 import datetime
 import io
 import time
-import requests
 import urllib.request
 from bs4 import BeautifulSoup
 
-# 🎛️ Page Structural Settings
+# 🎛️ Page Structural Settings (No "Presented by SHAHID" as requested)
 st.set_page_config(
-    page_title="Presented by SHAHID | Delivery Portal", 
+    page_title="EMTTS Delivery Portal | Pakistan Post", 
     page_icon="📮", 
     layout="wide", 
     initial_sidebar_state="expanded"
@@ -45,7 +44,6 @@ if "current_navigation_tab" not in st.session_state: st.session_state.current_na
 if "selected_profile_index" not in st.session_state: st.session_state.selected_profile_index = 0
 if "show_recovery_prompt" not in st.session_state: st.session_state.show_recovery_prompt = False
 if "cached_recovery_data" not in st.session_state: st.session_state.cached_recovery_data = {}
-if "duplicate_log_csv" not in st.session_state: st.session_state.duplicate_log_csv = None
 
 # Initialize Column Mappings Memory
 mapping_keys = ["map_article", "map_name", "map_city", "map_phone", "map_date", "map_mrn", "map_address", "map_bo", "map_dup"]
@@ -53,14 +51,12 @@ for key in mapping_keys:
     if key not in st.session_state:
         st.session_state[key] = None
 
-# 🎨 Premium UI Engine Styling (Fixed Double-Braces Syntax)
+# 🎨 EP.GOV.PK Premium Red & Gold Theme + Frosted Glass Sidebar Styling
 sidebar_css_rule = ""
 if not st.session_state.logged_in:
     sidebar_css_rule = """
     [data-testid="stSidebar"] { display: none !important; visibility: hidden !important; }
     [data-testid="collapsedControl"] { display: none !important; visibility: hidden !important; }
-    div[data-testid="stSidebarUserContent"] { display: none !important; }
-    .st-emotion-cache-1jicfl2 { padding-left: 1rem !important; padding-right: 1rem !important; }
     """
 else:
     sidebar_css_rule = """
@@ -70,174 +66,148 @@ else:
         display: block !important;
         visibility: visible !important;
         transform: translateX(0%) !important;
-        min-width: 260px !important;
-        max-width: 260px !important;
-        background: rgba(255, 255, 255, 0.45) !important;
-        backdrop-filter: blur(20px) saturate(170%) !important;
-        border-right: 2px solid rgba(0, 102, 51, 0.2) !important;
-        box-shadow: 5px 0px 30px rgba(0, 77, 38, 0.08) !important;
+        min-width: 270px !important;
+        max-width: 270px !important;
+        background: rgba(25, 25, 25, 0.85) !important;
+        backdrop-filter: blur(25px) saturate(180%) !important;
+        -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
+        border-right: 2px solid #D4AF37 !important;
+        box-shadow: 10px 0px 40px rgba(0, 0, 0, 0.5) !important;
     }
     """
 
 st.markdown(f"""
     <style>
-    /* Global Compact Reset */
-    .block-container {{ padding-top: 1.0rem !important; padding-bottom: 1.0rem !important; padding-left: 2rem !important; padding-right: 2rem !important; }}
+    /* Global Styling & Red-Gold Palette */
+    .block-container {{ padding-top: 1.0rem !important; padding-bottom: 1.0rem !important; }}
     div[data-testid="stToolbar"] {{ visibility: hidden !important; display: none !important; }}
     .stDeployButton {{ display: none !important; }}
-    
-    /* 🛠️ GITHUB / EMAIL WATERMARK REMOVAL */
     footer {{ visibility: hidden !important; display: none !important; }}
-    [data-testid="stViewerBadge"] {{ display: none !important; visibility: hidden !important; }}
-    .viewerBadge {{ display: none !important; }}
+    [data-testid="stViewerBadge"] {{ display: none !important; }}
     
     {sidebar_css_rule}
     
-    /* Elements Spacing Reduction */
-    [data-testid="stVerticalBlock"] {{ gap: 0.5rem !important; }}
-    div.row-widget.stRadio > div {{ gap: 10px !important; }}
-    
-    .stApp {{ background-color: #f4f8f5; }}
-    .brand-title {{ color: #004d26; font-weight: 800; font-size: 1.6rem; margin-bottom: 1px; line-height: 1.2; }}
-    .brand-subtitle {{ color: #3d5a4c; font-size: 0.9rem; margin-bottom: 12px; font-weight: 600; border-left: 3px solid #d4af37; padding-left: 8px; }}
-    
-    /* 🛠️ LOGIN CONTAINER CUT FIX: Full Fluid Compatibility */
-    div[data-testid="stForm"], .pyqt-panel {{
-        background: #ffffff !important;
-        border-radius: 6px !important;
-        border: 1px solid #c2d1c9 !important;
-        box-shadow: 0 4px 8px -2px rgba(0,77,38,0.04) !important;
-        padding: 20px !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        box-sizing: border-box !important;
+    /* Global Input Helper Text ("Press Enter to submit form" removal) */
+    div[data-testid="stInputHelperText"] {{
+        display: none !important;
+        visibility: hidden !important;
+        height: 0px !important;
     }}
     
+    /* App Canvas styling */
+    .stApp {{ background-color: #faf8f5; }}
+    
+    .brand-title {{ color: #A30000; font-weight: 800; font-size: 1.8rem; margin-bottom: 2px; line-height: 1.2; letter-spacing: 0.5px; }}
+    .brand-subtitle {{ color: #5a5a5a; font-size: 0.9rem; margin-bottom: 15px; font-weight: 600; border-left: 3px solid #D4AF37; padding-left: 8px; }}
+    
+    /* Frosted Sidebar Custom Text */
+    .sb-section-title {{
+        color: #aeaeae !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        letter-spacing: 1.5px;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }}
+    .sb-logged-name {{
+        color: #D4AF37 !important;
+        font-size: 20px !important;
+        font-weight: 800 !important;
+        text-shadow: 0px 2px 4px rgba(0,0,0,0.6);
+        letter-spacing: 0.5px;
+    }}
+    .sb-badge-privilege {{
+        color: #FFFFFF !important;
+        font-size: 11px !important;
+        font-weight: bold !important;
+        background: rgba(163, 0, 0, 0.45);
+        padding: 3px 10px;
+        border-radius: 4px;
+        border: 1px solid rgba(163, 0, 0, 0.6);
+        display: inline-block;
+        margin-top: 5px;
+        letter-spacing: 1px;
+    }}
+    
+    /* Login panel box styling */
+    div[data-testid="stForm"] {{
+        background: #ffffff !important;
+        border-radius: 8px !important;
+        border: 1px solid #e0d5c1 !important;
+        box-shadow: 0 10px 25px rgba(163, 0, 0, 0.05) !important;
+        padding: 25px !important;
+    }}
+    
+    /* Red-Gold Premium Buttons with Animations */
     div.stButton > button, div.stDownloadButton > button {{
-        background: linear-gradient(180deg, #008040 0%, #006633 100%) !important;
+        background: linear-gradient(180deg, #A30000 0%, #7A0000 100%) !important;
         color: #ffffff !important;
-        border: 1px solid #004d26 !important;
-        border-bottom: 3px solid #00331a !important;
-        border-radius: 5px !important;
-        padding: 5px 18px !important;
+        border: 1px solid #7A0000 !important;
+        border-bottom: 3.5px solid #5C0000 !important;
+        border-radius: 4px !important;
         font-weight: 700;
         font-size: 14px !important;
-        box-shadow: 0px 3px 6px rgba(0,0,0,0.1) !important;
+        box-shadow: 0px 4px 10px rgba(163, 0, 0, 0.15) !important;
+        transition: all 0.15s ease-in-out !important;
+    }}
+    div.stButton > button:hover, div.stDownloadButton > button:hover {{
+        background: linear-gradient(180deg, #B50000 0%, #8A0000 100%) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0px 6px 14px rgba(163, 0, 0, 0.25) !important;
+    }}
+    div.stButton > button:active, div.stDownloadButton > button:active {{
+        transform: translateY(1.5px) !important;
+        border-bottom: 1px solid #5C0000 !important;
+        box-shadow: 0px 2px 4px rgba(0,0,0,0.2) !important;
     }}
     
+    /* Active tab buttons styling */
     .active-nav-btn div.stButton > button {{
-        background: linear-gradient(180deg, #004d26 0%, #00331a 100%) !important;
-        border-bottom: 1px solid #001a0d !important;
-        transform: translateY(1px) !important;
+        background: linear-gradient(180deg, #D4AF37 0%, #AA8725 100%) !important;
+        color: #000000 !important;
+        border: 1px solid #AA8725 !important;
+        border-bottom: 2px solid #7D6114 !important;
     }}
     
-    /* 📥 3D TYPE SELECTORS MATRIX */
+    /* Premium Dropdown & Selectbox Look Restored */
     div[data-testid="stSelectbox"] > div[data-baseweb="select"], 
     div[data-testid="stDateInput"] > div {{
         background: #ffffff !important;
-        border: 1px solid #cbd5e1 !important;
-        border-bottom: 3px solid #006633 !important;
-        border-radius: 6px !important;
-        box-shadow: 0px 3px 8px rgba(0, 77, 38, 0.04) !important;
-        min-height: 34px !important;
-    }}
-    div[data-testid="stSelectbox"] label, div[data-testid="stDateInput"] label, div[data-testid="stTextInput"] label {{
-        margin-bottom: 2px !important;
-        font-size: 13px !important;
-        font-weight: 600 !important;
+        border: 1px solid #d4cfc5 !important;
+        border-radius: 4px !important;
+        box-shadow: none !important;
     }}
     
-    /* 📱 DECENT-SIZED 3D CLICKABLE PHONE DISPLAY */
+    /* Dynamic Contact Number Display */
     .big-phone-display {{ 
-        font-family: 'Segoe UI', -apple-system, sans-serif; 
-        font-size: 21px !important; 
+        font-family: 'Segoe UI', sans-serif; 
+        font-size: 22px !important; 
         font-weight: 700 !important; 
         color: #ffffff !important; 
-        background: linear-gradient(180deg, #10b981 0%, #059669 100%) !important; 
-        padding: 6px 12px; 
-        border-radius: 6px; 
+        background: linear-gradient(180deg, #A30000 0%, #7A0000 100%) !important; 
+        padding: 8px 15px; 
+        border-radius: 4px; 
         text-align: center; 
-        border: 1px solid #047857; 
-        border-bottom: 3.5px solid #065f46;
-        box-shadow: 0px 4px 10px rgba(5, 150, 105, 0.2);
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        border: 1px solid #7A0000; 
+        border-bottom: 3.5px solid #5C0000;
+        box-shadow: 0px 4px 12px rgba(163, 0, 0, 0.2);
         letter-spacing: 1.5px;
-        margin: 4px 0;
+        margin: 5px 0;
     }}
     
-    /* 🚨 FALLBACK RED BOX */
     .no-phone-display {{
-        font-family: 'Segoe UI', -apple-system, sans-serif; 
+        font-family: 'Segoe UI', sans-serif; 
         font-size: 15px !important; 
         font-weight: 700 !important; 
         color: #ffffff !important; 
-        background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%) !important; 
+        background: #555555 !important; 
         padding: 8px 12px; 
-        border-radius: 6px; 
+        border-radius: 4px; 
         text-align: center; 
-        border: 1px solid #b91c1c; 
-        border-bottom: 3.5px solid #991b1b;
-        box-shadow: 0px 4px 10px rgba(220, 38, 38, 0.2);
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-        margin: 4px 0;
+        margin: 5px 0;
     }}
     
-    /* 🏷️ PRECISE LEFT PANEL DATA CARDS */
-    .data-card {{
-        background: #ffffff;
-        padding: 10px 14px;
-        border-radius: 6px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 2px 4px -1px rgba(0,0,0,0.03);
-    }}
-    .data-row {{
-        margin-bottom: 6px;
-        font-size: 13px;
-        color: #475569;
-        line-height: 1.3;
-    }}
-    .data-value {{
-        font-size: 14.5px !important;
-        font-weight: 700 !important;
-        color: #004d26;
-        background: #f0fdf4;
-        padding: 1px 6px;
-        border-radius: 4px;
-        border: 1px solid #bbf7d0;
-        display: inline-block;
-        margin-top: 2px;
-    }}
-    .data-value-alt {{
-        font-size: 14.5px !important;
-        font-weight: 700 !important;
-        color: #b45309;
-        font-family: monospace;
-        background: #fffbeb;
-        padding: 1px 6px;
-        border-radius: 4px;
-        border: 1px solid #fef3c7;
-        display: inline-block;
-        margin-top: 2px;
-    }}
-    .patient-card-header {{ font-size: 17px !important; font-weight: 700 !important; color: #004d26; border-left: 4px solid #d4af37; padding-left: 8px; margin-bottom: 8px; }}
-    
-    /* Sidebar Compactness */
-    .sb-headline {{ font-size: 15px !important; font-weight: 700; color: #004d26; }}
-    .sb-name-tag {{ font-size: 12px; color: #475569; }}
-    .sb-name-bold {{ font-size: 14px !important; font-weight: 700; color: #004d26; }}
-    hr {{ margin: 8px 0 !important; }}
-    h4 {{ margin-top: 8px !important; margin-bottom: 4px !important; font-size: 14px !important; }}
-
-    /* ✨ PROFESSIONAL OFFICIAL MANIFESTO PRINT STYLE (Fixed Braces) */
-    @media print {{
-        body * {{ visibility: hidden !important; }}
-        .print-manifest-card, .print-manifest-card * {{ visibility: visible !important; }}
-        .print-manifest-card {{
-            position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important;
-            border: 2px solid #004d26 !important; padding: 25px !important; font-family: 'Arial', sans-serif !important;
-            background: #fff !important; color: #000 !important; border-radius: 8px !important;
-        }}
-    }}
+    .patient-card-header {{ font-size: 18px !important; font-weight: 700 !important; color: #A30000; border-left: 4px solid #D4AF37; padding-left: 8px; margin-bottom: 10px; }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -334,28 +304,31 @@ def fetch_live_emtts_status(article_id):
     except Exception as e:
         return None, f"Server Timeout / Failed: {str(e)}"
 
+# Glassmorphism Sidebar Render (With Gold Username & Proper Styling)
 if st.session_state.logged_in:
     with st.sidebar:
-        st.markdown("<div class='sb-headline'>Presented by SHAHID</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='sb-name-tag'>Name: <br><span class='sb-name-bold'>{st.session_state.full_name}</span></div>", unsafe_allow_html=True)
-        st.markdown(f"**user:** `{st.session_state.role.upper()}`")
-        st.markdown("<br><hr style='border-top:1px solid rgba(0,102,51,0.2);'>", unsafe_allow_html=True)
-        if st.button("Terminate Session 🚪", use_container_width=True):
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("<div class='sb-section-title'>LOGGED IN AS:</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='sb-logged-name'>{st.session_state.full_name}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='sb-badge-privilege'>{st.session_state.role.upper()} PRIVILEGES</div>", unsafe_allow_html=True)
+        st.markdown("<br><hr style='border-top:1px solid rgba(255,255,255,0.15);'><br>", unsafe_allow_html=True)
+        if st.button("🚪 Terminate Session", use_container_width=True):
             st.session_state.logged_in = False
             st.query_params.clear()
             st.rerun()
 
-st.markdown("<div class='brand-title'>📮 SHC & Pak Post | Delivery System</div>", unsafe_allow_html=True)
+st.markdown("<div class='brand-title'>📮 EMTTS & Pak Post | Delivery System</div>", unsafe_allow_html=True)
 st.markdown("<div class='brand-subtitle'>Secure Audit & Communication Engine</div>", unsafe_allow_html=True)
 
+# LOGIN PAGE
 if not st.session_state.logged_in:
     _, center_col, _ = st.columns([0.8, 1.4, 0.8])
     with center_col:
-        st.markdown("<div style='background-color:#006633; color:#ffffff; padding:10px; font-weight:700; font-size:13px; border-radius:6px 6px 0px 0px; border:1px solid #004d26; text-align:center;'>SECURE PORTAL AUTHENTICATION</div>", unsafe_allow_html=True)
+        st.markdown("<div style='background-color:#A30000; color:#ffffff; padding:12px; font-weight:700; font-size:14px; border-radius:6px 6px 0px 0px; border:1px solid #7A0000; text-align:center; letter-spacing: 0.5px;'>SECURE PORTAL AUTHENTICATION</div>", unsafe_allow_html=True)
         with st.form("pyqt_enterprise_login"):
             input_user = st.text_input("OPERATOR ID / USERNAME", placeholder="Enter Username")
             input_pass = st.text_input("SECURITY ACCESS PASSWORD", type="password", placeholder="Enter Secure Key")
-            btn_login = st.form_submit_button("UNLOCK TERMINAL", use_container_width=True)
+            btn_login = st.form_submit_button("LOGIN TO PORTAL", use_container_width=True)
             if btn_login:
                 if input_user and input_pass:
                     try:
@@ -441,14 +414,23 @@ else:
                 st.session_state.current_navigation_tab = "📥 Secure Reports Export Center"; st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
 
-    # PAGE 1: HYBRID INGESTION (Saves directly to Supabase Storage Bucket to prevent DB limit issues)
+    # PAGE 1: HYBRID INGESTION
     if st.session_state.current_navigation_tab == "📊 Administrative Ingestion Engine" and st.session_state.role == "admin":
         st.markdown("### 🚨 Critical Security Red-Flag Alerts")
         try:
             flagged_recs = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes").execute().data
             if flagged_recs:
                 for record in flagged_recs:
-                    st.error(f"⚠️ **Extra Money Alert:** Postman demanded cash from **{record['patient_name']}** | Article: `{record['article_id']}` | Op Stamp: {record.get('operator_stamp')}")
+                    col_alert, col_action = st.columns([4, 1])
+                    with col_alert:
+                        st.error(f"⚠️ **Extra Money Alert:** Postman demanded cash from **{record['patient_name']}** | Article: `{record['article_id']}` | Op Stamp: {record.get('operator_stamp')}")
+                    with col_action:
+                        # Action Button to Resolve Directly
+                        if st.button("Resolve Alert ✅", key=f"res_{record['id']}", use_container_width=True):
+                            supabase.table("patient_deliveries").update({"extra_money_charged": "No"}).eq("id", record["id"]).execute()
+                            st.success("Alert resolved successfully!")
+                            time.sleep(0.5)
+                            st.rerun()
             else:
                 st.success("✅ No unauthorized monetary flags detected in current database pipeline.")
         except:
@@ -495,7 +477,6 @@ else:
                         "status": "Pending"
                     })
                 
-                # Convert normalized data into compressed CSV bytes
                 clean_df = pd.DataFrame(staging_area)
                 csv_buffer = io.BytesIO()
                 clean_df.to_csv(csv_buffer, index=False)
@@ -503,7 +484,6 @@ else:
                 
                 filename = f"manifest_{str(target_upload_date)}.csv"
                 try:
-                    # Clear out if file exists and rewrite smoothly
                     try: supabase.storage.from_("manifests").remove([filename])
                     except: pass
                     
@@ -512,9 +492,9 @@ else:
                         file=csv_bytes,
                         file_options={"content-type": "text/csv"}
                     )
-                    st.success(f"🎉 Manifest backup file saved into free cloud bucket node as '{filename}'!")
+                    st.success(f"🎉 Manifest backup file saved successfully as '{filename}'!")
                 except Exception as ex: 
-                    st.error(f"Cloud Bucket Storage Connection Error: {ex}. Make sure bucket named 'manifests' is created inside Supabase Dashboard.")
+                    st.error(f"Cloud Bucket Storage Connection Error: {ex}. Please check that bucket 'manifests' is created in Supabase.")
 
     # PAGE 2: OPERATOR MATRIX
     elif st.session_state.current_navigation_tab == "👥 Operator Matrix & Security Audit Logs" and st.session_state.role == "admin":
@@ -529,7 +509,7 @@ else:
                     st.success("Operator registered successfully!")
                 except Exception as e: st.error(f"Error: {e}")
 
-    # PAGE 3: OUTBOUND HUB (Hybrid File Extraction + Live Table Overlay)
+    # PAGE 3: OUTBOUND COMMUNICATIONS HUB (With Animated Loader & "No Data Found" Check)
     elif st.session_state.current_navigation_tab == "📞 Outbound Communications Hub":
         
         sel_col1, sel_col2, sel_col3 = st.columns([1, 1.2, 1.8])
@@ -537,27 +517,43 @@ else:
         with sel_col1:
             query_date = st.date_input("Select Booking Date:", datetime.date.today())
         
-        # Load raw data safely from the Cloud Storage Bucket file
         raw_date_recs = []
-        filename = f"manifest_{str(query_date)}.csv"
-        try:
-            storage_file_bytes = supabase.storage.from_("manifests").download(filename)
-            if storage_file_bytes:
-                raw_date_recs = pd.read_csv(io.BytesIO(storage_file_bytes)).to_dict(orient="records")
-        except:
-            raw_date_recs = []
-            
-        if not raw_date_recs: 
-            st.info("No logistics manifest backup file found in cloud bucket matching this calendar date.")
+        is_loaded = False
+
+        # ⏳ Animated Loading Spinner during data fetching process
+        with st.spinner("⏳ Connecting to system and processing data nodes..."):
+            # Attempt 1: Fetch from Cloud Storage Bucket File
+            filename = f"manifest_{str(query_date)}.csv"
+            try:
+                storage_file_bytes = supabase.storage.from_("manifests").download(filename)
+                if storage_file_bytes:
+                    raw_date_recs = pd.read_csv(io.BytesIO(storage_file_bytes)).to_dict(orient="records")
+                    is_loaded = True
+            except:
+                raw_date_recs = []
+                
+            # Attempt 2 (Fallback): Query Database Table Directly (In case file isn't in Storage yet)
+            if not is_loaded:
+                try:
+                    db_recs = supabase.table("patient_deliveries").select("*").eq("booking_date", str(query_date)).execute().data
+                    if db_recs:
+                        raw_date_recs = db_recs
+                        is_loaded = True
+                except:
+                    pass
+
+        # ❌ If absolutely no records are found after processing
+        if not is_loaded or not raw_date_recs: 
+            st.error(f"❌ No data found against this date ({query_date}). Please upload a sheet first.")
         else:
-            # Check DB for any existing actions to overlay processed entries live
+            # Check DB for updates to overlay
             try:
                 db_recs = supabase.table("patient_deliveries").select("*").eq("booking_date", str(query_date)).execute().data
                 db_map = {r['article_id']: r for r in db_recs} if db_recs else {}
             except:
                 db_map = {}
 
-            # Overlay real-time statuses from DB onto master records
+            # Overlay real-time statuses
             for record in raw_date_recs:
                 art_id = str(record['article_id']).strip()
                 if art_id in db_map:
@@ -585,7 +581,7 @@ else:
                 final_recs = filtered_by_office
 
             if not final_recs: 
-                st.warning("No records matched filters.")
+                st.warning("No records matched the filter criteria.")
             else:
                 options_list = [f"{r['patient_name']} (MRN: {r.get('mrn_no', 'N/A')}) - [{r['status']}]" for r in final_recs]
                 if st.session_state.selected_profile_index >= len(options_list): st.session_state.selected_profile_index = 0
@@ -600,11 +596,11 @@ else:
                     st.markdown(f"<div class='patient-card-header'>👤 {target_profile['patient_name']}</div>", unsafe_allow_html=True)
                     
                     st.markdown(f"""
-                        <div class='data-card'>
-                            <div class='data-row'>🔢 <b>MRN Number:</b> <span class='data-value'>{target_profile.get('mrn_no', 'N/A')}</span></div>
-                            <div class='data-row'>📦 <b>Consignment ID:</b> <span class='data-value-alt'>{target_profile['article_id']}</span></div>
-                            <div class='data-row'>🏥 <b>GPO Station:</b> <span style='font-size:14px; font-weight:600; color:#1e293b;'>{target_profile.get('booking_office', 'Unknown GPO')}</span></div>
-                            <div class='data-row'>🏠 <b>Address:</b> <span style='font-size:13px; font-weight:600; color:#1e293b; background:#f8fafc; padding:3px 6px; display:inline-block; border-radius:4px; border:1px solid #e2e8f0; margin-top:2px;'>{target_profile['address']}</span></div>
+                        <div style="background:#ffffff; padding:15px; border-radius:6px; border:1px solid #e2d8c5; margin-bottom:15px;">
+                            <div style="margin-bottom:8px;">🔢 <b>MRN Number:</b> <span style="font-weight:700; color:#A30000;">{target_profile.get('mrn_no', 'N/A')}</span></div>
+                            <div style="margin-bottom:8px;">📦 <b>Consignment ID:</b> <span style="font-weight:700; font-family:monospace; color:#A30000;">{target_profile['article_id']}</span></div>
+                            <div style="margin-bottom:8px;">🏥 <b>GPO Station:</b> <span style="font-weight:600;">{target_profile.get('booking_office', 'Unknown GPO')}</span></div>
+                            <div>🏠 <b>Address:</b> <span style="font-size:13px; font-weight:500; background:#f9f9f9; padding:4px 8px; display:inline-block; border-radius:4px; border:1px solid #eee; margin-top:3px;">{target_profile['address']}</span></div>
                         </div>
                     """, unsafe_allow_html=True)
                     
@@ -638,10 +634,9 @@ else:
                                     st.dataframe(pd.DataFrame(processed_rows), use_container_width=True)
                                 else:
                                     final_status_str = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
-                                    st.markdown(f"<div style='font-size:14.5px; font-weight:600; color:#004d26; background:#e8f5e9; padding:6px 12px; border-radius:4px; border:1px solid #c8e6c9;'><b>Latest Status Update:</b> {final_status_str} ({last_entry['datetime']})</div>", unsafe_allow_html=True)
+                                    st.markdown(f"<div style='font-size:14px; font-weight:600; color:#A30000; background:#fdf2f2; padding:8px 12px; border-radius:4px; border:1px solid #f5c2c2;'><b>Latest Status Update:</b> {final_status_str} ({last_entry['datetime']})</div>", unsafe_allow_html=True)
 
                     st.markdown("#### 🎴 DIAL THIS PHONE NUMBER:")
-                    
                     raw_phone = str(target_profile.get('phone_number', '')).strip()
                     if not raw_phone or raw_phone.lower() in ['none', 'nan', 'null', ''] or len(raw_phone) < 5:
                         st.markdown("<div class='no-phone-display'>⚠️ No Contact Number Available</div>", unsafe_allow_html=True)
@@ -698,13 +693,13 @@ else:
                                 <tr>
                                     <td style="text-align:left; width:15%;"><span style="font-size:45px;">📮</span></td>
                                     <td style="text-align:center; width:70%;">
-                                        <h2 style="margin:0; color:#004d26; font-size:24px; letter-spacing:1px;">PAKISTAN POST LOGISTICS REPORT</h2>
+                                        <h2 style="margin:0; color:#A30000; font-size:24px; letter-spacing:1px;">PAKISTAN POST LOGISTICS REPORT</h2>
                                         <h5 style="margin:4px 0; color:#555; font-size:12px;">LAHORE GENERAL POST OFFICE (GPO) | SECURE AUDIT</h5>
                                     </td>
                                     <td style="text-align:right; width:15%; font-size:11px; color:#444;"><b>CONFIDENTIAL</b></td>
                                 </tr>
                             </table>
-                            <hr style="border:1px solid #004d26; margin:15px 0;">
+                            <hr style="border:1.5px solid #A30000; margin:15px 0;">
                             
                             <table style="width:100%; font-size:14px; line-height:2; border-spacing:10px;">
                                 <tr>
@@ -715,7 +710,7 @@ else:
                                 </tr>
                                 <tr>
                                     <td><b>Consignment ID:</b></td>
-                                    <td style="border-bottom:1px dotted #ccc; font-family:monospace; font-weight:bold;">{target_profile['article_id']}</td>
+                                    <td style="border-bottom:1px dotted #ccc; font-family:monospace; font-weight:bold; color:#A30000;">{target_profile['article_id']}</td>
                                     <td><b>GPO Origin Node:</b></td>
                                     <td style="border-bottom:1px dotted #ccc;">{target_profile.get('booking_office', 'Lahore GPO')}</td>
                                 </tr>
@@ -731,8 +726,8 @@ else:
                                 </tr>
                             </table>
                             
-                            <div style="margin-top:25px; padding:15px; background:#f4f8f5; border:1px solid #004d26; border-radius:6px;">
-                                <h4 style="margin:0 0 10px 0; color:#004d26;">AUDIT EVALUATION SUMMARY</h4>
+                            <div style="margin-top:25px; padding:15px; background:#faf4f4; border:1px solid #A30000; border-radius:4px;">
+                                <h4 style="margin:0 0 10px 0; color:#A30000;">AUDIT EVALUATION SUMMARY</h4>
                                 <table style="width:100%; font-size:13px;">
                                     <tr>
                                         <td><b>Physical Delivery Status:</b> {payload_buffer.get('status', target_profile['status'])}</td>
