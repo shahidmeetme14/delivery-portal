@@ -168,11 +168,11 @@ st.markdown(f"""
     /* 📱 Premium 3D Clickable Phone Display Button */
     .big-phone-display {{ 
         font-family: 'Segoe UI', -apple-system, sans-serif; 
-        font-size: 16px !important; 
+        font-size: 22px !important; 
         font-weight: 800 !important; 
         color: #ffffff !important; 
         background: linear-gradient(180deg, #d4af37 0%, #b3922e 100%) !important; 
-        padding: 4px 12px; 
+        padding: 6px 12px; 
         border-radius: 4px; 
         text-align: center; 
         border: 1px solid #b3922e; 
@@ -188,11 +188,11 @@ st.markdown(f"""
     
     .no-phone-display {{
         font-family: 'Segoe UI', -apple-system, sans-serif; 
-        font-size: 15px !important; 
+        font-size: 22px !important; 
         font-weight: 700 !important; 
         color: #ffffff !important; 
         background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%) !important; 
-        padding: 4px 12px; 
+        padding: 6px 12px; 
         border-radius: 4px; 
         text-align: center; 
         border: 1px solid #b91c1c; 
@@ -213,12 +213,12 @@ st.markdown(f"""
         border: 1px solid #cbd5e1;
         box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
     }}
-    .data-row {{
+    .data-card .data-row {{
         margin-bottom: 12px;
         font-size: 15px;
         color: #334155;
     }}
-    .data-value {{
+    .data-card .data-value {{
         font-size: 19px !important;
         font-weight: 700 !important;
         color: #a61c1c;
@@ -228,7 +228,7 @@ st.markdown(f"""
         border: 1px solid #fecaca;
         display: inline-block;
     }}
-    .data-value-alt {{
+    .data-card .data-value-alt {{
         font-size: 19px !important;
         font-weight: 700 !important;
         color: #b45309;
@@ -333,7 +333,7 @@ def fetch_live_emtts_status(article_id):
                 rows = track_div.find_all("tr")
                 current_date = ""
                 for row in rows:
-                    tds = row.find_all("td") # 🟢 FIXED: Target table cells correctly instead of tr
+                    tds = row.find_all("td") 
                     if len(tds) == 1 and "20" in tds[0].text:
                         current_date = tds[0].text.strip()
                     if len(tds) >= 4:
@@ -729,9 +729,14 @@ else:
                                     st.dataframe(pd.DataFrame(processed_rows), use_container_width=True)
                                 else:
                                     final_status_str = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
-                                    st.metric(label="Latest Status", value=final_status_str)
+                                    # Fixed: Custom HTML wrapper applied instead of st.metric to prevent text truncation
+                                    st.markdown(f"""
+                                        <div style='font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 2px;'>Latest Status</div>
+                                        <div style='font-size: 26px; font-weight: 700; color: #1e293b; line-height: 1.25; word-wrap: break-word;'>{final_status_str}</div>
+                                    """, unsafe_allow_html=True)
 
-                    st.markdown("<div style='font-size: 14px; font-weight: bold; color: #334155; margin-bottom: 2px;'>🎴 DIAL THIS PHONE NUMBER FROM LANDLINE:</div>", unsafe_allow_html=True)
+                    # Fixed: Font size and margin updated to match the phone display styling
+                    st.markdown("<div style='font-size: 22px; font-weight: 800; color: #334155; margin-bottom: 6px;'>🎴 DIAL THIS PHONE NUMBER FROM LANDLINE:</div>", unsafe_allow_html=True)
                     
                     raw_phone = str(target_profile.get('phone_number', '')).strip()
                     if not raw_phone or raw_phone.lower() in ['none', 'nan', 'null', ''] or len(raw_phone) < 5:
