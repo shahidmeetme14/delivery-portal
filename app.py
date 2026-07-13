@@ -333,7 +333,7 @@ def fetch_live_emtts_status(article_id):
                 rows = track_div.find_all("tr")
                 current_date = ""
                 for row in rows:
-                    tds = row.find_all("tr")
+                    tds = row.find_all("td") # 🟢 FIXED: Target table cells correctly instead of tr
                     if len(tds) == 1 and "20" in tds[0].text:
                         current_date = tds[0].text.strip()
                     if len(tds) >= 4:
@@ -731,7 +731,7 @@ else:
                                     final_status_str = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
                                     st.metric(label="Latest Status", value=final_status_str)
 
-                    st.markdown("<p style='font-size: 14px; font-weight: bold; color: #334155; margin-bottom: 2px;'>🎴 DIAL THIS PHONE NUMBER FROM LANDLINE:</p>", unsafe_allow_html=True)
+                    st.markdown("<div style='font-size: 14px; font-weight: bold; color: #334155; margin-bottom: 2px;'>🎴 DIAL THIS PHONE NUMBER FROM LANDLINE:</div>", unsafe_allow_html=True)
                     
                     raw_phone = str(target_profile.get('phone_number', '')).strip()
                     if not raw_phone or raw_phone.lower() in ['none', 'nan', 'null', ''] or len(raw_phone) < 5:
