@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 
 # 🎛️ Page Structural Settings
 st.set_page_config(
-    page_title="Presented by SHAHID | Delivery Portal", 
+    page_title="SHC & Pak Post | Delivery System", 
     page_icon="📮", 
     layout="wide", 
     initial_sidebar_state="expanded"
@@ -53,7 +53,7 @@ for key in mapping_keys:
     if key not in st.session_state:
         st.session_state[key] = None
 
-# 🎨 Premium UI Engine Styling & Pakistan Post Etched Glass Sidebar Styles
+# 🎨 Premium UI Engine Styling
 sidebar_css_rule = ""
 if not st.session_state.logged_in:
     sidebar_css_rule = """
@@ -74,12 +74,8 @@ else:
         max-width: 300px !important;
         background: rgba(255, 255, 255, 0.45) !important;
         backdrop-filter: blur(20px) saturate(170%) !important;
-        -webkit-backdrop-filter: blur(20px) saturate(170%) !important;
         border-right: 2px solid rgba(0, 102, 51, 0.2) !important;
         box-shadow: 5px 0px 30px rgba(0, 77, 38, 0.08) !important;
-    }
-    section[data-testid="stSidebar"] .stMarkdown {
-        text-shadow: 0.5px 0.5px 1px rgba(255,255,255,0.9);
     }
     """
 
@@ -111,6 +107,12 @@ st.markdown(f"""
         padding: 8px 24px !important;
         font-weight: 700;
         box-shadow: 0px 4px 8px rgba(0,0,0,0.12) !important;
+        transition: all 0.1s ease;
+    }}
+    
+    div.stButton > button:active, div.stDownloadButton > button:active {{
+        transform: scale(0.98);
+        box-shadow: inset 0px 2px 5px rgba(0,0,0,0.3) !important;
     }}
     
     .active-nav-btn div.stButton > button {{
@@ -119,58 +121,64 @@ st.markdown(f"""
         transform: translateY(2px) !important;
     }}
     
-    /* 📥 3D DROP-DOWNS & DATE SELECTORS UI ENGINE */
+    /* 📥 3D DARK DROP-DOWNS, INPUTS & DATE SELECTORS UI ENGINE */
     div[data-testid="stSelectbox"] > div[data-baseweb="select"], 
-    div[data-testid="stDateInput"] > div {{
-        background: #ffffff !important;
-        border: 1px solid #cbd5e1 !important;
-        border-bottom: 4px solid #006633 !important;
+    div[data-testid="stDateInput"] > div,
+    div[data-testid="stTextInput"] > div {{
+        background: #1e293b !important;
+        border: 1px solid #0f172a !important;
+        border-bottom: 4px solid #020617 !important;
         border-radius: 8px !important;
-        box-shadow: 0px 5px 12px rgba(0, 77, 38, 0.06) !important;
+        box-shadow: inset 0px 1px 3px rgba(255,255,255,0.1), 0px 4px 10px rgba(0, 0, 0, 0.15) !important;
         transition: all 0.2s ease-in-out;
     }}
+    
     div[data-testid="stSelectbox"] > div[data-baseweb="select"]:hover, 
-    div[data-testid="stDateInput"] > div:hover {{
-        transform: translateY(-1px);
-        box-shadow: 0px 7px 15px rgba(0, 102, 51, 0.12) !important;
+    div[data-testid="stDateInput"] > div:hover,
+    div[data-testid="stTextInput"] > div:hover {{
+        background: #0f172a !important;
+        box-shadow: inset 0px 1px 3px rgba(255,255,255,0.15), 0px 6px 14px rgba(0, 0, 0, 0.25) !important;
+    }}
+
+    /* Target input text color inside dark mode controls */
+    div[data-testid="stSelectbox"] *, 
+    div[data-testid="stDateInput"] input,
+    div[data-testid="stTextInput"] input {{
+        color: #ffffff !important;
+        font-weight: 600 !important;
     }}
     
-    /* 🖥️ Sidebar Typographical Formats */
-    .sb-headline {{ color: #004d26; font-weight: 800; font-size: 1.15rem; border-bottom: 2px solid rgba(0,102,51,0.2); padding-bottom: 6px; margin-bottom: 15px; }}
-    .sb-name-tag {{ font-size: 1.05rem; color: #1e293b; font-weight: 500; margin-bottom: 5px; }}
-    .sb-name-bold {{ color: #b48608; font-weight: 800; font-size: 1.2rem; text-shadow: 0px 1px 0px rgba(255,255,255,0.8); }}
-    
-    /* 📱 Premium 3D Clickable Phone Display Button (Slightly Reduced Size) */
+    /* 📱 Premium 3D Clickable Phone Display Button (Slightly Smaller Layout) */
     .big-phone-display {{ 
         font-family: 'Segoe UI', -apple-system, sans-serif; 
-        font-size: 26px !important; 
+        font-size: 24px !important; 
         font-weight: 800 !important; 
         color: #ffffff !important; 
         background: linear-gradient(180deg, #10b981 0%, #059669 100%) !important; 
-        padding: 8px; 
+        padding: 10px; 
         border-radius: 8px; 
         text-align: center; 
         border: 1px solid #047857; 
         border-bottom: 5px solid #065f46;
-        box-shadow: 0px 6px 14px rgba(5, 150, 105, 0.3);
+        box-shadow: 0px 5px 12px rgba(5, 150, 105, 0.25);
         text-shadow: 1px 2px 3px rgba(0,0,0,0.25);
         letter-spacing: 2px;
         margin: 10px 0;
     }}
     
-    /* 🚨 High Visibility Fallback Red 3D Button for Missing Contacts (Slightly Reduced Size) */
+    /* 🚨 High Visibility Fallback Red 3D Button for Missing Contacts */
     .no-phone-display {{
         font-family: 'Segoe UI', -apple-system, sans-serif; 
-        font-size: 18px !important; 
+        font-size: 20px !important; 
         font-weight: 700 !important; 
         color: #ffffff !important; 
         background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%) !important; 
-        padding: 10px; 
+        padding: 12px; 
         border-radius: 8px; 
         text-align: center; 
         border: 1px solid #b91c1c; 
         border-bottom: 5px solid #991b1b;
-        box-shadow: 0px 6px 14px rgba(220, 38, 38, 0.3);
+        box-shadow: 0px 5px 12px rgba(220, 38, 38, 0.25);
         text-shadow: 1px 2px 3px rgba(0,0,0,0.25);
         margin: 10px 0;
     }}
@@ -210,6 +218,12 @@ st.markdown(f"""
         display: inline-block;
     }}
     .patient-card-header {{ font-size: 22px !important; font-weight: 700 !important; color: #004d26; border-left: 5px solid #d4af37; padding-left: 10px; margin-bottom: 15px; }}
+    
+    /* Custom Sidebar Identity Typography Styling to match Image 1 */
+    .sb-headline-custom {{ font-size: 20px !important; font-weight: bold !important; color: #334155 !important; margin-bottom: 15px; }}
+    .sb-login-label {{ margin-top: 15px; color: #475569; font-size: 14px; }}
+    .sb-username-display {{ font-size: 18px !important; font-weight: bold !important; color: #b45309 !important; margin-bottom: 10px; }}
+    .sb-privilege-label {{ margin-top: 10px; color: #475569; font-size: 14px; }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -308,9 +322,10 @@ def fetch_live_emtts_status(article_id):
 
 if st.session_state.logged_in:
     with st.sidebar:
-        st.markdown("<div class='sb-headline'>🖥️ Presented by SHAHID</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='sb-name-tag'>Operator Name: <br><span class='sb-name-bold'>{st.session_state.full_name}</span></div>", unsafe_allow_html=True)
-        st.markdown(f"**Role Cluster:** `{st.session_state.role.upper()}`")
+        # Reverted exact typography and labels to match Image 1 layout
+        st.markdown("<div class='sb-headline-custom'>🖥️ Enterprise Console</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='sb-login-label'>Logged in as:</div><div class='sb-username-display'>{st.session_state.full_name}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='sb-privilege-label'>Privilege Cluster: <span style='font-family: monospace; font-weight: bold;'>{st.session_state.role.upper()}</span></div>", unsafe_allow_html=True)
         st.markdown("<br><hr style='border-top:1px solid rgba(0,102,51,0.2);'><br>", unsafe_allow_html=True)
         if st.button("Terminate Session 🚪", use_container_width=True):
             st.session_state.logged_in = False
@@ -476,7 +491,7 @@ else:
     elif st.session_state.current_navigation_tab == "📞 Outbound Communications Hub":
         st.markdown("### 📞 Outbound Communications Desk")
         
-        # 📥 3D TYPE SELECTORS MATRIX (Date, Office, Patient Selector)
+        # 📥 3D DARK TYPE SELECTORS MATRIX (Date, Office, Patient Selector)
         query_date = st.date_input("Filter Manifest Records by Booking Date:", datetime.date.today())
         
         try: raw_date_recs = supabase.table("patient_deliveries").select("*").eq("booking_date", str(query_date)).execute().data
@@ -559,10 +574,8 @@ else:
                     raw_phone = str(target_profile.get('phone_number', '')).strip()
                     
                     if not raw_phone or raw_phone.lower() in ['none', 'nan', 'null', ''] or len(raw_phone) < 5:
-                        # Fallback: Agar number na ho ya invalid ho
                         st.markdown("<div class='no-phone-display'>⚠️ No Contact Number Available</div>", unsafe_allow_html=True)
                     else:
-                        # Formatting: Shuru me khud 0 lagana agar mojud na ho
                         if not raw_phone.startswith('0') and raw_phone.isdigit():
                             raw_phone = '0' + raw_phone
                         st.markdown(f"<div class='big-phone-display'>{raw_phone}</div>", unsafe_allow_html=True)
@@ -606,11 +619,9 @@ else:
             if all_records:
                 df_export = pd.DataFrame(all_records)
                 
-                # Check mapping data architecture safety for operator stamps
                 if "operator_stamp" not in df_export.columns:
                     df_export["operator_stamp"] = "Unassigned Logs"
                 
-                # Apply Security Access Filtration Clearances
                 if st.session_state.role == "admin":
                     st.markdown("#### 🛠️ Admin Export Panel (Full Ledger Control)")
                     distinct_operators = list(df_export["operator_stamp"].dropna().unique())
