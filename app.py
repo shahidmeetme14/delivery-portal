@@ -176,7 +176,9 @@ st.markdown(f"""
         text-shadow: 1px 1px 1px rgba(0,0,0,0.15);
         letter-spacing: 1px;
         margin: 4px 0;
-        display: inline-block;
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
     }}
     
     /* 🚨 High Visibility Fallback Red 3D Button for Missing Contacts */
@@ -194,7 +196,9 @@ st.markdown(f"""
         box-shadow: 0px 2px 5px rgba(220, 38, 38, 0.15);
         text-shadow: 1px 1px 1px rgba(0,0,0,0.15);
         margin: 4px 0;
-        display: inline-block;
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
     }}
     
     /* 🏷️ Premium Left Panel Data Display */
@@ -320,7 +324,7 @@ def fetch_live_emtts_status(article_id):
                 rows = track_div.find_all("tr")
                 current_date = ""
                 for row in rows:
-                    tds = row.find_all("td")
+                    tds = row.find_all("tr")
                     if len(tds) == 1 and "20" in tds[0].text:
                         current_date = tds[0].text.strip()
                     if len(tds) >= 4:
@@ -358,7 +362,7 @@ if st.session_state.logged_in and st.session_state.role == "admin":
             for alert in unauthorized_charges:
                 alert_col1, alert_col2 = st.columns([4, 1])
                 with alert_col1:
-                    st.error(f"⚠️ **Postman Alert:** Extra money requested/charged for **{alert['patient_name']}** (MRN: {alert.get('mrn_no', 'N/A')}, Consignment ID: {alert['article_id']}). Stamped by Operator: **{alert.get('operator_stamp', 'Staff')}**")
+                    st.error(f"⚠️ **Postman Alert (Extra Charges Wala Issue):** Extra money requested/charged for **{alert['patient_name']}** (MRN: {alert.get('mrn_no', 'N/A')}, Consignment ID: {alert['article_id']}). Stamped by Operator: **{alert.get('operator_stamp', 'Staff')}**\n\n*(Note: Questionnaire main postman details wali changes hotay hi ye click par mazeed logs show kare ga)*")
                 with alert_col2:
                     if st.button("Dismiss / Resolve ✅", key=f"resolve_charge_{alert['id']}", use_container_width=True):
                         with st.spinner("Processing alert resolution..."):
@@ -371,7 +375,7 @@ if st.session_state.logged_in and st.session_state.role == "admin":
         # 📁 HISTORICAL SECURE LOGS ARCHIVE VIEWER ENGINE
         resolved_charges = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes (Resolved)").execute().data
         if resolved_charges:
-            with st.expander("📁 View Resolved Alert History Logs (Past Reports Archive)"):
+            with st.expander("📁 View Resolved Alert History Logs (Past Reports Archive - Extra Charges Issues)"):
                 history_df = pd.DataFrame(resolved_charges)
                 column_mapping_view = {
                     "patient_name": "Patient Name",
@@ -597,8 +601,11 @@ else:
                 options_list = [f"{r['patient_name']} (MRN: {r.get('mrn_no', 'N/A')}) - [{r['status']}]" for r in final_recs]
                 if st.session_state.selected_profile_index >= len(options_list): st.session_state.selected_profile_index = 0
                     
-                st.selectbox("Select Patient Profile to Process:", options_list, index=st.session_state.selected_profile_index, key="outbound_profile_select")
-                target_profile = final_recs[st.session_state.selected_profile_index]
+                selected_prof_str = st.selectbox("Select Patient Profile to Process:", options_list, index=st.session_state.selected_profile_index, key="outbound_profile_select")
+                
+                # 🔄 Real-time dropdown change dynamic sync engine (Image 2 Fix)
+                actual_index = options_list.index(selected_prof_str) if selected_prof_str in options_list else 0
+                target_profile = final_recs[actual_index]
                 
                 st.markdown("<hr>", unsafe_allow_html=True)
                 l_panel, r_panel = st.columns(2)
@@ -648,7 +655,8 @@ else:
                                     final_status_str = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
                                     st.metric(label="Latest Status", value=final_status_str)
 
-                    st.markdown("#### 🎴 DIAL THIS PHONE NUMBER FROM LANDLINE:")
+                    # 📱 Optimized Font Size Reduction (Image 3 Font Fix)
+                    st.markdown("<p style='font-size: 14px; font-weight: bold; color: #334155; margin-bottom: 2px;'>🎴 DIAL THIS PHONE NUMBER FROM LANDLINE:</p>", unsafe_allow_html=True)
                     
                     raw_phone = str(target_profile.get('phone_number', '')).strip()
                     if not raw_phone or raw_phone.lower() in ['none', 'nan', 'null', ''] or len(raw_phone) < 5:
