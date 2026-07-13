@@ -127,10 +127,60 @@ st.markdown(f"""
         box-shadow: inset 0px 2px 5px rgba(0,0,0,0.3) !important;
     }}
     
-    .active-nav-btn div.stButton > button {{
-        background: linear-gradient(180deg, #a61c1c 0%, #731010 100%) !important;
-        border-bottom: 1px solid #400707 !important;
-        transform: translateY(2px) !important;
+    /* 💎 Crystal Style Navigation Buttons with 3D Gold Border */
+    section[data-testid="stSidebar"] div.stButton > button {{
+        background: rgba(255, 255, 255, 0.05) !important;
+        color: #ffffff !important;
+        border: 2px solid rgba(212, 175, 55, 0.5) !important;
+        border-bottom: 5px solid rgba(179, 146, 46, 0.9) !important; /* Rich 3D Gold shadow base */
+        border-radius: 10px !important;
+        padding: 10px 20px !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 2px rgba(255,255,255,0.1) !important;
+        transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        font-weight: 700 !important;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9) !important;
+    }}
+    
+    section[data-testid="stSidebar"] div.stButton > button:hover {{
+        background: rgba(212, 175, 55, 0.15) !important; /* Elegant golden crystal glow */
+        border-color: rgba(212, 175, 55, 0.9) !important;
+        box-shadow: 0 0 15px rgba(212, 175, 55, 0.4), inset 0 1px 3px rgba(255, 255, 255, 0.2) !important;
+        transform: translateY(-1px) !important;
+    }}
+    
+    section[data-testid="stSidebar"] div.stButton > button:active {{
+        transform: translateY(3px) !important;
+        border-bottom: 2px solid rgba(179, 146, 46, 0.9) !important;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(0,0,0,0.3) !important;
+    }}
+    
+    /* 🖨️ Parent-Level Custom Print Button */
+    .custom-print-btn {{
+        background: linear-gradient(180deg, #cc2424 0%, #a61c1c 100%) !important;
+        color: #ffffff !important;
+        border: 1px solid #801414 !important;
+        border-bottom: 4px solid #590d0d !important;
+        border-radius: 6px !important;
+        padding: 12px 24px !important;
+        font-weight: 700;
+        font-size: 14px;
+        font-family: 'Segoe UI', sans-serif;
+        box-shadow: 0px 4px 8px rgba(0,0,0,0.12);
+        cursor: pointer;
+        width: 100%;
+        margin-top: 15px;
+        transition: all 0.1s ease;
+        display: block;
+        text-align: center;
+    }}
+    .custom-print-btn:hover {{
+        background: linear-gradient(180deg, #e53e3e 0%, #cc2424 100%) !important;
+    }}
+    .custom-print-btn:active {{
+        transform: scale(0.99);
+        box-shadow: inset 0px 2px 5px rgba(0,0,0,0.3) !important;
     }}
     
     div[data-testid="stSelectbox"] > div[data-baseweb="select"], 
@@ -248,6 +298,7 @@ st.markdown(f"""
         text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14, 0 0 20px #39ff14 !important;
     }}
     
+    /* 🖨️ Absolute Print Media Optimization */
     @media print {{
         html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMainViewContainer"], .main, .block-container {{
             height: auto !important;
@@ -285,13 +336,17 @@ st.markdown(f"""
             top: 0 !important; 
             width: 100% !important; 
             height: auto !important;
-            border: 2px dashed #cbd5e1 !important; 
+            border: none !important; 
             box-shadow: none !important; 
             background: #ffffff !important;
             padding: 25px !important;
             margin: 0 !important;
             box-sizing: border-box !important;
             display: block !important;
+            z-index: 9999999 !important;
+        }}
+        .print-manifest-card table {{
+            page-break-inside: avoid !important;
         }}
     }}
     </style>
@@ -814,33 +869,10 @@ def communications_view():
                         </div>
                     """, unsafe_allow_html=True)
 
-                    components.html("""
-                    <button onclick="window.parent.print()" style="
-                        background: linear-gradient(180deg, #cc2424 0%, #a61c1c 100%);
-                        color: #ffffff;
-                        border: 1px solid #801414;
-                        border-bottom: 4px solid #590d0d;
-                        border-radius: 6px;
-                        padding: 12px 24px;
-                        font-weight: 700;
-                        font-size: 14px;
-                        font-family: 'Segoe UI', sans-serif;
-                        box-shadow: 0px 4px 8px rgba(0,0,0,0.12);
-                        cursor: pointer;
-                        width: 100%;
-                        margin-top: 15px;
-                        transition: all 0.1s ease;
-                    ">🖨️ PRINT LOGISTICS MANIFEST</button>
-                    <style>
-                        button:hover {
-                            background: linear-gradient(180deg, #e53e3e 0%, #cc2424 100%);
-                        }
-                        button:active {
-                            transform: scale(0.99);
-                            box-shadow: inset 0px 2px 5px rgba(0,0,0,0.3);
-                        }
-                    </style>
-                    """, height=65)
+                    # 🖨️ Parent Window Direct Printing Script (Bypasses Sandbox Iframe restrictions completely)
+                    st.markdown("""
+                    <button onclick="window.print()" class="custom-print-btn">🖨️ PRINT LOGISTICS MANIFEST</button>
+                    """, unsafe_allow_html=True)
 
                     st.markdown('<p style="font-size:12px; color:#64748b; margin-top:8px; text-align:center;">💡 Tip: Clicking the button above or pressing <b>Ctrl + P</b> will cleanly print only this manifest certificate on a full page.</p>', unsafe_allow_html=True)
             
