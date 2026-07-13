@@ -251,6 +251,13 @@ st.markdown(f"""
         font-weight: bold !important;
         text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14, 0 0 20px #39ff14 !important;
     }}
+    
+    /* 🖨️ Clean CSS Print Optimizations */
+    @media print {{
+        body * {{ visibility: hidden !important; }}
+        .print-manifest-card, .print-manifest-card * {{ visibility: visible !important; }}
+        .print-manifest-card {{ position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; border: none !important; }}
+    }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -729,22 +736,73 @@ else:
                                     st.dataframe(pd.DataFrame(processed_rows), use_container_width=True)
                                 else:
                                     final_status_str = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
-                                    # Fixed: Custom HTML wrapper applied instead of st.metric to prevent text truncation
+                                    # Modified: Decent background color box with reduced font size for cleaner presentation look
                                     st.markdown(f"""
-                                        <div style='font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 2px;'>Latest Status</div>
-                                        <div style='font-size: 26px; font-weight: 700; color: #1e293b; line-height: 1.25; word-wrap: break-word;'>{final_status_str}</div>
+                                        <div style='background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px; margin-bottom: 15px;'>
+                                            <div style='font-size: 13px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;'>Latest Status</div>
+                                            <div style='font-size: 20px; font-weight: 700; color: #1e293b; line-height: 1.3; word-wrap: break-word;'>{final_status_str}</div>
+                                        </div>
                                     """, unsafe_allow_html=True)
 
-                    # Fixed: Font size and margin updated to match the phone display styling
                     st.markdown("<div style='font-size: 22px; font-weight: 800; color: #334155; margin-bottom: 6px;'>🎴 DIAL THIS PHONE NUMBER FROM LANDLINE:</div>", unsafe_allow_html=True)
                     
                     raw_phone = str(target_profile.get('phone_number', '')).strip()
                     if not raw_phone or raw_phone.lower() in ['none', 'nan', 'null', ''] or len(raw_phone) < 5:
                         st.markdown("<div class='no-phone-display'>⚠️ No Contact Number Available</div>", unsafe_allow_html=True)
+                        raw_phone = ""
                     else:
                         if not raw_phone.startswith('0') and raw_phone.isdigit():
                             raw_phone = '0' + raw_phone
                         st.markdown(f"<div class='big-phone-display'>{raw_phone}</div>", unsafe_allow_html=True)
+                    
+                    # New Feature: Print Manifest Certificate Area
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    with st.expander("🖨️ Individual Profile Print Desk"):
+                        print_operator = target_profile.get('operator_stamp', st.session_state.full_name)
+                        print_status = target_profile.get('status', 'Pending')
+                        st.markdown(f"""
+                            <div class="print-manifest-card" style="background: #ffffff; border: 2px dashed #cbd5e1; padding: 25px; border-radius: 8px; font-family: 'Segoe UI', sans-serif; color: #000000;">
+                                <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 10px; margin-bottom: 20px;">
+                                    <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST LOGISTICS MANIFEST</h2>
+                                    <p style="margin: 5px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Quality Verification & Consignee Audit Certificate</p>
+                                </div>
+                                <table style="width: 100%; border-collapse: collapse; font-size: 15px; color: #000000;">
+                                    <tr>
+                                        <td style="padding: 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td>
+                                        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['patient_name']}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">MRN Number:</td>
+                                        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('mrn_no', 'N/A')}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Consignment ID (Article):</td>
+                                        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: 700; color: #a61c1c;">{target_profile['article_id']}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Contact Number:</td>
+                                        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{raw_phone if raw_phone else 'N/A'}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Booking GPO Station:</td>
+                                        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('booking_office', 'N/A')}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Mailing Address:</td>
+                                        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['address']}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Verification Status:</td>
+                                        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #a61c1c;">[{print_status}]</td>
+                                    </tr>
+                                </table>
+                                <div style="margin-top: 35px; display: flex; justify-content: space-between; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 15px; color: #475569;">
+                                    <div><b>Verified By (Operator ID):</b> {print_operator}</div>
+                                    <div><b>System Print Timestamp:</b> {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
+                                </div>
+                            </div>
+                            <p style="font-size:12px; color:#64748b; margin-top:8px; text-align:center;">💡 Tip: Press <b>Ctrl + P</b> anywhere on this page to print this layout perfectly on a full sheet.</p>
+                        """, unsafe_allow_html=True)
                 
                 with r_panel:
                     st.markdown("#### 📝 Live Quality Verification & Audit Questionnaire")
