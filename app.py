@@ -371,14 +371,15 @@ st.markdown(f"""
     @media print {{
         @page {{
             size: A4 portrait !important;
-            margin: 12mm !important;
+            margin: 10mm !important;
         }}
         
-        html, body {{
-            height: 100% !important;
+        html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], .block-container {{
+            height: auto !important;
+            width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
-            overflow: hidden !important;
+            overflow: visible !important;
             background: #ffffff !important;
             background-color: #ffffff !important;
         }}
@@ -409,12 +410,11 @@ st.markdown(f"""
 
         /* Direct Positioning & Isolation on Page 1 (Strictly Single Page A4) */
         .print-manifest-card {{ 
-            position: fixed !important; 
+            position: absolute !important; 
             left: 0 !important; 
             top: 0 !important; 
             width: 100% !important; 
             height: auto !important;
-            max-height: 100vh !important;
             margin: 0 !important;
             padding: 20px !important;
             border: 2px solid #000000 !important; 
@@ -422,11 +422,7 @@ st.markdown(f"""
             background: #ffffff !important;
             box-sizing: border-box !important;
             page-break-inside: avoid !important;
-            page-break-after: avoid !important;
-            page-break-before: avoid !important;
-            break-inside: avoid !important;
-            overflow: hidden !important;
-            z-index: 999999 !important;
+            z-index: 99999 !important;
         }}
 
         .print-manifest-card table {{
@@ -447,6 +443,22 @@ st.markdown(f"""
             font-size: 14px !important;
             color: #000000 !important;
             border-bottom: 1px solid #cbd5e1 !important;
+        }}
+        
+        .print-timestamp {{
+            visibility: visible !important;
+            position: fixed !important;
+            bottom: 15mm !important;
+            right: 15mm !important;
+            font-size: 12px !important;
+            color: #000000 !important;
+            font-weight: bold !important;
+            z-index: 999999 !important;
+            text-align: right !important;
+        }}
+        
+        .screen-only-timestamp {{
+            display: none !important;
         }}
 
         /* Chrome/Edge color forced prints */
@@ -786,13 +798,23 @@ def communications_view():
         unique_offices = sorted(list(set([str(r.get('booking_office', 'Lahore GPO')).strip() for r in raw_date_recs])))
         unique_offices.insert(0, "All Offices")
         
-        filter_col1, filter_col2 = st.columns(2)
-        with filter_col1: selected_office = st.selectbox("🏥 Filter by Booking Office / GPO Node:", unique_offices)
-        with filter_col2: search_term = st.text_input("🔎 Smart Search (Name, Article ID, or MRN):").strip().lower()
+        try:
+            dynamic_headings = list(master_ledger_df.columns)
+        except:
+            dynamic_headings = ["patient_name", "article_id", "mrn_no", "phone_number", "address", "booking_office", "transaction_no"]
+        
+        filter_col1, filter_col2, filter_col3 = st.columns([1.5, 1.5, 1.5])
+        with filter_col1: selected_office = st.selectbox("🏥 Filter by Booking Office:", unique_offices)
+        with filter_col2: search_category = st.selectbox("🔎 Search By Heading:", ["All Fields"] + dynamic_headings)
+        with filter_col3: search_term = st.text_input("Enter detail to search:").strip().lower()
             
         filtered_by_office = raw_date_recs if selected_office == "All Offices" else [r for r in raw_date_recs if str(r.get('booking_office')).strip() == selected_office]
+        
         if search_term:
-            final_recs = [r for r in filtered_by_office if search_term in str(r.get('patient_name','')).lower() or search_term in str(r.get('article_id','')).lower() or search_term in str(r.get('mrn_no','')).lower()]
+            if search_category == "All Fields":
+                final_recs = [r for r in filtered_by_office if any(search_term in str(val).lower() for val in r.values())]
+            else:
+                final_recs = [r for r in filtered_by_office if search_term in str(r.get(search_category, '')).lower()]
         else: final_recs = filtered_by_office
 
         if not final_recs: st.warning("No records matched filters.")
@@ -997,9 +1019,10 @@ def communications_view():
                             </table>
                             <div style="margin-top: 35px; display: flex; justify-content: space-between; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 15px; color: #475569;">
                                 <div><b>Verified By (Operator ID):</b> {print_operator}</div>
-                                <div><b>System Print Timestamp:</b> {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
+                                <div class="screen-only-timestamp"><b>System Print Timestamp:</b> {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
                             </div>
                         </div>
+                        <div class="print-timestamp">System Print Timestamp: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
                     """, unsafe_allow_html=True)
 
                     # 🖨️ Print button will strictly only activate if the article status is fetched
