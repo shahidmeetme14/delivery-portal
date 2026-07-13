@@ -160,39 +160,36 @@ st.markdown(f"""
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(0,0,0,0.3) !important;
     }}
 
-    /* 🔴 Terminate Session Button - Glossy Red Look styling via Anchor Selector & Direct Siblings */
-    div[data-testid="element-container"]:has(.terminate-btn-anchor) + div[data-testid="element-container"] button,
-    div:has(> .terminate-btn-anchor) + div.element-container div.stButton > button,
-    div:has(> * > .terminate-btn-anchor) + div.element-container div.stButton > button,
-    div.terminate-btn-anchor + div.stButton > button {{
-        background: linear-gradient(180deg, #ff3b30 0%, #c31414 100%) !important;
+    /* 🔴 Terminate Session Button - Robust CSS Hook for 3D Glossy Red Button Styling */
+    section[data-testid="stSidebar"] div[data-testid="element-container"]:has(.terminate-btn-anchor) + div[data-testid="element-container"] div.stButton > button,
+    section[data-testid="stSidebar"] div.terminate-btn-anchor + div.stButton > button,
+    section[data-testid="stSidebar"] div:has(> .terminate-btn-anchor) + div.element-container div.stButton > button {{
+        background: linear-gradient(180deg, #ff4d4d 0%, #c31414 100%) !important;
         color: #ffffff !important;
-        border: 2px solid rgba(255, 59, 48, 0.6) !important;
-        border-bottom: 5px solid #8a0c0c !important;
+        border: 2px solid rgba(255, 255, 255, 0.2) !important;
+        border-bottom: 5px solid #800a0a !important;
         border-radius: 10px !important;
         padding: 10px 20px !important;
         backdrop-filter: blur(12px) !important;
         -webkit-backdrop-filter: blur(12px) !important;
-        box-shadow: 0 8px 32px 0 rgba(195, 20, 20, 0.3), inset 0 1px 3px rgba(255,255,255,0.4) !important;
+        box-shadow: 0 8px 32px 0 rgba(195, 20, 20, 0.35), inset 0 1px 3px rgba(255,255,255,0.4) !important;
         transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
         font-weight: 700 !important;
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6) !important;
     }}
-    div[data-testid="element-container"]:has(.terminate-btn-anchor) + div[data-testid="element-container"] button:hover,
-    div:has(> .terminate-btn-anchor) + div.element-container div.stButton > button:hover,
-    div:has(> * > .terminate-btn-anchor) + div.element-container div.stButton > button:hover,
-    div.terminate-btn-anchor + div.stButton > button:hover {{
-        background: linear-gradient(180deg, #ff453a 0%, #d31818 100%) !important;
-        border-color: rgba(255, 59, 48, 0.9) !important;
-        box-shadow: 0 0 20px rgba(255, 59, 48, 0.5), inset 0 1px 4px rgba(255, 255, 255, 0.5) !important;
+    section[data-testid="stSidebar"] div[data-testid="element-container"]:has(.terminate-btn-anchor) + div[data-testid="element-container"] div.stButton > button:hover,
+    section[data-testid="stSidebar"] div.terminate-btn-anchor + div.stButton > button:hover,
+    section[data-testid="stSidebar"] div:has(> .terminate-btn-anchor) + div.element-container div.stButton > button:hover {{
+        background: linear-gradient(180deg, #ff6666 0%, #d91616 100%) !important;
+        border-color: rgba(255, 255, 255, 0.4) !important;
+        box-shadow: 0 0 20px rgba(255, 59, 48, 0.6), inset 0 1px 4px rgba(255, 255, 255, 0.5) !important;
         transform: translateY(-1px) !important;
     }}
-    div[data-testid="element-container"]:has(.terminate-btn-anchor) + div[data-testid="element-container"] button:active,
-    div:has(> .terminate-btn-anchor) + div.element-container div.stButton > button:active,
-    div:has(> * > .terminate-btn-anchor) + div.element-container div.stButton > button:active,
-    div.terminate-btn-anchor + div.stButton > button:active {{
+    section[data-testid="stSidebar"] div[data-testid="element-container"]:has(.terminate-btn-anchor) + div[data-testid="element-container"] div.stButton > button:active,
+    section[data-testid="stSidebar"] div.terminate-btn-anchor + div.stButton > button:active,
+    section[data-testid="stSidebar"] div:has(> .terminate-btn-anchor) + div.element-container div.stButton > button:active {{
         transform: translateY(3px) !important;
-        border-bottom: 2px solid #8a0c0c !important;
+        border-bottom: 2px solid #800a0a !important;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(0,0,0,0.3) !important;
     }}
     
@@ -338,82 +335,96 @@ st.markdown(f"""
         text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14, 0 0 20px #39ff14 !important;
     }}
     
-    /* 🖨️ Absolute Print Media Optimization (Perfect A4 Portrait Layout) */
+    /* 🖨️ Absolute Print Media Optimization (Fixed Multiple Pages & Offsite Leaks) */
     @media print {{
-        @page {{
-            size: A4 portrait !important;
-            margin: 15mm !important; /* Standard clean margin space on A4 sheets */
-        }}
-        html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMainViewContainer"], .main, .block-container {{
-            height: auto !important;
-            overflow: visible !important;
-            overflow-x: visible !important;
-            overflow-y: visible !important;
+        html, body, .stApp {{
             background: #ffffff !important;
             background-color: #ffffff !important;
-            padding: 0 !important;
-            margin: 0 !important;
+            height: auto !important;
+            overflow: visible !important;
+            overflow-x: hidden !important;
+            overflow-y: hidden !important;
         }}
-        /* Hide all UI elements, sidebars, buttons, headers by default to prevent leaking */
-        body * {{ 
-            visibility: hidden !important; 
+        
+        /* Strict clean page definitions */
+        @page {{
+            size: A4 portrait !important;
+            margin: 12mm 12mm 12mm 12mm !important;
         }}
-        [data-testid="stSidebar"], 
-        [data-testid="stHeader"], 
-        [data-testid="stToolbar"], 
+
+        /* Clean out all generic Streamlit layout elements */
+        div[data-testid="stSidebar"], 
+        div[data-testid="stHeader"], 
+        div[data-testid="stToolbar"],
+        div.stAppDeployButton,
         .stDeployButton, 
         footer, 
-        button, 
-        iframe, 
-        .stButton,
+        button,
+        iframe,
+        div.stButton,
         [data-testid="collapsedControl"] {{
             display: none !important;
             visibility: hidden !important;
-            height: 0 !important;
-            width: 0 !important;
-            margin: 0 !important;
-            padding: 0 !important;
+            height: 0px !important;
+            width: 0px !important;
+            margin: 0px !important;
+            padding: 0px !important;
         }}
-        /* Enable and Re-display ONLY the manifest card and its nested children */
-        .print-manifest-card, .print-manifest-card * {{ 
+
+        /* Hide all page contents by default */
+        body * {{ 
+            visibility: hidden !important; 
+        }}
+
+        /* Force Only the active manifest card and its items to show up */
+        .print-manifest-card, 
+        .print-manifest-card * {{ 
             visibility: visible !important; 
-            display: revert !important;
+            display: block !important;
         }}
-        /* Anchor the manifest cleanly to the top-left of the physical paper page */
+
+        /* Direct Positioning & Isolation on Page 1 */
         .print-manifest-card {{ 
             position: absolute !important; 
-            left: 0 !important; 
-            top: 0 !important; 
+            left: 0px !important; 
+            top: 0px !important; 
             width: 100% !important; 
-            max-width: 180mm !important; /* Fits precisely on standard A4 paper width */
-            height: auto !important;
+            max-width: 185mm !important;
             border: none !important; 
             box-shadow: none !important; 
             background: #ffffff !important;
-            padding: 0px !important; /* Prevents visual offset on layout printing */
-            margin: 0 !important;
-            box-sizing: border-box !important;
+            padding: 0px !important;
+            margin: 0px !important;
             display: block !important;
-            z-index: 9999999 !important;
             page-break-inside: avoid !important;
+            page-break-after: avoid !important;
+            page-break-before: avoid !important;
         }}
+
         .print-manifest-card table {{
             width: 100% !important;
-            table-layout: fixed !important;
+            display: table !important;
             border-collapse: collapse !important;
             margin-top: 15px !important;
-            page-break-inside: avoid !important;
         }}
+
+        .print-manifest-card tr {{
+            display: table-row !important;
+        }}
+
         .print-manifest-card td {{
-            word-wrap: break-word !important;
-            overflow-wrap: break-word !important;
-            white-space: normal !important;
+            display: table-cell !important;
             padding: 8px 10px !important;
             font-size: 14px !important;
             color: #000000 !important;
-            border-bottom: 1px solid #e2e8f0 !important;
+            border-bottom: 1px solid #cbd5e1 !important;
         }}
-        /* Force color backgrounds to render properly (e.g. red anomaly box, warning headers) */
+
+        .print-manifest-card div {{
+            display: block !important;
+        }}
+
+        /* Chrome/Edge color forced prints */
         * {{
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
@@ -876,7 +887,7 @@ def communications_view():
                         
                         print_anomaly_box_html = ""
                         if print_historical_anomaly and not (print_last_delivered or print_last_rts):
-                            print_anomaly_box_html = """
+                            print_anomaly_box_html = f"""
                             <div class="anomaly-warning-box" style="background-color: #dc2626 !important; color: #ffffff !important; padding: 12px; border-radius: 6px; font-weight: bold; font-size: 13px; margin-bottom: 15px; border: 1px solid #b91c1c; word-wrap: break-word; white-space: normal; line-height: 1.4; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
                                 ⚠️ ANOMALY DETECTED: Marked Delivered/RTS in history but NOT currently!
                             </div>
@@ -1100,43 +1111,44 @@ else:
 # Initialize Routing (Position set to hidden so default sidebar links don't show)
 selected_navigation_route = st.navigation(pages_to_display, position="hidden")
 
-# 2. Global Header Branding & Complaints Alert Engine (Will render on all sub-pages automatically)
-st.markdown("<div class='brand-title'>📮 SHC & Pak Post | Delivery System</div>", unsafe_allow_html=True)
-st.markdown("<div class='brand-subtitle'>Secure Audit & Communication Engine</div>", unsafe_allow_html=True)
+# 2. Global Header Branding & Complaints Alert Engine (Will render on all sub-pages automatically EXCEPT Login Screen)
+if st.session_state.logged_in:
+    st.markdown("<div class='brand-title'>📮 SHC & Pak Post | Delivery System</div>", unsafe_allow_html=True)
+    st.markdown("<div class='brand-subtitle'>Secure Audit & Communication Engine</div>", unsafe_allow_html=True)
 
-if st.session_state.logged_in and st.session_state.role == "admin":
-    try:
-        unauthorized_charges = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes").execute().data
-        if unauthorized_charges:
-            st.markdown("### 🚨 Critical Corruption & Extra Charges Alerts")
-            for alert in unauthorized_charges:
-                alert_col1, alert_col2 = st.columns([4, 1])
-                with alert_col1:
-                    st.error(f"⚠️ **Postman Alert (Extra Charges Issue):** Extra money requested/charged for **{alert['patient_name']}** (MRN: {alert.get('mrn_no', 'N/A')}, Consignment ID: {alert['article_id']}). Stamped by Operator: **{alert.get('operator_stamp', 'Staff')}**\n\n*(Note: This log will display extended postman information upon questionnaire configuration updates)*")
-                with alert_col2:
-                    if st.button("Dismiss / Resolve ✅", key=f"resolve_charge_{alert['id']}", use_container_width=True):
-                        with st.spinner("Processing alert resolution..."):
-                            supabase.table("patient_deliveries").update({"extra_money_charged": "Yes (Resolved)"}).eq("id", alert["id"]).execute()
-                            st.success("Alert successfully cleared from active view!")
-                            time.sleep(0.5)
-                            st.rerun()
-            st.markdown("<hr style='border-top: 1px solid #cc2424;'>", unsafe_allow_html=True)
-            
-        resolved_charges = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes (Resolved)").execute().data
-        if resolved_charges:
-            with st.expander("📁 View Resolved Alert History Logs (Past Reports Archive - Extra Charges Issues)"):
-                history_df = pd.DataFrame(resolved_charges)
-                column_mapping_view = {
-                    "patient_name": "Patient Name",
-                    "mrn_no": "MRN Number",
-                    "article_id": "Consignment ID",
-                    "operator_stamp": "Reported By (Operator)",
-                    "booking_date": "Booking Date"
-                }
-                history_df_filtered = history_df[[col for col in column_mapping_view.keys() if col in history_df.columns]].rename(columns=column_mapping_view)
-                st.dataframe(history_df_filtered, use_container_width=True, hide_index=True)
-    except:
-        pass
+    if st.session_state.role == "admin":
+        try:
+            unauthorized_charges = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes").execute().data
+            if unauthorized_charges:
+                st.markdown("### 🚨 Critical Corruption & Extra Charges Alerts")
+                for alert in unauthorized_charges:
+                    alert_col1, alert_col2 = st.columns([4, 1])
+                    with alert_col1:
+                        st.error(f"⚠️ **Postman Alert (Extra Charges Issue):** Extra money requested/charged for **{alert['patient_name']}** (MRN: {alert.get('mrn_no', 'N/A')}, Consignment ID: {alert['article_id']}). Stamped by Operator: **{alert.get('operator_stamp', 'Staff')}**\n\n*(Note: This log will display extended postman information upon questionnaire configuration updates)*")
+                    with alert_col2:
+                        if st.button("Dismiss / Resolve ✅", key=f"resolve_charge_{alert['id']}", use_container_width=True):
+                            with st.spinner("Processing alert resolution..."):
+                                supabase.table("patient_deliveries").update({"extra_money_charged": "Yes (Resolved)"}).eq("id", alert["id"]).execute()
+                                st.success("Alert successfully cleared from active view!")
+                                time.sleep(0.5)
+                                st.rerun()
+                st.markdown("<hr style='border-top: 1px solid #cc2424;'>", unsafe_allow_html=True)
+                
+            resolved_charges = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes (Resolved)").execute().data
+            if resolved_charges:
+                with st.expander("📁 View Resolved Alert History Logs (Past Reports Archive - Extra Charges Issues)"):
+                    history_df = pd.DataFrame(resolved_charges)
+                    column_mapping_view = {
+                        "patient_name": "Patient Name",
+                        "mrn_no": "MRN Number",
+                        "article_id": "Consignment ID",
+                        "operator_stamp": "Reported By (Operator)",
+                        "booking_date": "Booking Date"
+                    }
+                    history_df_filtered = history_df[[col for col in column_mapping_view.keys() if col in history_df.columns]].rename(columns=column_mapping_view)
+                    st.dataframe(history_df_filtered, use_container_width=True, hide_index=True)
+        except:
+            pass
 
 
 # 3. Render Sidebar Session Meta Information, Navigation Buttons & Session Kill Switch
