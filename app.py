@@ -7,6 +7,7 @@ import time
 import requests
 import urllib.request
 from bs4 import BeautifulSoup
+import streamlit.components.v1 as components
 
 # 🎛️ Page Structural Settings
 st.set_page_config(
@@ -46,6 +47,7 @@ if "selected_profile_index" not in st.session_state: st.session_state.selected_p
 if "show_recovery_prompt" not in st.session_state: st.session_state.show_recovery_prompt = False
 if "cached_recovery_data" not in st.session_state: st.session_state.cached_recovery_data = {}
 if "duplicate_log_csv" not in st.session_state: st.session_state.duplicate_log_csv = None
+if "fetched_emtts_data" not in st.session_state: st.session_state.fetched_emtts_data = {}
 
 # Initialize Column Mappings Memory
 mapping_keys = ["map_article", "map_name", "map_city", "map_phone", "map_date", "map_mrn", "map_address", "map_bo", "map_dup"]
@@ -253,11 +255,25 @@ st.markdown(f"""
     }}
     
     /* 🖨️ Clean CSS Print Optimizations */
-    @media print {{
-        body * {{ visibility: hidden !important; }}
-        .print-manifest-card, .print-manifest-card * {{ visibility: visible !important; }}
-        .print-manifest-card {{ position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; border: none !important; }}
-    }}
+    @media print {
+        body * { visibility: hidden !important; }
+        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], .stDeployButton, footer, button, iframe, .stButton {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        .print-manifest-card, .print-manifest-card * { visibility: visible !important; }
+        .print-manifest-card { 
+            position: absolute !important; 
+            left: 0 !important; 
+            top: 0 !important; 
+            width: 100% !important; 
+            border: none !important; 
+            box-shadow: none !important; 
+            background: #ffffff !important;
+            padding: 20px !important;
+            margin: 0 !important;
+        }
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -715,6 +731,9 @@ else:
                             data, err = fetch_live_emtts_status(target_profile['article_id'])
                             if err: st.error(err)
                             elif data and data["history"]:
+                                # Save the successfully fetched tracking result to session state cache for the print layout
+                                st.session_state.fetched_emtts_data[target_profile['article_id']] = data
+                                
                                 history_list = data["history"]
                                 last_entry = history_list[-1]
                                 last_status_lower = last_entry["status"].lower()
@@ -755,11 +774,84 @@ else:
                             raw_phone = '0' + raw_phone
                         st.markdown(f"<div class='big-phone-display'>{raw_phone}</div>", unsafe_allow_html=True)
                     
-                    # New Feature: Print Manifest Certificate Area
+                    # New Feature: Print Manifest Certificate Area (Updated for detailed verification status, print button, and EMTTS live status option)
                     st.markdown("<br>", unsafe_allow_html=True)
                     with st.expander("🖨️ Individual Profile Print Desk"):
                         print_operator = target_profile.get('operator_stamp', st.session_state.full_name)
+                        
+                        # 1. Verification Status Detailed Evaluation
                         print_status = target_profile.get('status', 'Pending')
+                        print_status_detail = f"[{print_status}]"
+                        if print_status == "Delivered":
+                            delivery_date = target_profile.get('delivery_date', 'N/A')
+                            received_mode = target_profile.get('received_mode', 'N/A')
+                            extra_money = target_profile.get('extra_money_charged', 'N/A')
+                            print_status_detail = f"""
+                            <b style="color: green;">Delivered</b><br>
+                            <span style="font-size: 13px; font-weight: 600; color: #334155; line-height: 1.4;">
+                                • Date: {delivery_date}<br>
+                                • Mode: {received_mode}<br>
+                                • Extra Money Requested/Tips: <b style="color: {'#dc2626' if extra_money == 'Yes' else '#1e293b'}">{extra_money}</b>
+                            </span>
+                            """
+                        elif print_status == "Issue / Complaint":
+                            issue_reason = target_profile.get('issue_reason', 'N/A')
+                            print_status_detail = f"""
+                            <b style="color: #dc2626;">Issue / Complaint</b><br>
+                            <span style="font-size: 13px; font-weight: 600; color: #334155; line-height: 1.4;">
+                                • Reason: {issue_reason}
+                            </span>
+                            """
+                        else:
+                            print_status_detail = f"<b style='color: #475569;'>Pending Verification</b>"
+
+                        # 2. EMTTS Tracking Live Evaluation for Print Manifest
+                        current_article_id = target_profile['article_id']
+                        cached_emtts = st.session_state.fetched_emtts_data.get(current_article_id)
+
+                        if cached_emtts and "history" in cached_emtts:
+                            history_list = cached_emtts["history"]
+                            use_mapped = (data_mode == "Fetch Snipped Data (Mapped Mode)")
+                            
+                            if report_scope == "All Statuses (Full History)":
+                                # Compact, highly polished HTML sub-table for Full History logs inside print Layout
+                                rows_html = ""
+                                for idx, h in enumerate(history_list):
+                                    status_val = map_status(h["status"]) if use_mapped else h["status"]
+                                    rows_html += f"""
+                                    <tr style="font-size: 11px; border-bottom: 1px solid #e2e8f0;">
+                                        <td style="padding: 4px; color: #334155;">{h['datetime']}</td>
+                                        <td style="padding: 4px; color: #334155;">{h['office']}</td>
+                                        <td style="padding: 4px; font-weight: bold; color: #a61c1c;">{status_val}</td>
+                                    </tr>
+                                    """
+                                emtts_status_html = f"""
+                                <table style="width: 100%; border-collapse: collapse; margin-top: 5px; border: 1px solid #cbd5e1;">
+                                    <thead>
+                                        <tr style="background: #f1f5f9; font-size: 11px; text-align: left;">
+                                            <th style="padding: 4px; border-bottom: 2px solid #cbd5e1; color: #1e293b;">Date/Time</th>
+                                            <th style="padding: 4px; border-bottom: 2px solid #cbd5e1; color: #1e293b;">Office</th>
+                                            <th style="padding: 4px; border-bottom: 2px solid #cbd5e1; color: #1e293b;">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {rows_html}
+                                    </tbody>
+                                </table>
+                                """
+                            else:
+                                # Last Status display format
+                                last_entry = history_list[-1]
+                                status_val = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
+                                emtts_status_html = f"""
+                                <div style="font-weight: bold; color: #1e293b; font-size: 14px;">{status_val}</div>
+                                <div style="font-size: 11px; color: #475569; margin-top: 2px;">
+                                    📍 Office: {last_entry['office']} | 🕒 Date-Time: {last_entry['datetime']}
+                                </div>
+                                """
+                        else:
+                            emtts_status_html = "<span style='color: #94a3b8; font-style: italic; font-size: 13px;'>Live status not fetched yet (Click 'Fetch Live Status' above to populate)</span>"
+
                         st.markdown(f"""
                             <div class="print-manifest-card" style="background: #ffffff; border: 2px dashed #cbd5e1; padding: 25px; border-radius: 8px; font-family: 'Segoe UI', sans-serif; color: #000000;">
                                 <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 10px; margin-bottom: 20px;">
@@ -792,8 +884,12 @@ else:
                                         <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['address']}</td>
                                     </tr>
                                     <tr>
-                                        <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Verification Status:</td>
-                                        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #a61c1c;">[{print_status}]</td>
+                                        <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">EMTTS Tracking Status:</td>
+                                        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{emtts_status_html}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Verification Status:</td>
+                                        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{print_status_detail}</td>
                                     </tr>
                                 </table>
                                 <div style="margin-top: 35px; display: flex; justify-content: space-between; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 15px; color: #475569;">
@@ -801,8 +897,38 @@ else:
                                     <div><b>System Print Timestamp:</b> {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
                                 </div>
                             </div>
-                            <p style="font-size:12px; color:#64748b; margin-top:8px; text-align:center;">💡 Tip: Press <b>Ctrl + P</b> anywhere on this page to print this layout perfectly on a full sheet.</p>
                         """, unsafe_allow_html=True)
+
+                        # Premium, responsive client-side Print button component targeting the layout
+                        components.html("""
+                        <button onclick="window.parent.print()" style="
+                            background: linear-gradient(180deg, #cc2424 0%, #a61c1c 100%);
+                            color: #ffffff;
+                            border: 1px solid #801414;
+                            border-bottom: 4px solid #590d0d;
+                            border-radius: 6px;
+                            padding: 12px 24px;
+                            font-weight: 700;
+                            font-size: 14px;
+                            font-family: 'Segoe UI', sans-serif;
+                            box-shadow: 0px 4px 8px rgba(0,0,0,0.12);
+                            cursor: pointer;
+                            width: 100%;
+                            margin-top: 15px;
+                            transition: all 0.1s ease;
+                        ">🖨️ PRINT LOGISTICS MANIFEST</button>
+                        <style>
+                            button:hover {
+                                background: linear-gradient(180deg, #e53e3e 0%, #cc2424 100%);
+                            }
+                            button:active {
+                                transform: scale(0.99);
+                                box-shadow: inset 0px 2px 5px rgba(0,0,0,0.3);
+                            }
+                        </style>
+                        """, height=65)
+
+                        st.markdown('<p style="font-size:12px; color:#64748b; margin-top:8px; text-align:center;">💡 Tip: Clicking the button above or pressing <b>Ctrl + P</b> will cleanly print only this manifest certificate on a full page.</p>', unsafe_allow_html=True)
                 
                 with r_panel:
                     st.markdown("#### 📝 Live Quality Verification & Audit Questionnaire")
