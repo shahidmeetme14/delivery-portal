@@ -654,7 +654,7 @@ def communications_view():
                             use_mapped = (data_mode == "Fetch Snipped Data (Mapped Mode)")
                             if report_scope == "All Statuses (Full History)":
                                 processed_rows = [{"Event": i+1, "Timestamp": h["datetime"], "Office": h["office"], "Status": map_status(h["status"]) if use_mapped else h["status"]} for i, h in enumerate(history_list)]
-                               st.dataframe(pd.DataFrame(processed_rows), use_container_width=True)
+                                st.dataframe(pd.DataFrame(processed_rows), use_container_width=True)
                             else:
                                 final_status_str = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
                                 st.markdown(f"""
