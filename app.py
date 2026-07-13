@@ -89,13 +89,19 @@ else:
 
 st.markdown(f"""
     <style>
-    div[data-testid="stToolbar"] {{ visibility: hidden !important; display: none !important; }}
-    .stDeployButton {{ display: none !important; }}
-    footer {{ visibility: hidden !important; display: none !important; }}
-    [data-testid="stViewerBadge"] {{ display: none !important; visibility: hidden !important; }}
-    div[class^="viewerBadge"] {{ display: none !important; visibility: hidden !important; }}
-    .viewerBadge_container__1616G {{ display: none !important; visibility: hidden !important; }}
-    .stAppDeployButton {{ display: none !important; visibility: hidden !important; }}
+    /* Complete Removal of Streamlit Watermarks, Headers, Footers & Badges */
+    div[data-testid="stToolbar"], #MainMenu, footer, header,
+    .stDeployButton, .stAppDeployButton,
+    [data-testid="stViewerBadge"], div[class^="viewerBadge"],
+    .viewerBadge_container__1616G,
+    div[data-testid="stDecoration"], div[data-testid="stStatusWidget"] {{
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        height: 0px !important;
+        width: 0px !important;
+        pointer-events: none !important;
+    }}
     {sidebar_css_rule}
     
     .stApp {{ background-color: #fdfcf9; }}
@@ -136,7 +142,7 @@ st.markdown(f"""
         background: rgba(255, 255, 255, 0.05) !important;
         color: #ffffff !important;
         border: 2px solid rgba(212, 175, 55, 0.5) !important;
-        border-bottom: 5px solid rgba(179, 146, 46, 0.9) !important; /* Rich 3D Gold shadow base */
+        border-bottom: 5px solid rgba(179, 146, 46, 0.9) !important;
         border-radius: 10px !important;
         padding: 10px 20px !important;
         backdrop-filter: blur(12px) !important;
@@ -148,7 +154,7 @@ st.markdown(f"""
     }}
     
     section[data-testid="stSidebar"] div.stButton > button:hover {{
-        background: rgba(212, 175, 55, 0.15) !important; /* Elegant golden crystal glow */
+        background: rgba(212, 175, 55, 0.15) !important;
         border-color: rgba(212, 175, 55, 0.9) !important;
         box-shadow: 0 0 15px rgba(212, 175, 55, 0.4), inset 0 1px 3px rgba(255, 255, 255, 0.2) !important;
         transform: translateY(-1px) !important;
@@ -160,34 +166,67 @@ st.markdown(f"""
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(0,0,0,0.3) !important;
     }}
 
+    /* 🟡 Glossy Gold Crystal Password Button */
+    section[data-testid="stSidebar"] div[data-testid="stElementContainer"]:has(.password-btn-anchor) + div[data-testid="stElementContainer"] button,
+    section[data-testid="stSidebar"] div[data-testid="element-container"]:has(.password-btn-anchor) + div[data-testid="element-container"] button,
+    section[data-testid="stSidebar"] div.password-btn-anchor + div button,
+    section[data-testid="stSidebar"] div:has(> .password-btn-anchor) + div button,
+    section[data-testid="stSidebar"] button:has(div:contains("Change User Password")),
+    section[data-testid="stSidebar"] button:has(p:contains("Change User Password")) {{
+        background: linear-gradient(180deg, #ffd700 0%, #b8860b 100%) !important;
+        color: #000000 !important;
+        border: 2px solid rgba(255, 255, 255, 0.5) !important;
+        border-bottom: 5px solid #8b6508 !important;
+        border-radius: 10px !important;
+        padding: 10px 20px !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        box-shadow: 0 8px 32px 0 rgba(212, 175, 55, 0.4), inset 0 1px 3px rgba(255,255,255,0.6) !important;
+        transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        font-weight: 800 !important;
+        text-shadow: 0px 1px 1px rgba(255, 255, 255, 0.5) !important;
+    }}
+    section[data-testid="stSidebar"] button:has(div:contains("Change User Password")):hover,
+    section[data-testid="stSidebar"] button:has(p:contains("Change User Password")):hover {{
+        background: linear-gradient(180deg, #ffe44d 0%, #d4a017 100%) !important;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), inset 0 1px 4px rgba(255, 255, 255, 0.8) !important;
+        transform: translateY(-1px) !important;
+    }}
+    section[data-testid="stSidebar"] button:has(div:contains("Change User Password")):active,
+    section[data-testid="stSidebar"] button:has(p:contains("Change User Password")):active {{
+        transform: translateY(3px) !important;
+        border-bottom: 2px solid #8b6508 !important;
+    }}
+
     /* 🔴 Terminate Session Button - Robust CSS Hook for 3D Glossy Red Button Styling */
-    section[data-testid="stSidebar"] div[data-testid="element-container"]:has(.terminate-btn-anchor) + div[data-testid="element-container"] div.stButton > button,
-    section[data-testid="stSidebar"] div.terminate-btn-anchor + div.stButton > button,
-    section[data-testid="stSidebar"] div:has(> .terminate-btn-anchor) + div.element-container div.stButton > button {{
+    section[data-testid="stSidebar"] div[data-testid="stElementContainer"]:has(.terminate-btn-anchor) + div[data-testid="stElementContainer"] button,
+    section[data-testid="stSidebar"] div[data-testid="element-container"]:has(.terminate-btn-anchor) + div[data-testid="element-container"] button,
+    section[data-testid="stSidebar"] div.terminate-btn-anchor + div button,
+    section[data-testid="stSidebar"] div:has(> .terminate-btn-anchor) + div button,
+    section[data-testid="stSidebar"] button:has(div:contains("Terminate Session")),
+    section[data-testid="stSidebar"] button:has(p:contains("Terminate Session")) {{
         background: linear-gradient(180deg, #ff4d4d 0%, #c31414 100%) !important;
         color: #ffffff !important;
-        border: 2px solid rgba(255, 255, 255, 0.2) !important;
+        border: 2px solid rgba(255, 255, 255, 0.3) !important;
         border-bottom: 5px solid #800a0a !important;
         border-radius: 10px !important;
         padding: 10px 20px !important;
         backdrop-filter: blur(12px) !important;
         -webkit-backdrop-filter: blur(12px) !important;
-        box-shadow: 0 8px 32px 0 rgba(195, 20, 20, 0.35), inset 0 1px 3px rgba(255,255,255,0.4) !important;
+        box-shadow: 0 8px 32px 0 rgba(195, 20, 20, 0.4), inset 0 1px 3px rgba(255,255,255,0.4) !important;
         transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-        font-weight: 700 !important;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6) !important;
+        font-weight: 800 !important;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7) !important;
     }}
-    section[data-testid="stSidebar"] div[data-testid="element-container"]:has(.terminate-btn-anchor) + div[data-testid="element-container"] div.stButton > button:hover,
-    section[data-testid="stSidebar"] div.terminate-btn-anchor + div.stButton > button:hover,
-    section[data-testid="stSidebar"] div:has(> .terminate-btn-anchor) + div.element-container div.stButton > button:hover {{
+    section[data-testid="stSidebar"] button:has(div:contains("Terminate Session")):hover,
+    section[data-testid="stSidebar"] button:has(p:contains("Terminate Session")):hover {{
         background: linear-gradient(180deg, #ff6666 0%, #d91616 100%) !important;
-        border-color: rgba(255, 255, 255, 0.4) !important;
-        box-shadow: 0 0 20px rgba(255, 59, 48, 0.6), inset 0 1px 4px rgba(255, 255, 255, 0.5) !important;
+        border-color: rgba(255, 255, 255, 0.6) !important;
+        box-shadow: 0 0 20px rgba(255, 59, 48, 0.7), inset 0 1px 4px rgba(255, 255, 255, 0.5) !important;
         transform: translateY(-1px) !important;
     }}
-    section[data-testid="stSidebar"] div[data-testid="element-container"]:has(.terminate-btn-anchor) + div[data-testid="element-container"] div.stButton > button:active,
-    section[data-testid="stSidebar"] div.terminate-btn-anchor + div.stButton > button:active,
-    section[data-testid="stSidebar"] div:has(> .terminate-btn-anchor) + div.element-container div.stButton > button:active {{
+    section[data-testid="stSidebar"] button:has(div:contains("Terminate Session")):active,
+    section[data-testid="stSidebar"] button:has(p:contains("Terminate Session")):active {{
         transform: translateY(3px) !important;
         border-bottom: 2px solid #800a0a !important;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(0,0,0,0.3) !important;
@@ -335,45 +374,39 @@ st.markdown(f"""
         text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14, 0 0 20px #39ff14 !important;
     }}
     
-    /* 🖨️ Absolute Print Media Optimization (Fixed Multiple Pages & Offsite Leaks) */
+    /* 🖨️ Absolute Print Media Optimization (Fixed Single Page Clean Print & Container Resets) */
     @media print {{
-        html, body, .stApp {{
+        @page {{
+            size: A4 portrait !important;
+            margin: 10mm !important;
+        }}
+        
+        html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stMainBlockContainer"], div, section {{
             background: #ffffff !important;
             background-color: #ffffff !important;
             height: auto !important;
+            max-height: none !important;
             overflow: visible !important;
-            overflow-x: hidden !important;
-            overflow-y: hidden !important;
+            position: static !important;
+            transform: none !important;
+            box-shadow: none !important;
+            border: none !important;
         }}
         
-        /* Strict clean page definitions */
-        @page {{
-            size: A4 portrait !important;
-            margin: 12mm 12mm 12mm 12mm !important;
+        /* Hide everything by default */
+        body * {{ 
+            visibility: hidden !important; 
         }}
 
         /* Clean out all generic Streamlit layout elements */
-        div[data-testid="stSidebar"], 
-        div[data-testid="stHeader"], 
-        div[data-testid="stToolbar"],
-        div.stAppDeployButton,
-        .stDeployButton, 
-        footer, 
-        button,
-        iframe,
-        div.stButton,
-        [data-testid="collapsedControl"] {{
+        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"],
+        footer, button, iframe, div.stButton, [data-testid="collapsedControl"],
+        .stAppDeployButton, .stDeployButton, #MainMenu {{
             display: none !important;
-            visibility: hidden !important;
-            height: 0px !important;
-            width: 0px !important;
-            margin: 0px !important;
-            padding: 0px !important;
-        }}
-
-        /* Hide all page contents by default */
-        body * {{ 
-            visibility: hidden !important; 
+            height: 0 !important;
+            width: 0 !important;
+            opacity: 0 !important;
+            overflow: hidden !important;
         }}
 
         /* Force Only the active manifest card and its items to show up */
@@ -386,19 +419,20 @@ st.markdown(f"""
         /* Direct Positioning & Isolation on Page 1 */
         .print-manifest-card {{ 
             position: absolute !important; 
-            left: 0px !important; 
-            top: 0px !important; 
+            left: 0 !important; 
+            top: 0 !important; 
             width: 100% !important; 
-            max-width: 185mm !important;
-            border: none !important; 
-            box-shadow: none !important; 
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 15px !important;
+            border: 2px solid #000000 !important; 
+            border-radius: 0px !important;
             background: #ffffff !important;
-            padding: 0px !important;
-            margin: 0px !important;
-            display: block !important;
+            box-sizing: border-box !important;
             page-break-inside: avoid !important;
             page-break-after: avoid !important;
             page-break-before: avoid !important;
+            z-index: 999999 !important;
         }}
 
         .print-manifest-card table {{
@@ -410,6 +444,7 @@ st.markdown(f"""
 
         .print-manifest-card tr {{
             display: table-row !important;
+            page-break-inside: avoid !important;
         }}
 
         .print-manifest-card td {{
@@ -418,10 +453,6 @@ st.markdown(f"""
             font-size: 14px !important;
             color: #000000 !important;
             border-bottom: 1px solid #cbd5e1 !important;
-        }}
-
-        .print-manifest-card div {{
-            display: block !important;
         }}
 
         /* Chrome/Edge color forced prints */
@@ -523,6 +554,33 @@ def fetch_live_emtts_status(article_id):
     except Exception as e:
         return None, f"Server Timeout / Failed: {str(e)}"
 
+# 🔐 CHANGE PASSWORD DIALOG FUNCTION
+@st.dialog("🔐 Change User Password")
+def change_password_dialog():
+    st.markdown("<div style='color: #475569; font-size: 14px; margin-bottom: 15px;'>Enter your current password and define a new secure key.</div>", unsafe_allow_html=True)
+    curr_pass = st.text_input("Current Password", type="password", key="dlg_curr_pass")
+    new_pass = st.text_input("New Password", type="password", key="dlg_new_pass")
+    conf_pass = st.text_input("Confirm New Password", type="password", key="dlg_conf_pass")
+    
+    if st.button("Update Password 💾", use_container_width=True):
+        if not curr_pass or not new_pass or not conf_pass:
+            st.error("⚠️ Please fill in all password fields.")
+        elif new_pass != conf_pass:
+            st.error("❌ New passwords do not match!")
+        else:
+            with st.spinner("Verifying and updating credentials..."):
+                try:
+                    ud = supabase.table("app_users").select("*").eq("username", st.session_state.username).eq("password", curr_pass.strip()).execute().data
+                    if ud:
+                        supabase.table("app_users").update({"password": new_pass.strip()}).eq("username", st.session_state.username).execute()
+                        st.success("✅ Password updated successfully!")
+                        time.sleep(1)
+                        st.rerun()
+                    else:
+                        st.error("❌ Incorrect current password!")
+                except Exception as ex:
+                    st.error(f"Database error: {ex}")
+
 
 # ==========================================
 # 📑 MULTI-PAGE DECLARATIONS (VIEWS)
@@ -531,6 +589,8 @@ def fetch_live_emtts_status(article_id):
 def login_view():
     _, center_col, _ = st.columns([1, 1.4, 1])
     with center_col:
+        st.markdown("<div class='brand-title' style='text-align:center; margin-top: 15px;'>📮 SHC & Pak Post | Delivery System</div>", unsafe_allow_html=True)
+        st.markdown("<div class='brand-subtitle' style='text-align:center; border-left: none; margin-bottom: 25px;'>Secure Audit & Communication Engine</div>", unsafe_allow_html=True)
         st.markdown("<div style='background-color:#a61c1c; color:#ffffff; padding:12px; font-weight:700; font-size:13px; border-radius:6px 6px 0px 0px; border:1px solid #801414; text-align:center;'>SECURE PORTAL AUTHENTICATION</div>", unsafe_allow_html=True)
         with st.form("pyqt_enterprise_login"):
             input_user = st.text_input("OPERATOR ID / USERNAME", placeholder="Enter Username")
@@ -950,46 +1010,49 @@ def communications_view():
                         </div>
                     """, unsafe_allow_html=True)
 
-                    # 🖨️ Direct Printing Script (Uses Components Iframe to reliably trigger parent window print)
-                    components.html(f"""
-                    <style>
-                    .custom-print-btn {{
-                        background: linear-gradient(180deg, #cc2424 0%, #a61c1c 100%) !important;
-                        color: #ffffff !important;
-                        border: 1px solid #801414 !important;
-                        border-bottom: 4px solid #590d0d !important;
-                        border-radius: 6px !important;
-                        padding: 12px 24px !important;
-                        font-weight: 700;
-                        font-size: 14px;
-                        font-family: 'Segoe UI', sans-serif;
-                        box-shadow: 0px 4px 8px rgba(0,0,0,0.12);
-                        cursor: pointer;
-                        width: 100%;
-                        margin: 0;
-                        box-sizing: border-box;
-                        transition: all 0.1s ease;
-                        display: block;
-                        text-align: center;
-                    }}
-                    .custom-print-btn:hover {{
-                        background: linear-gradient(180deg, #e53e3e 0%, #cc2424 100%) !important;
-                    }}
-                    .custom-print-btn:active {{
-                        transform: scale(0.99);
-                        box-shadow: inset 0px 2px 5px rgba(0,0,0,0.3) !important;
-                    }}
-                    body {{
-                        margin: 0;
-                        padding: 0;
-                        overflow: hidden;
-                        background: transparent;
-                    }}
-                    </style>
-                    <button onclick="window.parent.print()" class="custom-print-btn">🖨️ PRINT LOGISTICS MANIFEST</button>
-                    """, height=55)
+                    # 🖨️ Print button will strictly only activate if the article status is fetched
+                    if cached_emtts and "history" in cached_emtts:
+                        components.html(f"""
+                        <style>
+                        .custom-print-btn {{
+                            background: linear-gradient(180deg, #cc2424 0%, #a61c1c 100%) !important;
+                            color: #ffffff !important;
+                            border: 1px solid #801414 !important;
+                            border-bottom: 4px solid #590d0d !important;
+                            border-radius: 6px !important;
+                            padding: 12px 24px !important;
+                            font-weight: 700;
+                            font-size: 14px;
+                            font-family: 'Segoe UI', sans-serif;
+                            box-shadow: 0px 4px 8px rgba(0,0,0,0.12);
+                            cursor: pointer;
+                            width: 100%;
+                            margin: 0;
+                            box-sizing: border-box;
+                            transition: all 0.1s ease;
+                            display: block;
+                            text-align: center;
+                        }}
+                        .custom-print-btn:hover {{
+                            background: linear-gradient(180deg, #e53e3e 0%, #cc2424 100%) !important;
+                        }}
+                        .custom-print-btn:active {{
+                            transform: scale(0.99);
+                            box-shadow: inset 0px 2px 5px rgba(0,0,0,0.3) !important;
+                        }}
+                        body {{
+                            margin: 0;
+                            padding: 0;
+                            overflow: hidden;
+                            background: transparent;
+                        }}
+                        </style>
+                        <button onclick="window.parent.print()" class="custom-print-btn">🖨️ PRINT LOGISTICS MANIFEST</button>
+                        """, height=55)
 
-                    st.markdown('<p style="font-size:12px; color:#64748b; margin-top:8px; text-align:center;">💡 Tip: Clicking the button above or pressing <b>Ctrl + P</b> will cleanly print only this manifest certificate on a full page.</p>', unsafe_allow_html=True)
+                        st.markdown('<p style="font-size:12px; color:#64748b; margin-top:8px; text-align:center;">💡 Tip: Clicking the button above or pressing <b>Ctrl + P</b> will cleanly print only this manifest certificate on a full page.</p>', unsafe_allow_html=True)
+                    else:
+                        st.warning("⚠️ Live tracking status is required before printing. Please fetch the status above or click 'Fetch Status inside Print Card' to activate the Print Logistics Manifest button.")
             
             with r_panel:
                 st.markdown("#### 📝 Live Quality Verification & Audit Questionnaire")
@@ -1157,6 +1220,11 @@ if st.session_state.logged_in:
         st.markdown("<div class='sb-headline-custom'>🖥️ Enterprise Console</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='sb-login-label'>Logged in as:</div><div class='sb-username-display'>{st.session_state.full_name}</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='sb-privilege-label'>Privilege Cluster: <span>{st.session_state.role.upper()}</span></div>", unsafe_allow_html=True)
+        
+        # 🔐 Glossy Gold Crystal Password Button inside Enterprise Console
+        st.markdown("<div class='password-btn-anchor'></div>", unsafe_allow_html=True)
+        if st.button("🔐 Change User Password", use_container_width=True):
+            change_password_dialog()
         
         # Navigation Portion
         if not st.session_state.show_recovery_prompt:
