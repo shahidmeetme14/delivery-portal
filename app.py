@@ -53,7 +53,7 @@ for key in mapping_keys:
     if key not in st.session_state:
         st.session_state[key] = None
 
-# 🎨 Premium UI Engine Styling - Customized to ep.gov.pk Red & Gold Theme
+# 🎨 Premium UI Engine Styling - Customized to ep.gov.pk Red & Gold Theme with Crystal Black Sidebar
 sidebar_css_rule = ""
 if not st.session_state.logged_in:
     sidebar_css_rule = """
@@ -72,10 +72,16 @@ else:
         transform: translateX(0%) !important;
         min-width: 300px !important;
         max-width: 300px !important;
-        background: rgba(255, 255, 255, 0.45) !important;
+        background: linear-gradient(180deg, #111111 0%, #222222 100%) !important;
         backdrop-filter: blur(20px) saturate(170%) !important;
-        border-right: 2px solid rgba(166, 28, 28, 0.2) !important;
-        box-shadow: 5px 0px 30px rgba(166, 28, 28, 0.08) !important;
+        border-right: 2px solid rgba(212, 175, 55, 0.4) !important;
+        box-shadow: 5px 0px 30px rgba(0, 0, 0, 0.6) !important;
+    }
+    section[data-testid="stSidebar"] * {
+        color: #ffffff !important;
+    }
+    section[data-testid="stSidebar"] button div * {
+        color: #ffffff !important;
     }
     """
 
@@ -126,7 +132,7 @@ st.markdown(f"""
         transform: translateY(2px) !important;
     }}
     
-    /* 📥 COMFORTABLE LIGHT THEME CONTROLS ENGINE (Eye Fatigue & Black Box Fixes) */
+    /* 📥 COMFORTABLE LIGHT THEME CONTROLS ENGINE */
     div[data-testid="stSelectbox"] > div[data-baseweb="select"], 
     div[data-testid="stDateInput"] > div,
     div[data-testid="stTextInput"] > div {{
@@ -146,7 +152,7 @@ st.markdown(f"""
         box-shadow: 0px 2px 4px rgba(166,28,28,0.08) !important;
     }}
 
-    /* Target input text color inside dark mode controls to prevent white text on light backgrounds */
+    /* Target input text color inside controls */
     div[data-testid="stSelectbox"] *, 
     div[data-testid="stDateInput"] input,
     div[data-testid="stTextInput"] input {{
@@ -154,13 +160,12 @@ st.markdown(f"""
         font-weight: 600 !important;
     }}
     
-    /* Absolute reset for input text elements inside password management fields to destroy dark artifacts */
     div[data-testid="stTextInput"] input[type="password"] {{
         background: transparent !important;
         color: #1e293b !important;
     }}
     
-    /* 📱 Premium 3D Clickable Phone Display Button (Optimized, More Compact & Theme Aligned) */
+    /* 📱 Premium 3D Clickable Phone Display Button */
     .big-phone-display {{ 
         font-family: 'Segoe UI', -apple-system, sans-serif; 
         font-size: 16px !important; 
@@ -181,7 +186,6 @@ st.markdown(f"""
         box-sizing: border-box;
     }}
     
-    /* 🚨 High Visibility Fallback Red 3D Button for Missing Contacts */
     .no-phone-display {{
         font-family: 'Segoe UI', -apple-system, sans-serif; 
         font-size: 15px !important; 
@@ -237,11 +241,11 @@ st.markdown(f"""
     }}
     .patient-card-header {{ font-size: 22px !important; font-weight: 700 !important; color: #a61c1c; border-left: 5px solid #d4af37; padding-left: 10px; margin-bottom: 15px; }}
     
-    /* Custom Sidebar Identity Typography Styling to match Image 1 */
-    .sb-headline-custom {{ font-size: 20px !important; font-weight: bold !important; color: #334155 !important; margin-bottom: 15px; }}
-    .sb-login-label {{ margin-top: 15px; color: #475569; font-size: 14px; }}
-    .sb-username-display {{ font-size: 18px !important; font-weight: bold !important; color: #b45309 !important; margin-bottom: 10px; }}
-    .sb-privilege-label {{ margin-top: 10px; color: #475569; font-size: 14px; }}
+    /* Custom Sidebar Identity Typography Styling for Crystal Black Theme */
+    .sb-headline-custom {{ font-size: 20px !important; font-weight: bold !important; color: #d4af37 !important; margin-bottom: 15px; }}
+    .sb-login-label {{ margin-top: 15px; color: #cbd5e1; font-size: 14px; }}
+    .sb-username-display {{ font-size: 18px !important; font-weight: bold !important; color: #ffffff !important; margin-bottom: 10px; }}
+    .sb-privilege-label {{ margin-top: 10px; color: #cbd5e1; font-size: 14px; }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -343,7 +347,7 @@ if st.session_state.logged_in:
         st.markdown("<div class='sb-headline-custom'>🖥️ Enterprise Console</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='sb-login-label'>Logged in as:</div><div class='sb-username-display'>{st.session_state.full_name}</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='sb-privilege-label'>Privilege Cluster: <span style='font-family: monospace; font-weight: bold;'>{st.session_state.role.upper()}</span></div>", unsafe_allow_html=True)
-        st.markdown("<br><hr style='border-top:1px solid rgba(166,28,28,0.2);'><br>", unsafe_allow_html=True)
+        st.markdown("<br><hr style='border-top:1px solid rgba(212,175,55,0.3);'><br>", unsafe_allow_html=True)
         if st.button("Terminate Session 🚪", use_container_width=True):
             with st.spinner("Processing session termination..."):
                 st.session_state.logged_in = False
@@ -494,7 +498,7 @@ else:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # PAGE 1: INGESTION (DIRECT TO STORAGE BUCKET ENGINE)
+    # PAGE 1: INGESTION (SMART GLOBAL DE-DUPLICATION ENGINE TO STORAGE)
     if st.session_state.current_navigation_tab == "📊 Administrative Ingestion Engine" and st.session_state.role == "admin":
         st.markdown("### 📥 Bulk Logistics Ingestion Engine")
         source_file = st.file_uploader("Upload Parcel Manifest Sheet", type=["xlsx", "csv"])
@@ -520,33 +524,82 @@ else:
                 c_dup = st.selectbox("Duplication Log Column:", df.columns, index=calculate_mapped_index(df.columns, "map_dup", "Duplicate"))
 
             if st.button("🚀 Push Verified Records to Cloud Database & Storage Bucket", use_container_width=True):
-                with st.spinner("Processing cloud file stream and database ingestion..."):
-                    # 📥 DIRECT STORAGE BUCKET UPLOAD CONTEXT
-                    try:
-                        file_data_bytes = source_file.getvalue()
-                        unique_manifest_name = f"{int(time.time())}_{source_file.name}"
-                        supabase.storage.from_("manifests").upload(path=unique_manifest_name, file=file_data_bytes)
-                        st.success("📁 Manifest source architecture successfully synchronized directly into storage bucket 'manifests'!")
-                    except Exception as storage_ex:
-                        st.error(f"Storage System Synchronization Alert: {storage_ex}")
+                # UI Realtime Progress Bar Integration
+                status_progress_text = st.empty()
+                progress_bar_control = st.progress(0)
+                
+                status_progress_text.text("Connecting with cloud storage nodes... (15% Complete)")
+                progress_bar_control.progress(15)
+                
+                # 📥 GLOBAL MASTER ARCHIVE LOOKUP
+                try:
+                    existing_master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
+                    master_ledger_df = pd.read_csv(io.BytesIO(existing_master_bytes), dtype=str)
+                except Exception:
+                    master_ledger_df = pd.DataFrame(columns=[
+                        "article_id", "patient_name", "phone_number", "booking_date", 
+                        "address", "patient_city", "mrn_no", "booking_office", "transaction_no"
+                    ])
 
-                    staging_area = []
-                    for _, row in df.iterrows():
-                        staging_area.append({
-                            "article_id": str(row[c_article]).strip(),
-                            "patient_name": str(row[c_name]).strip(),
-                            "phone_number": str(row[c_phone]).strip(),
-                            "booking_date": str(row[c_date])[:10],
-                            "address": str(row[c_address]).strip(),
-                            "patient_city": str(row[c_city]).strip(),
-                            "mrn_no": str(row[c_mrn]).strip(),
-                            "booking_office": str(row[c_bo]).strip() if c_bo in df.columns else "Lahore GPO",
-                            "status": "Pending"
-                        })
-                    try:
-                        supabase.table("patient_deliveries").upsert(staging_area, on_conflict="article_id").execute()
-                        st.success("🎉 Records uploaded smoothly onto cloud datastore nodes!")
-                    except Exception as ex: st.error(f"Upload error: {ex}")
+                status_progress_text.text("Analyzing spreadsheet matrix structures... (45% Complete)")
+                progress_bar_control.progress(45)
+                
+                new_manifest_rows = []
+                for _, row_data in df.iterrows():
+                    new_manifest_rows.append({
+                        "article_id": str(row_data[c_article]).strip(),
+                        "patient_name": str(row_data[c_name]).strip(),
+                        "phone_number": str(row_data[c_phone]).strip(),
+                        "booking_date": str(row_data[c_date])[:10],
+                        "address": str(row_data[c_address]).strip(),
+                        "patient_city": str(row_data[c_city]).strip(),
+                        "mrn_no": str(row_data[c_mrn]).strip(),
+                        "booking_office": str(row_data[c_bo]).strip() if c_bo in df.columns else "Lahore GPO",
+                        "transaction_no": str(row_data[c_dup]).strip() if c_dup in df.columns else ""
+                    })
+                uploaded_records_df = pd.DataFrame(new_manifest_rows, dtype=str)
+                total_input_count = len(uploaded_records_df)
+
+                status_progress_text.text("Scanning master datastore for cross-duplications... (75% Complete)")
+                progress_bar_control.progress(75)
+                
+                # Global Matching Logic Engine (Transaction No -> Fallback to Article ID)
+                is_duplicate_by_transaction = uploaded_records_df["transaction_no"].isin(master_ledger_df["transaction_no"]) & (uploaded_records_df["transaction_no"] != "") & (uploaded_records_df["transaction_no"] != "nan")
+                is_duplicate_by_article = uploaded_records_df["article_id"].isin(master_ledger_df["article_id"]) & (uploaded_records_df["article_id"] != "") & (uploaded_records_df["article_id"] != "nan")
+                
+                global_duplication_mask = is_duplicate_by_transaction | is_duplicate_by_article
+                
+                # Filter Unique Rows & Strip Self-contained Sheet Duplicates
+                clean_unique_records = uploaded_records_df[~global_duplication_mask]
+                if "transaction_no" in clean_unique_records.columns:
+                    clean_unique_records = clean_unique_records.drop_duplicates(subset=["transaction_no"])
+                clean_unique_records = clean_unique_records.drop_duplicates(subset=["article_id"])
+                
+                total_duplicates_cleared = total_input_count - len(clean_unique_records)
+                
+                # Merge into Global Master Matrix
+                final_consolidated_df = pd.concat([master_ledger_df, clean_unique_records], ignore_index=True)
+                
+                status_progress_text.text("Synchronizing clean ledger stream into cloud core... (95% Complete)")
+                progress_bar_control.progress(95)
+                
+                # Push Consolidated Stream to Supabase Storage Node
+                master_csv_buffer = io.StringIO()
+                final_consolidated_df.to_csv(master_csv_buffer, index=False)
+                master_csv_bytes = master_csv_buffer.getvalue().encode('utf-8')
+                
+                try:
+                    try: supabase.storage.from_("manifests").remove(["master_manifest_store.csv"])
+                    except: pass
+                    
+                    supabase.storage.from_("manifests").upload(path="master_manifest_store.csv", file=master_csv_bytes, file_options={"content-type": "text/csv"})
+                    
+                    status_progress_text.empty()
+                    progress_bar_control.empty()
+                    
+                    st.success(f"🟢 Success: File processed successfully! Is file mein {total_duplicates_cleared} duplicate entries thien (Transaction No / Article ID ke mutabiq), jinhe remove kar diya gaya hai aur baqi unique data save ho chuka hai.")
+                except Exception as store_ex:
+                    st.error(f"Failed to synchronize master stream archive: {store_ex}")
 
     # PAGE 2: OPERATOR MATRIX
     elif st.session_state.current_navigation_tab == "👥 Operator Matrix & Security Audit Logs" and st.session_state.role == "admin":
@@ -562,28 +615,46 @@ else:
                         st.success("Operator registered successfully!")
                     except Exception as e: st.error(f"Error: {e}")
 
-    # PAGE 3: OUTBOUND HUB
+    # PAGE 3: OUTBOUND HUB (CASCADE MASTER FILE DESK READ)
     elif st.session_state.current_navigation_tab == "📞 Outbound Communications Hub":
         st.markdown("### 📞 Outbound Communications Desk")
         
-        # 📥 3D TYPE SELECTORS MATRIX (Date, Office, Patient Selector)
         query_date = st.date_input("Filter Manifest Records by Booking Date:", datetime.date.today())
         
-        # 🔍 CASCADE LOOKUP ENGINE: CHECK MANIFESTS STORAGE FIRST THEN DOCK ENTRIES
         with st.spinner("Processing cloud storage lookup and database audit..."):
             try:
-                manifest_bucket_files = supabase.storage.from_("manifests").list()
-            except:
-                manifest_bucket_files = []
-                
-            try: 
-                raw_date_recs = supabase.table("patient_deliveries").select("*").eq("booking_date", str(query_date)).execute().data
-            except: 
+                existing_master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
+                master_ledger_df = pd.read_csv(io.BytesIO(existing_master_bytes), dtype=str)
+                filtered_master_rows = master_ledger_df[master_ledger_df["booking_date"] == str(query_date)]
+                raw_date_recs = filtered_master_rows.to_dict(orient="records")
+            except Exception:
                 raw_date_recs = []
-            
+                
+            try:
+                # Get operational response states mapped inside table
+                db_action_logs = supabase.table("patient_deliveries").select("*").eq("booking_date", str(query_date)).execute().data
+                db_logs_dictionary = {str(item["article_id"]).strip(): item for item in db_action_logs}
+            except Exception:
+                db_logs_dictionary = {}
+                
         if not raw_date_recs: 
             st.info("No record found against selected date.")
         else:
+            # Inject Operational States into Raw Manifest Profiles
+            for profile in raw_date_recs:
+                article_key = str(profile["article_id"]).strip()
+                if article_key in db_logs_dictionary:
+                    profile["id"] = db_logs_dictionary[article_key]["id"]
+                    profile["status"] = db_logs_dictionary[article_key].get("status", "Pending")
+                    profile["delivery_date"] = db_logs_dictionary[article_key].get("delivery_date")
+                    profile["received_mode"] = db_logs_dictionary[article_key].get("received_mode")
+                    profile["extra_money_charged"] = db_logs_dictionary[article_key].get("extra_money_charged")
+                    profile["issue_reason"] = db_logs_dictionary[article_key].get("issue_reason")
+                    profile["operator_stamp"] = db_logs_dictionary[article_key].get("operator_stamp")
+                else:
+                    profile["id"] = None
+                    profile["status"] = "Pending"
+
             unique_offices = sorted(list(set([str(r.get('booking_office', 'Lahore GPO')).strip() for r in raw_date_recs])))
             unique_offices.insert(0, "All Offices")
             
@@ -603,10 +674,13 @@ else:
                     
                 selected_prof_str = st.selectbox("Select Patient Profile to Process:", options_list, index=st.session_state.selected_profile_index, key="outbound_profile_select")
                 
-                # 🔄 Real-time dropdown change dynamic sync engine (Image 2 Fix)
                 actual_index = options_list.index(selected_prof_str) if selected_prof_str in options_list else 0
                 target_profile = final_recs[actual_index]
                 
+                # Check for questionnaire status rule warning alerts
+                if target_profile["status"] in ["Delivered", "Issue / Complaint"]:
+                    st.warning(f"⚠️ Note: Is patient ka questionnaire pehle hi process ho chuka hai! Current Status: [{target_profile['status']}]")
+
                 st.markdown("<hr>", unsafe_allow_html=True)
                 l_panel, r_panel = st.columns(2)
                 
@@ -655,7 +729,6 @@ else:
                                     final_status_str = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
                                     st.metric(label="Latest Status", value=final_status_str)
 
-                    # 📱 Optimized Font Size Reduction (Image 3 Font Fix)
                     st.markdown("<p style='font-size: 14px; font-weight: bold; color: #334155; margin-bottom: 2px;'>🎴 DIAL THIS PHONE NUMBER FROM LANDLINE:</p>", unsafe_allow_html=True)
                     
                     raw_phone = str(target_profile.get('phone_number', '')).strip()
@@ -685,8 +758,18 @@ else:
                             if is_delivered == "Select Assessment Option": st.error("Select verification response.")
                             else:
                                 payload_buffer["operator_stamp"] = st.session_state.full_name
+                                # Populate master reference descriptors for decoupled storage structure compatibility
+                                payload_buffer["article_id"] = target_profile["article_id"]
+                                payload_buffer["patient_name"] = target_profile["patient_name"]
+                                payload_buffer["phone_number"] = target_profile["phone_number"]
+                                payload_buffer["booking_date"] = target_profile["booking_date"]
+                                payload_buffer["address"] = target_profile["address"]
+                                payload_buffer["patient_city"] = target_profile["patient_city"]
+                                payload_buffer["mrn_no"] = target_profile["mrn_no"]
+                                payload_buffer["booking_office"] = target_profile["booking_office"]
+                                
                                 try:
-                                    supabase.table("patient_deliveries").update(payload_buffer).eq("id", target_profile["id"]).execute()
+                                    supabase.table("patient_deliveries").upsert(payload_buffer, on_conflict="article_id").execute()
                                     st.success("Updated with operator identity stamp!")
                                     st.session_state.selected_profile_index += 1
                                     save_operator_state()
@@ -694,7 +777,7 @@ else:
                                     st.rerun()
                                 except Exception as e: st.error(f"Sync error: {e}")
 
-    # PAGE 4: SECURE DATA EXPORT NODE & CLOUD BACKUP CONTROLS
+    # PAGE 4: SECURE DATA EXPORT NODE
     elif st.session_state.current_navigation_tab == "📥 Secure Reports Export Center":
         st.markdown("### 📥 Secure Data Export & Cloud Records Center")
         st.info("💡 Note: Saara real-time backup pehle hi cloud storage data-nodes par fully updated aur safe hai.")
