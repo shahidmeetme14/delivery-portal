@@ -11,7 +11,7 @@ import streamlit.components.v1 as components
 
 # 🎛️ Page Structural Settings
 st.set_page_config(
-    page_title="SHC & Pak Post | Delivery System", 
+    page_title="SHC & Pak Post | Free Home Delivery of Medicine", 
     page_icon="📮", 
     layout="wide", 
     initial_sidebar_state="expanded"
@@ -637,8 +637,8 @@ def recovery_view():
 
 def ingestion_view():
     st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine"
-    st.markdown("### 📥 Bulk Logistics Ingestion Engine")
-    source_file = st.file_uploader("Upload Parcel Manifest Sheet", type=["xlsx", "csv"])
+    st.markdown("### 📥 Bulk Articles Ingestion Engine")
+    source_file = st.file_uploader("Upload Medicne Article Sheet", type=["xlsx", "csv"])
     if source_file is not None:
         file_key = f"cached_df_{source_file.name}_{source_file.size}"
         if file_key not in st.session_state:
@@ -829,7 +829,7 @@ def communications_view():
                 with opt_col2: report_scope = st.radio("Reporting Scope Evaluation:", ["Only Last Status", "All Statuses (Full History)"])
                 
                 if st.button("🔍 Fetch Live Status from PakPost Server", use_container_width=True):
-                    with st.spinner("Connecting to EMTTS Logistics..."):
+                    with st.spinner("Connecting to EMTTS Website..."):
                         data, err = fetch_live_emtts_status(target_profile['article_id'])
                         if err: st.error(err)
                         elif data and data["history"]:
@@ -913,7 +913,7 @@ def communications_view():
                         print_report_scope = st.radio("Print Reporting Scope:", ["Only Last Status", "All Statuses (Full History)"], key="print_report_scope_sel")
                         
                         if st.button("🔍 Fetch Status inside Print Card", use_container_width=True, key="print_direct_fetch_btn"):
-                            with st.spinner("Connecting to EMTTS Logistics..."):
+                            with st.spinner("Connecting to EMTTS Website..."):
                                 data, err = fetch_live_emtts_status(current_article_id)
                                 if err:
                                     st.error(err)
@@ -958,7 +958,7 @@ def communications_view():
                     st.markdown(f"""
                         <div class="print-manifest-card" style="background: #ffffff; border: 2px dashed #cbd5e1; padding: 25px; border-radius: 8px; font-family: 'Segoe UI', sans-serif; color: #000000;">
                             <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 10px; margin-bottom: 20px;">
-                                <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST LOGISTICS MANIFEST</h2>
+                                <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
                                 <p style="margin: 5px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Quality Verification & Consignee Audit Certificate</p>
                             </div>
                             <table style="width: 100%; border-collapse: collapse; font-size: 15px; color: #000000;">
@@ -1039,15 +1039,15 @@ def communications_view():
                             background: transparent;
                         }}
                         </style>
-                        <button onclick="window.parent.print()" class="custom-print-btn">🖨️ PRINT LOGISTICS MANIFEST</button>
+                        <button onclick="window.parent.print()" class="custom-print-btn">🖨️ PRINT FEEDBACK MANIFEST</button>
                         """, height=55)
 
                         st.markdown('<p style="font-size:12px; color:#64748b; margin-top:8px; text-align:center;">💡 Tip: Clicking the button above or pressing <b>Ctrl + P</b> will cleanly print only this manifest certificate on a full page.</p>', unsafe_allow_html=True)
                     else:
-                        st.warning("⚠️ Live tracking status is required before printing. Please fetch the status above or click 'Fetch Status inside Print Card' to activate the Print Logistics Manifest button.")
+                        st.warning("⚠️ Live tracking status is required before printing. Please fetch the status above or click 'Fetch Status inside Print Card' to activate the Print Feedback Manifest button.")
             
             with r_panel:
-                st.markdown("#### 📝 Live Quality Verification & Audit Questionnaire")
+                st.markdown("#### 📝 Live Pateint Verification & Feedback Questionnaire")
                 is_delivered = st.radio("Has the consignee physically received the delivery?", ["Select Assessment Option", "Yes", "No"])
                 payload_buffer = {}
                 
@@ -1058,7 +1058,7 @@ def communications_view():
                     payload_buffer["extra_money_charged"] = st.radio("Did the delivery agent request any unauthorized monetary payment/tips?", ["No", "Yes"])
                 elif is_delivered == "No":
                     payload_buffer["status"] = "Issue / Complaint"
-                    payload_buffer["issue_reason"] = st.selectbox("Select Primary Failure Mode:", ["Wrong Delivery Status on EMTTS", "Incomplete Address / Premises Locked", "Logistics Delay", "Formal Institutional Dispute"])
+                    payload_buffer["issue_reason"] = st.selectbox("Select Primary Failure Mode:", ["Wrong Delivery Status on EMTTS", "Incomplete Address / Premises Locked", "Article Delivery Delay", "Formal Institutional Dispute"])
                     
                 if st.button("💾 Finalize Session & Commit Logs", use_container_width=True):
                     with st.spinner("Processing transaction submission rules..."):
@@ -1167,8 +1167,8 @@ else:
 selected_navigation_route = st.navigation(pages_to_display, position="hidden")
 
 # 2. Global Header Branding & Complaints Alert Engine (Renders cleanly at top on ALL pages including Login)
-st.markdown("<div class='brand-title'>📮 SHC & Pak Post | Delivery System</div>", unsafe_allow_html=True)
-st.markdown("<div class='brand-subtitle'>Secure Audit & Communication Engine</div>", unsafe_allow_html=True)
+st.markdown("<div class='brand-title'>📮 SHC & Pak Post | Free Home Delivery of Medicine</div>", unsafe_allow_html=True)
+st.markdown("<div class='brand-subtitle'>Article Tracking & Patient Feedback Report</div>", unsafe_allow_html=True)
 
 if st.session_state.logged_in and st.session_state.role == "admin":
     try:
