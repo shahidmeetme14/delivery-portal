@@ -121,66 +121,75 @@ st.markdown(f"""
         transform: translateY(2px) !important;
     }}
     
-    /* 📥 3D DARK DROP-DOWNS, INPUTS & DATE SELECTORS UI ENGINE */
+    /* 📥 COMFORTABLE LIGHT THEME CONTROLS ENGINE (Eye Fatigue & Black Box Fixes) */
     div[data-testid="stSelectbox"] > div[data-baseweb="select"], 
     div[data-testid="stDateInput"] > div,
     div[data-testid="stTextInput"] > div {{
-        background: #1e293b !important;
-        border: 1px solid #0f172a !important;
-        border-bottom: 4px solid #020617 !important;
-        border-radius: 8px !important;
-        box-shadow: inset 0px 1px 3px rgba(255,255,255,0.1), 0px 4px 10px rgba(0, 0, 0, 0.15) !important;
-        transition: all 0.2s ease-in-out;
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        border-bottom: 3px solid #b1bccd !important;
+        border-radius: 6px !important;
+        box-shadow: 0px 1px 2px rgba(0,0,0,0.05) !important;
+        transition: all 0.15s ease-in-out;
     }}
     
     div[data-testid="stSelectbox"] > div[data-baseweb="select"]:hover, 
     div[data-testid="stDateInput"] > div:hover,
     div[data-testid="stTextInput"] > div:hover {{
-        background: #0f172a !important;
-        box-shadow: inset 0px 1px 3px rgba(255,255,255,0.15), 0px 6px 14px rgba(0, 0, 0, 0.25) !important;
+        background: #ffffff !important;
+        border-color: #a61c1c !important;
+        box-shadow: 0px 2px 4px rgba(166,28,28,0.08) !important;
     }}
 
-    /* Target input text color inside dark mode controls */
+    /* Target input text color inside dark mode controls to prevent white text on light backgrounds */
     div[data-testid="stSelectbox"] *, 
     div[data-testid="stDateInput"] input,
     div[data-testid="stTextInput"] input {{
-        color: #ffffff !important;
+        color: #1e293b !important;
         font-weight: 600 !important;
     }}
     
-    /* 📱 Premium 3D Clickable Phone Display Button (Slightly Smaller Layout) */
+    /* Absolute reset for input text elements inside password management fields to destroy dark artifacts */
+    div[data-testid="stTextInput"] input[type="password"] {{
+        background: transparent !important;
+        color: #1e293b !important;
+    }}
+    
+    /* 📱 Premium 3D Clickable Phone Display Button (Optimized, More Compact & Theme Aligned) */
     .big-phone-display {{ 
         font-family: 'Segoe UI', -apple-system, sans-serif; 
-        font-size: 24px !important; 
+        font-size: 19px !important; 
         font-weight: 800 !important; 
         color: #ffffff !important; 
-        background: linear-gradient(180deg, #10b981 0%, #059669 100%) !important; 
-        padding: 10px; 
-        border-radius: 8px; 
+        background: linear-gradient(180deg, #d4af37 0%, #b3922e 100%) !important; 
+        padding: 6px 14px; 
+        border-radius: 6px; 
         text-align: center; 
-        border: 1px solid #047857; 
-        border-bottom: 5px solid #065f46;
-        box-shadow: 0px 5px 12px rgba(5, 150, 105, 0.25);
-        text-shadow: 1px 2px 3px rgba(0,0,0,0.25);
-        letter-spacing: 2px;
-        margin: 10px 0;
+        border: 1px solid #b3922e; 
+        border-bottom: 4px solid #8c7120;
+        box-shadow: 0px 3px 8px rgba(212, 175, 55, 0.2);
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.15);
+        letter-spacing: 1.5px;
+        margin: 8px 0;
+        max-width: 240px;
     }}
     
     /* 🚨 High Visibility Fallback Red 3D Button for Missing Contacts */
     .no-phone-display {{
         font-family: 'Segoe UI', -apple-system, sans-serif; 
-        font-size: 20px !important; 
+        font-size: 16px !important; 
         font-weight: 700 !important; 
         color: #ffffff !important; 
         background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%) !important; 
-        padding: 12px; 
-        border-radius: 8px; 
+        padding: 8px 12px; 
+        border-radius: 6px; 
         text-align: center; 
         border: 1px solid #b91c1c; 
-        border-bottom: 5px solid #991b1b;
-        box-shadow: 0px 5px 12px rgba(220, 38, 38, 0.25);
-        text-shadow: 1px 2px 3px rgba(0,0,0,0.25);
-        margin: 10px 0;
+        border-bottom: 4px solid #991b1b;
+        box-shadow: 0px 3px 8px rgba(220, 38, 38, 0.15);
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.15);
+        margin: 8px 0;
+        max-width: 240px;
     }}
     
     /* 🏷️ Premium Left Panel Data Display */
@@ -353,6 +362,21 @@ if st.session_state.logged_in and st.session_state.role == "admin":
                             time.sleep(0.5)
                             st.rerun()
             st.markdown("<hr style='border-top: 1px solid #cc2424;'>", unsafe_allow_html=True)
+            
+        # 📁 HISTORICAL SECURE LOGS ARCHIVE VIEWER ENGINE
+        resolved_charges = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes (Resolved)").execute().data
+        if resolved_charges:
+            with st.expander("📁 View Resolved Alert History Logs (Past Reports Archive)"):
+                history_df = pd.DataFrame(resolved_charges)
+                column_mapping_view = {
+                    "patient_name": "Patient Name",
+                    "mrn_no": "MRN Number",
+                    "article_id": "Consignment ID",
+                    "operator_stamp": "Reported By (Operator)",
+                    "booking_date": "Booking Date"
+                }
+                history_df_filtered = history_df[[col for col in column_mapping_view.keys() if col in history_df.columns]].rename(columns=column_mapping_view)
+                st.dataframe(history_df_filtered, use_container_width=True, hide_index=True)
     except:
         pass
 
@@ -532,7 +556,7 @@ else:
     elif st.session_state.current_navigation_tab == "📞 Outbound Communications Hub":
         st.markdown("### 📞 Outbound Communications Desk")
         
-        # 📥 3D DARK TYPE SELECTORS MATRIX (Date, Office, Patient Selector)
+        # 📥 3D TYPE SELECTORS MATRIX (Date, Office, Patient Selector)
         query_date = st.date_input("Filter Manifest Records by Booking Date:", datetime.date.today())
         
         # 🔍 CASCADE LOOKUP ENGINE: CHECK MANIFESTS STORAGE FIRST THEN DOCK ENTRIES
