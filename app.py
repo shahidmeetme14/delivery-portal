@@ -911,7 +911,7 @@ def communications_view():
             actual_index = options_list.index(selected_prof_str) if selected_prof_str in options_list else 0
             target_profile = final_recs[actual_index]
             
-            if target_profile["status"] in ["Delivered", "Issue / Complaint"]:
+            if target_profile["status"] not in ["Pending", "Pending Retry"]:
                 st.warning(f"⚠️ Note: The questionnaire for this patient has already been processed! Current Status: [{target_profile['status']}]")
 
             st.markdown("<hr>", unsafe_allow_html=True)
@@ -1007,7 +1007,7 @@ def communications_view():
                         </span>
                         """
                     else:
-                        print_status_detail = f"<b style='color: #475569;'>Pending Verification</b>"
+                        print_status_detail = f"<b style='color: #475569;'>{print_status}</b>"
 
                     current_article_id = target_profile['article_id']
                     cached_emtts = st.session_state.fetched_emtts_data.get(current_article_id)
@@ -1109,7 +1109,6 @@ def communications_view():
                         <div class="print-timestamp">System Print Timestamp: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
                     """, unsafe_allow_html=True)
 
-                    # 🖨️ Print button will strictly only activate if the article status is fetched
                     if cached_emtts and "history" in cached_emtts:
                         components.html(f"""
                         <style>
@@ -1154,23 +1153,137 @@ def communications_view():
                         st.warning("⚠️ Live tracking status is required before printing. Please fetch the status above or click 'Fetch Status inside Print Card' to activate the Print Feedback Manifest button.")
             
             with r_panel:
-                st.markdown("#### 📝 Live Pateint Verification & Feedback Questionnaire")
-                is_delivered = st.radio("Has the consignee physically received the delivery?", ["Select Assessment Option", "Yes", "No"])
-                payload_buffer = {}
+                st.markdown("#### 📝 Live Patient Verification & Feedback Questionnaire")
                 
-                if is_delivered == "Yes":
-                    payload_buffer["status"] = "Delivered"
-                    payload_buffer["delivery_date"] = str(st.date_input("Delivery Verification Date", datetime.date.today()))
-                    payload_buffer["received_mode"] = st.radio("Delivery Execution Mode:", ["Delivered by postman to home address", "Collected directly from local post office branch"])
-                    payload_buffer["extra_money_charged"] = st.radio("Did the delivery agent request any unauthorized monetary payment/tips?", ["No", "Yes"])
-                elif is_delivered == "No":
-                    payload_buffer["status"] = "Issue / Complaint"
-                    payload_buffer["issue_reason"] = st.selectbox("Select Primary Failure Mode:", ["Wrong Delivery Status on EMTTS", "Incomplete Address / Premises Locked", "Article Delivery Delay", "Formal Institutional Dispute"])
+                payload_buffer = {}
+                can_submit = False
+                
+                # Fetching EMTTS live state for conflict resolution logic
+                current_article_id = target_profile['article_id']
+                cached_emtts = st.session_state.fetched_emtts_data.get(current_article_id)
+                live_status = ""
+                live_date = ""
+                if cached_emtts and "history" in cached_emtts and len(cached_emtts["history"]) > 0:
+                    live_status = cached_emtts["history"][-1]["status"].lower()
+                    live_date = cached_emtts["history"][-1]["datetime"]
+
+                contact_status = st.radio("📞 Was the patient successfully contacted on call?", ["Select Option", "Yes", "No"])
+                
+                if contact_status == "No":
+                    payload_buffer["contact_status"] = "No"
+                    no_contact_reason = st.selectbox("Reason for failure to contact:", ["Select Reason", "Phone number not valid", "Phone number wrong", "Phone switched off", "Did not pick up"])
                     
-                if st.button("💾 Finalize Session & Commit Logs", use_container_width=True):
-                    with st.spinner("Processing transaction submission rules..."):
-                        if is_delivered == "Select Assessment Option": st.error("Select verification response.")
-                        else:
+                    if no_contact_reason == "Did not pick up":
+                        st.warning("⏱️ **Patient did not pick up the call.** Please attempt a follow-up call after 2 hours. If this is already a retry and they still didn't answer, you may close the case.")
+                        retry_action = st.radio("Action Strategy:", ["Mark for Retry (Pending)", "Close as Unreachable (Max Attempts Reached)"])
+                        if retry_action == "Mark for Retry (Pending)": 
+                            payload_buffer["status"] = "Pending Retry"
+                            payload_buffer["no_contact_reason"] = "Did not pick up - Pending Retry"
+                            can_submit = True
+                        elif retry_action == "Close as Unreachable (Max Attempts Reached)":
+                            payload_buffer["status"] = "Unreachable"
+                            payload_buffer["no_contact_reason"] = "Did not pick up - Final"
+                            can_submit = True
+                    elif no_contact_reason != "Select Reason":
+                        payload_buffer["status"] = f"Unreachable"
+                        payload_buffer["no_contact_reason"] = no_contact_reason
+                        can_submit = True
+                        
+                elif contact_status == "Yes":
+                    payload_buffer["contact_status"] = "Yes"
+                    is_delivered = st.radio("📦 According to the patient, have they physically received the medicine?", ["Select Option", "Yes", "No"])
+                    
+                    if is_delivered == "Yes":
+                        payload_buffer["status"] = "Delivered"
+                        
+                        st.markdown("##### 📅 Delivery Date & Verification")
+                        col_d1, col_d2 = st.columns(2)
+                        with col_d1: 
+                            delivery_date = st.date_input("Select the date patient received the parcel:", datetime.date.today())
+                        with col_d2:
+                            st.info(f"**EMTTS Fetched Date:**\n{live_date if live_date else 'Not Fetched Yet'}")
+                            
+                        # Basic Date Conflict Notification
+                        if live_date and str(delivery_date) not in live_date and delivery_date.strftime("%d-%m-%Y") not in live_date:
+                            st.error("⚠️ **Date Conflict Alert:** The date provided by the patient differs from the official EMTTS log date.")
+                            payload_buffer["emtts_conflict"] = "Date Mismatch Detected"
+                            
+                        # Status Conflict Notification
+                        if live_status and "delivered" not in live_status:
+                            st.error("🚨 **EMTTS STATUS CONFLICT:** The EMTTS tracking shows this parcel is NOT delivered, but the patient confirmed they received it. Please alert the post office to update the EMTTS portal.")
+                            payload_buffer["emtts_conflict"] = "Status Mismatch (Not Delivered on EMTTS)"
+                            
+                        payload_buffer["delivery_date"] = str(delivery_date)
+                        
+                        received_mode = st.radio("📍 Delivery Execution Mode:", ["Select Mode", "Delivered by postman to home address", "Collected directly from local post office branch"])
+                        payload_buffer["received_mode"] = received_mode
+                        
+                        if received_mode == "Delivered by postman to home address":
+                            st.markdown("##### 🕵️ Postman Conduct & Ethics Assessment")
+                            extra_money = st.radio("Did the postman ask for any unauthorized extra money or tips?", ["Select", "No", "Yes"])
+                            
+                            if extra_money == "Yes":
+                                st.error("🚨 **CRITICAL CORRUPTION ALERT:** Extra charges were demanded. This case will be highlighted for Admin Resolution.")
+                                payload_buffer["extra_money_charged"] = "Yes"
+                                payload_buffer["postman_issue_type"] = "Extra Charges Demanded"
+                                
+                                payload_buffer["extra_money_amount"] = st.text_input("Amount Demanded (Rs.):")
+                                col_p1, col_p2 = st.columns(2)
+                                with col_p1: payload_buffer["postman_name"] = st.text_input("Postman Name (if known):")
+                                with col_p2: payload_buffer["postman_phone"] = st.text_input("Postman Phone No. (if known):")
+                                payload_buffer["post_office_name"] = st.text_input("Concerned Post Office Name:")
+                                
+                                if payload_buffer["extra_money_amount"] and payload_buffer["post_office_name"]: 
+                                    can_submit = True
+                                    
+                            elif extra_money == "No":
+                                payload_buffer["extra_money_charged"] = "No"
+                                other_issue = st.radio("Any other issue or complaint regarding the postman?", ["No", "Yes"])
+                                
+                                if other_issue == "Yes":
+                                    payload_buffer["postman_issue_type"] = "Other Issue"
+                                    payload_buffer["issue_reason"] = st.text_area("Describe the issue:")
+                                    col_p1, col_p2 = st.columns(2)
+                                    with col_p1: payload_buffer["postman_name"] = st.text_input("Postman Name:")
+                                    with col_p2: payload_buffer["postman_phone"] = st.text_input("Postman Phone No.:")
+                                    payload_buffer["post_office_name"] = st.text_input("Concerned Post Office Name:")
+                                    
+                                    if payload_buffer["issue_reason"] and payload_buffer["post_office_name"]: 
+                                        can_submit = True
+                                else:
+                                    payload_buffer["postman_issue_type"] = "None"
+                                    can_submit = True
+                                    
+                        elif received_mode == "Collected directly from local post office branch":
+                             can_submit = True
+
+                    elif is_delivered == "No":
+                        payload_buffer["status"] = "Issue / Complaint"
+                        
+                        if live_status and "delivered" in live_status:
+                             st.error("🚨 **EMTTS FAKE DELIVERY CONFLICT:** The EMTTS tracking shows this parcel IS marked as delivered, but the patient states they DID NOT receive it! Immediate investigation required.")
+                             payload_buffer["emtts_conflict"] = "Fake Delivery Marked on EMTTS"
+                             
+                        postman_contact = st.radio("Did the postman contact the patient?", ["Select", "Yes", "No"])
+                        
+                        if postman_contact == "Yes":
+                             payload_buffer["postman_contacted"] = "Yes"
+                             reason = st.selectbox("Why did the patient not receive the medicine?", ["Select Reason", "Patient does not want to receive it", "Patient has passed away (Died)", "Medicine course is completed", "Other"])
+                             
+                             if reason != "Select Reason":
+                                 payload_buffer["not_received_reason"] = reason
+                                 payload_buffer["status"] = f"RTS Requested"
+                                 can_submit = True
+                                 
+                        elif postman_contact == "No":
+                             payload_buffer["postman_contacted"] = "No"
+                             st.warning("⚠️ **NEGLIGENCE ALERT:** The postman did not deliver the parcel and did not contact the patient. Follow-up is required with the destination post office.")
+                             payload_buffer["issue_reason"] = "Postman did not contact or deliver to the patient"
+                             can_submit = True
+                             
+                if can_submit:
+                    if st.button("💾 Finalize Session & Commit Logs", use_container_width=True):
+                        with st.spinner("Processing transaction submission rules..."):
                             payload_buffer["operator_stamp"] = st.session_state.full_name
                             payload_buffer["article_id"] = target_profile["article_id"]
                             payload_buffer["patient_name"] = target_profile["patient_name"]
@@ -1183,12 +1296,13 @@ def communications_view():
                             
                             try:
                                 supabase.table("patient_deliveries").upsert(payload_buffer, on_conflict="article_id").execute()
-                                st.success("Updated with operator identity stamp!")
+                                st.success("Updated securely with your operator identity stamp!")
                                 st.session_state.selected_profile_index += 1
                                 save_operator_state()
                                 time.sleep(0.5)
                                 st.rerun()
-                            except Exception as e: st.error(f"Sync error: {e}")
+                            except Exception as e: 
+                                st.error(f"Sync error: {e}")
 
 
 def export_center_view():
