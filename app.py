@@ -98,6 +98,11 @@ st.markdown(f"""
         padding: 30px !important;
     }}
     
+    /* Hide default Streamlit form submission helper texts */
+    div[data-testid="stForm"] small {{
+        display: none !important;
+    }}
+    
     div.stButton > button, div.stDownloadButton > button {{
         background: linear-gradient(180deg, #cc2424 0%, #a61c1c 100%) !important;
         color: #ffffff !important;
@@ -158,38 +163,38 @@ st.markdown(f"""
     /* 📱 Premium 3D Clickable Phone Display Button (Optimized, More Compact & Theme Aligned) */
     .big-phone-display {{ 
         font-family: 'Segoe UI', -apple-system, sans-serif; 
-        font-size: 19px !important; 
+        font-size: 16px !important; 
         font-weight: 800 !important; 
         color: #ffffff !important; 
         background: linear-gradient(180deg, #d4af37 0%, #b3922e 100%) !important; 
-        padding: 6px 14px; 
-        border-radius: 6px; 
+        padding: 4px 12px; 
+        border-radius: 4px; 
         text-align: center; 
         border: 1px solid #b3922e; 
-        border-bottom: 4px solid #8c7120;
-        box-shadow: 0px 3px 8px rgba(212, 175, 55, 0.2);
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.15);
-        letter-spacing: 1.5px;
-        margin: 8px 0;
-        max-width: 240px;
+        border-bottom: 3px solid #8c7120;
+        box-shadow: 0px 2px 5px rgba(212, 175, 55, 0.15);
+        text-shadow: 1px 1px 1px rgba(0,0,0,0.15);
+        letter-spacing: 1px;
+        margin: 4px 0;
+        display: inline-block;
     }}
     
     /* 🚨 High Visibility Fallback Red 3D Button for Missing Contacts */
     .no-phone-display {{
         font-family: 'Segoe UI', -apple-system, sans-serif; 
-        font-size: 16px !important; 
+        font-size: 15px !important; 
         font-weight: 700 !important; 
         color: #ffffff !important; 
         background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%) !important; 
-        padding: 8px 12px; 
-        border-radius: 6px; 
+        padding: 4px 12px; 
+        border-radius: 4px; 
         text-align: center; 
         border: 1px solid #b91c1c; 
-        border-bottom: 4px solid #991b1b;
-        box-shadow: 0px 3px 8px rgba(220, 38, 38, 0.15);
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.15);
-        margin: 8px 0;
-        max-width: 240px;
+        border-bottom: 3px solid #991b1b;
+        box-shadow: 0px 2px 5px rgba(220, 38, 38, 0.15);
+        text-shadow: 1px 1px 1px rgba(0,0,0,0.15);
+        margin: 4px 0;
+        display: inline-block;
     }}
     
     /* 🏷️ Premium Left Panel Data Display */
@@ -500,14 +505,15 @@ else:
             with mc1:
                 c_article = st.selectbox("Article ID Column:", df.columns, index=calculate_mapped_index(df.columns, "map_article", "Article ID"))
                 c_name = st.selectbox("Patient Name Column:", df.columns, index=calculate_mapped_index(df.columns, "map_name", "Name"))
+                c_mrn = st.selectbox("MRN No. Column:", df.columns, index=calculate_mapped_index(df.columns, "map_mrn", "MRN No"))
             with mc2:
                 c_phone = st.selectbox("Contact Number Column:", df.columns, index=calculate_mapped_index(df.columns, "map_phone", "MobileNo"))
                 c_date = st.selectbox("Booking Date Column:", df.columns, index=calculate_mapped_index(df.columns, "map_date", "Booking Date"))
-            with mc3:
-                c_mrn = st.selectbox("MRN No. Column:", df.columns, index=calculate_mapped_index(df.columns, "map_mrn", "MRN No"))
                 c_address = st.selectbox("Address Column:", df.columns, index=calculate_mapped_index(df.columns, "map_address", "Address"))
+            with mc3:
                 c_city = st.selectbox("City Column:", df.columns, index=calculate_mapped_index(df.columns, "map_city", "City"))
                 c_bo = st.selectbox("Booking Office Column:", df.columns, index=calculate_mapped_index(df.columns, "map_bo", "Booking Office"))
+                c_dup = st.selectbox("Duplication Log Column:", df.columns, index=calculate_mapped_index(df.columns, "map_dup", "Duplicate"))
 
             if st.button("🚀 Push Verified Records to Cloud Database & Storage Bucket", use_container_width=True):
                 with st.spinner("Processing cloud file stream and database ingestion..."):
