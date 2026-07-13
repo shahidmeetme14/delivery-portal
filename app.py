@@ -371,15 +371,16 @@ st.markdown(f"""
     @media print {{
         @page {{
             size: A4 portrait !important;
-            margin: 10mm !important;
+            margin: 5mm !important;
         }}
         
-        html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], .block-container {{
-            height: auto !important;
-            width: 100% !important;
+        html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], .block-container, .stApp {{
+            height: 100vh !important;
+            width: 100vw !important;
+            max-height: 100vh !important;
             margin: 0 !important;
             padding: 0 !important;
-            overflow: visible !important;
+            overflow: hidden !important;
             background: #ffffff !important;
             background-color: #ffffff !important;
         }}
@@ -415,6 +416,7 @@ st.markdown(f"""
             top: 0 !important; 
             width: 100% !important; 
             height: auto !important;
+            max-height: 280mm !important;
             margin: 0 !important;
             padding: 20px !important;
             border: 2px solid #000000 !important; 
@@ -448,13 +450,13 @@ st.markdown(f"""
         .print-timestamp {{
             visibility: visible !important;
             position: fixed !important;
-            bottom: 15mm !important;
-            right: 15mm !important;
+            bottom: 10mm !important;
+            left: 10mm !important;
             font-size: 12px !important;
             color: #000000 !important;
             font-weight: bold !important;
             z-index: 999999 !important;
-            text-align: right !important;
+            text-align: left !important;
         }}
         
         .screen-only-timestamp {{
@@ -586,6 +588,71 @@ def change_password_dialog():
                         st.error("❌ Incorrect current password!")
                 except Exception as ex:
                     st.error(f"Database error: {ex}")
+
+# 🖨️ ADMIN REPORT ALERT - AUTO MANIFEST DIALOG
+@st.dialog("🖨️ Auto-Fetched Alert Manifest", width="large")
+def open_alert_manifest(alert_data):
+    st.markdown(f"**Patient Name:** {alert_data.get('patient_name', 'N/A')} &nbsp; | &nbsp; **Consignment ID:** `{alert_data.get('article_id', 'N/A')}`")
+    
+    with st.spinner("Connecting securely to PakPost server for real-time EMTTS Tracking data..."):
+        data, err = fetch_live_emtts_status(alert_data['article_id'])
+        
+    if err or not data:
+        emtts_status_html = f"<span style='color: #dc2626; font-weight: bold;'>⚠️ {err}</span>"
+    else:
+        last_entry = data["history"][-1]
+        emtts_status_html = f"""
+        <div style="font-weight: bold; color: #1e293b; font-size: 15px;">{last_entry["status"]}</div>
+        <div style="font-size: 12px; color: #475569; margin-top: 4px;">📍 Office: {last_entry['office']} <br> 🕒 Date-Time: {last_entry['datetime']}</div>
+        """
+        
+    print_operator = alert_data.get('operator_stamp', 'System Alert Console')
+    print_status_detail = f"""
+    <b style="color: green;">Delivered</b><br>
+    <span style="font-size: 13px; font-weight: 600; color: #334155; line-height: 1.4;">
+        • Date: {alert_data.get('delivery_date', 'N/A')}<br>
+        • Mode: {alert_data.get('received_mode', 'N/A')}<br>
+        • Extra Money Requested/Tips: <b style="color: #dc2626">{alert_data.get('extra_money_charged', 'Yes')}</b>
+    </span>
+    """
+
+    raw_phone = str(alert_data.get('phone_number', '')).strip()
+    if not raw_phone.startswith('0') and raw_phone.isdigit():
+        raw_phone = '0' + raw_phone
+        
+    st.markdown(f"""
+        <div class="print-manifest-card" style="background: #ffffff; border: 2px dashed #cbd5e1; padding: 25px; border-radius: 8px; font-family: 'Segoe UI', sans-serif; color: #000000;">
+            <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 10px; margin-bottom: 20px;">
+                <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
+                <p style="margin: 5px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Quality Verification & Consignee Audit Certificate</p>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 15px; color: #000000;">
+                <tr><td style="padding: 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('patient_name', 'N/A')}</td></tr>
+                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">MRN Number:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('mrn_no', 'N/A')}</td></tr>
+                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Consignment ID (Article):</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: 700; color: #a61c1c;">{alert_data['article_id']}</td></tr>
+                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Contact Number:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{raw_phone if raw_phone else 'N/A'}</td></tr>
+                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Booking GPO Station:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('booking_office', 'N/A')}</td></tr>
+                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Mailing Address:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('address', 'N/A')}</td></tr>
+                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">EMTTS Tracking Status:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top;">{emtts_status_html}</td></tr>
+                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Verification Status:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{print_status_detail}</td></tr>
+            </table>
+            <div style="margin-top: 35px; display: flex; justify-content: space-between; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 15px; color: #475569;">
+                <div><b>Verified By (Operator ID):</b> {print_operator}</div>
+                <div class="screen-only-timestamp"><b>System Print Timestamp:</b> {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
+            </div>
+        </div>
+        <div class="print-timestamp">System Print Timestamp: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
+    """, unsafe_allow_html=True)
+    
+    components.html("""
+    <style>
+    .custom-print-btn { background: linear-gradient(180deg, #cc2424 0%, #a61c1c 100%) !important; color: #ffffff !important; border: 1px solid #801414 !important; border-bottom: 4px solid #590d0d !important; border-radius: 6px !important; padding: 12px 24px !important; font-weight: 700; font-size: 14px; font-family: 'Segoe UI', sans-serif; box-shadow: 0px 4px 8px rgba(0,0,0,0.12); cursor: pointer; width: 100%; display: block; text-align: center; }
+    .custom-print-btn:hover { background: linear-gradient(180deg, #e53e3e 0%, #cc2424 100%) !important; }
+    .custom-print-btn:active { transform: scale(0.99); }
+    body { margin: 0; padding: 0; overflow: hidden; background: transparent; }
+    </style>
+    <button onclick="window.parent.print()" class="custom-print-btn">🖨️ PRINT FEEDBACK MANIFEST</button>
+    """, height=55)
 
 
 # ==========================================
@@ -761,64 +828,72 @@ def communications_view():
     st.session_state.current_navigation_tab = "📞 Outbound Communications Desk"
     st.markdown("### 📞 Outbound Communications Desk")
     
-    query_date = st.date_input("Filter Manifest Records by Booking Date:", datetime.date.today())
+    query_date = st.date_input("Filter Manifest Records by Booking Date (Overridden by Search):", datetime.date.today())
     
     with st.spinner("Processing cloud storage lookup and database audit..."):
         try:
             existing_master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
             master_ledger_df = pd.read_csv(io.BytesIO(existing_master_bytes), dtype=str)
-            filtered_master_rows = master_ledger_df[master_ledger_df["booking_date"] == str(query_date)]
-            raw_date_recs = filtered_master_rows.to_dict(orient="records")
+            all_master_recs = master_ledger_df.to_dict(orient="records")
         except Exception:
-            raw_date_recs = []
+            all_master_recs = []
+            master_ledger_df = pd.DataFrame()
             
         try:
-            db_action_logs = supabase.table("patient_deliveries").select("*").eq("booking_date", str(query_date)).execute().data
+            db_action_logs = supabase.table("patient_deliveries").select("*").execute().data
             db_logs_dictionary = {str(item["article_id"]).strip(): item for item in db_action_logs}
         except Exception:
             db_logs_dictionary = {}
             
-    if not raw_date_recs: 
-        st.info("No record found against selected date.")
+    if not all_master_recs: 
+        st.info("No records found in the database. Please ensure data is ingested.")
     else:
-        for profile in raw_date_recs:
-            article_key = str(profile["article_id"]).strip()
-            if article_key in db_logs_dictionary:
-                profile["id"] = db_logs_dictionary[article_key]["id"]
-                profile["status"] = db_logs_dictionary[article_key].get("status", "Pending")
-                profile["delivery_date"] = db_logs_dictionary[article_key].get("delivery_date")
-                profile["received_mode"] = db_logs_dictionary[article_key].get("received_mode")
-                profile["extra_money_charged"] = db_logs_dictionary[article_key].get("extra_money_charged")
-                profile["issue_reason"] = db_logs_dictionary[article_key].get("issue_reason")
-                profile["operator_stamp"] = db_logs_dictionary[article_key].get("operator_stamp")
-            else:
-                profile["id"] = None
-                profile["status"] = "Pending"
-
-        unique_offices = sorted(list(set([str(r.get('booking_office', 'Lahore GPO')).strip() for r in raw_date_recs])))
-        unique_offices.insert(0, "All Offices")
-        
         try:
             dynamic_headings = list(master_ledger_df.columns)
         except:
             dynamic_headings = ["patient_name", "article_id", "mrn_no", "phone_number", "address", "booking_office", "transaction_no"]
+            
+        unique_offices = sorted(list(set([str(r.get('booking_office', 'Lahore GPO')).strip() for r in all_master_recs])))
+        unique_offices.insert(0, "All Offices")
         
         filter_col1, filter_col2, filter_col3 = st.columns([1.5, 1.5, 1.5])
         with filter_col1: selected_office = st.selectbox("🏥 Filter by Booking Office:", unique_offices)
         with filter_col2: search_category = st.selectbox("🔎 Search By Heading:", ["All Fields"] + dynamic_headings)
-        with filter_col3: search_term = st.text_input("Enter detail to search:").strip().lower()
+        with filter_col3: search_term = st.text_input("Enter detail to search (Searches Entire Backend):").strip().lower()
+        
+        # Base Selection: Global Search vs Selected Date Filter
+        if search_term:
+            base_recs = all_master_recs
+        else:
+            base_recs = [r for r in all_master_recs if r.get("booking_date") == str(query_date)]
             
-        filtered_by_office = raw_date_recs if selected_office == "All Offices" else [r for r in raw_date_recs if str(r.get('booking_office')).strip() == selected_office]
+        filtered_by_office = base_recs if selected_office == "All Offices" else [r for r in base_recs if str(r.get('booking_office')).strip() == selected_office]
         
         if search_term:
             if search_category == "All Fields":
                 final_recs = [r for r in filtered_by_office if any(search_term in str(val).lower() for val in r.values())]
             else:
                 final_recs = [r for r in filtered_by_office if search_term in str(r.get(search_category, '')).lower()]
-        else: final_recs = filtered_by_office
+        else: 
+            final_recs = filtered_by_office
 
-        if not final_recs: st.warning("No records matched filters.")
+        if not final_recs: st.warning("No records matched your filters or search.")
         else:
+            # Sync DB stats for final records
+            for profile in final_recs:
+                article_key = str(profile["article_id"]).strip()
+                if article_key in db_logs_dictionary:
+                    profile["id"] = db_logs_dictionary[article_key]["id"]
+                    profile["status"] = db_logs_dictionary[article_key].get("status", "Pending")
+                    profile["delivery_date"] = db_logs_dictionary[article_key].get("delivery_date")
+                    profile["received_mode"] = db_logs_dictionary[article_key].get("received_mode")
+                    profile["extra_money_charged"] = db_logs_dictionary[article_key].get("extra_money_charged")
+                    profile["issue_reason"] = db_logs_dictionary[article_key].get("issue_reason")
+                    profile["operator_stamp"] = db_logs_dictionary[article_key].get("operator_stamp")
+                else:
+                    profile["id"] = None
+                    profile["status"] = "Pending"
+
             options_list = [f"{r['patient_name']} (MRN: {r.get('mrn_no', 'N/A')}) - [{r['status']}]" for r in final_recs]
             if st.session_state.selected_profile_index >= len(options_list): st.session_state.selected_profile_index = 0
                 
@@ -1199,11 +1274,14 @@ if st.session_state.logged_in and st.session_state.role == "admin":
         if unauthorized_charges:
             st.markdown("### 🚨 Critical Corruption & Extra Charges Alerts")
             for alert in unauthorized_charges:
-                alert_col1, alert_col2 = st.columns([4, 1])
+                alert_col1, alert_col2, alert_col3 = st.columns([3, 1, 1])
                 with alert_col1:
-                    st.error(f"⚠️ **Postman Alert (Extra Charges Issue):** Extra money requested/charged for **{alert['patient_name']}** (MRN: {alert.get('mrn_no', 'N/A')}, Consignment ID: {alert['article_id']}). Stamped by Operator: **{alert.get('operator_stamp', 'Staff')}**\n\n*(Note: This log will display extended postman information upon questionnaire configuration updates)*")
+                    st.error(f"⚠️ **Postman Alert:** Extra money charged for **{alert['patient_name']}** (MRN: {alert.get('mrn_no', 'N/A')}, Consignment ID: {alert['article_id']}). Operator: **{alert.get('operator_stamp', 'Staff')}**")
                 with alert_col2:
-                    if st.button("Dismiss / Resolve ✅", key=f"resolve_charge_{alert['id']}", use_container_width=True):
+                    if st.button("🖨️ Open Manifest", key=f"print_alert_{alert['id']}", use_container_width=True):
+                        open_alert_manifest(alert)
+                with alert_col3:
+                    if st.button("Dismiss ✅", key=f"resolve_charge_{alert['id']}", use_container_width=True):
                         with st.spinner("Processing alert resolution..."):
                             supabase.table("patient_deliveries").update({"extra_money_charged": "Yes (Resolved)"}).eq("id", alert["id"]).execute()
                             st.success("Alert successfully cleared from active view!")
