@@ -91,7 +91,11 @@ st.markdown(f"""
     <style>
     div[data-testid="stToolbar"] {{ visibility: hidden !important; display: none !important; }}
     .stDeployButton {{ display: none !important; }}
-    footer {{ visibility: hidden !important; }}
+    footer {{ visibility: hidden !important; display: none !important; }}
+    [data-testid="stViewerBadge"] {{ display: none !important; visibility: hidden !important; }}
+    div[class^="viewerBadge"] {{ display: none !important; visibility: hidden !important; }}
+    .viewerBadge_container__1616G {{ display: none !important; visibility: hidden !important; }}
+    .stAppDeployButton {{ display: none !important; visibility: hidden !important; }}
     {sidebar_css_rule}
     
     .stApp {{ background-color: #fdfcf9; }}
@@ -153,6 +157,39 @@ st.markdown(f"""
     section[data-testid="stSidebar"] div.stButton > button:active {{
         transform: translateY(3px) !important;
         border-bottom: 2px solid rgba(179, 146, 46, 0.9) !important;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(0,0,0,0.3) !important;
+    }}
+
+    /* 🔴 Terminate Session Button - Glossy Red Look styling via Anchor Selector */
+    div:has(> .terminate-btn-anchor) + div.element-container div.stButton > button,
+    div:has(> * > .terminate-btn-anchor) + div.element-container div.stButton > button,
+    div.terminate-btn-anchor + div.stButton > button {{
+        background: linear-gradient(180deg, #ff3b30 0%, #c31414 100%) !important;
+        color: #ffffff !important;
+        border: 2px solid rgba(255, 59, 48, 0.6) !important;
+        border-bottom: 5px solid #8a0c0c !important;
+        border-radius: 10px !important;
+        padding: 10px 20px !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        box-shadow: 0 8px 32px 0 rgba(195, 20, 20, 0.3), inset 0 1px 3px rgba(255,255,255,0.4) !important;
+        transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        font-weight: 700 !important;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6) !important;
+    }}
+    div:has(> .terminate-btn-anchor) + div.element-container div.stButton > button:hover,
+    div:has(> * > .terminate-btn-anchor) + div.element-container div.stButton > button:hover,
+    div.terminate-btn-anchor + div.stButton > button:hover {{
+        background: linear-gradient(180deg, #ff453a 0%, #d31818 100%) !important;
+        border-color: rgba(255, 59, 48, 0.9) !important;
+        box-shadow: 0 0 20px rgba(255, 59, 48, 0.5), inset 0 1px 4px rgba(255, 255, 255, 0.5) !important;
+        transform: translateY(-1px) !important;
+    }}
+    div:has(> .terminate-btn-anchor) + div.element-container div.stButton > button:active,
+    div:has(> * > .terminate-btn-anchor) + div.element-container div.stButton > button:active,
+    div.terminate-btn-anchor + div.stButton > button:active {{
+        transform: translateY(3px) !important;
+        border-bottom: 2px solid #8a0c0c !important;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(0,0,0,0.3) !important;
     }}
     
@@ -643,7 +680,7 @@ def communications_view():
                 profile["status"] = db_logs_dictionary[article_key].get("status", "Pending")
                 profile["delivery_date"] = db_logs_dictionary[article_key].get("delivery_date")
                 profile["received_mode"] = db_logs_dictionary[article_key].get("received_mode")
-                profile["extra_money_charged"] = db_logs_dictionary[article_key].get("extra_money_charged")
+                profile["extra_money_charged"] = db_logs_dictionary[alert_key].get("extra_money_charged") if 'alert_key' in locals() else db_logs_dictionary[article_key].get("extra_money_charged")
                 profile["issue_reason"] = db_logs_dictionary[article_key].get("issue_reason")
                 profile["operator_stamp"] = db_logs_dictionary[article_key].get("operator_stamp")
             else:
@@ -869,10 +906,44 @@ def communications_view():
                         </div>
                     """, unsafe_allow_html=True)
 
-                    # 🖨️ Parent Window Direct Printing Script (Bypasses Sandbox Iframe restrictions completely)
-                    st.markdown("""
-                    <button onclick="window.print()" class="custom-print-btn">🖨️ PRINT LOGISTICS MANIFEST</button>
-                    """, unsafe_allow_html=True)
+                    # 🖨️ Direct Printing Script (Uses Components Iframe to reliably trigger parent window print)
+                    components.html(f"""
+                    <style>
+                    .custom-print-btn {{
+                        background: linear-gradient(180deg, #cc2424 0%, #a61c1c 100%) !important;
+                        color: #ffffff !important;
+                        border: 1px solid #801414 !important;
+                        border-bottom: 4px solid #590d0d !important;
+                        border-radius: 6px !important;
+                        padding: 12px 24px !important;
+                        font-weight: 700;
+                        font-size: 14px;
+                        font-family: 'Segoe UI', sans-serif;
+                        box-shadow: 0px 4px 8px rgba(0,0,0,0.12);
+                        cursor: pointer;
+                        width: 100%;
+                        margin: 0;
+                        box-sizing: border-box;
+                        transition: all 0.1s ease;
+                        display: block;
+                        text-align: center;
+                    }}
+                    .custom-print-btn:hover {{
+                        background: linear-gradient(180deg, #e53e3e 0%, #cc2424 100%) !important;
+                    }}
+                    .custom-print-btn:active {{
+                        transform: scale(0.99);
+                        box-shadow: inset 0px 2px 5px rgba(0,0,0,0.3) !important;
+                    }}
+                    body {{
+                        margin: 0;
+                        padding: 0;
+                        overflow: hidden;
+                        background: transparent;
+                    }}
+                    </style>
+                    <button onclick="window.parent.print()" class="custom-print-btn">🖨️ PRINT LOGISTICS MANIFEST</button>
+                    """, height=55)
 
                     st.markdown('<p style="font-size:12px; color:#64748b; margin-top:8px; text-align:center;">💡 Tip: Clicking the button above or pressing <b>Ctrl + P</b> will cleanly print only this manifest certificate on a full page.</p>', unsafe_allow_html=True)
             
@@ -1058,6 +1129,9 @@ if st.session_state.logged_in:
                     st.switch_page(pg)
                     
         st.markdown("<br><hr style='border-top: 2px solid rgba(212,175,55,0.4); margin: 10px 0;'><br>", unsafe_allow_html=True)
+        
+        # Sibling Anchor for Custom Glossy Red Button Styling
+        st.markdown("<div class='terminate-btn-anchor'></div>", unsafe_allow_html=True)
         if st.button("Terminate Session 🚪", use_container_width=True):
             with st.spinner("Processing session termination..."):
                 st.session_state.logged_in = False
