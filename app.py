@@ -104,8 +104,8 @@ st.markdown(f"""
         padding: 30px !important;
     }}
     
-    /* Hide default Streamlit form submission helper texts */
-    div[data-testid="stForm"] small {{
+    /* Hide default Streamlit form submission helper texts and input instructions */
+    div[data-testid="stForm"] small, [data-testid="InputInstructions"] {{
         display: none !important;
     }}
     
@@ -244,7 +244,7 @@ st.markdown(f"""
     /* Custom Sidebar Identity Typography Styling for Crystal Black Theme */
     .sb-headline-custom {{ font-size: 20px !important; font-weight: bold !important; color: #d4af37 !important; margin-bottom: 15px; }}
     .sb-login-label {{ margin-top: 15px; color: #cbd5e1; font-size: 14px; }}
-    .sb-username-display {{ font-size: 18px !important; font-weight: bold !important; color: #ffffff !important; margin-bottom: 10px; }}
+    .sb-username-display {{ font-size: 18px !important; font-weight: bold !important; color: #d4af37 !important; margin-bottom: 10px; }}
     .sb-privilege-label {{ margin-top: 10px; color: #cbd5e1; font-size: 14px; }}
     </style>
 """, unsafe_allow_html=True)
@@ -346,7 +346,7 @@ if st.session_state.logged_in:
     with st.sidebar:
         st.markdown("<div class='sb-headline-custom'>🖥️ Enterprise Console</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='sb-login-label'>Logged in as:</div><div class='sb-username-display'>{st.session_state.full_name}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='sb-privilege-label'>Privilege Cluster: <span style='font-family: monospace; font-weight: bold;'>{st.session_state.role.upper()}</span></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='sb-privilege-label'>Privilege Cluster: <span style='font-family: monospace; font-weight: bold; color: #39ff14; text-shadow: 0 0 8px rgba(57,255,20,0.6);'>{st.session_state.role.upper()}</span></div>", unsafe_allow_html=True)
         st.markdown("<br><hr style='border-top:1px solid rgba(212,175,55,0.3);'><br>", unsafe_allow_html=True)
         if st.button("Terminate Session 🚪", use_container_width=True):
             with st.spinner("Processing session termination..."):
@@ -366,7 +366,7 @@ if st.session_state.logged_in and st.session_state.role == "admin":
             for alert in unauthorized_charges:
                 alert_col1, alert_col2 = st.columns([4, 1])
                 with alert_col1:
-                    st.error(f"⚠️ **Postman Alert (Extra Charges Wala Issue):** Extra money requested/charged for **{alert['patient_name']}** (MRN: {alert.get('mrn_no', 'N/A')}, Consignment ID: {alert['article_id']}). Stamped by Operator: **{alert.get('operator_stamp', 'Staff')}**\n\n*(Note: Questionnaire main postman details wali changes hotay hi ye click par mazeed logs show kare ga)*")
+                    st.error(f"⚠️ **Postman Alert (Extra Charges Issue):** Extra money requested/charged for **{alert['patient_name']}** (MRN: {alert.get('mrn_no', 'N/A')}, Consignment ID: {alert['article_id']}). Stamped by Operator: **{alert.get('operator_stamp', 'Staff')}**\n\n*(Note: This log will display extended postman information upon questionnaire configuration updates)*")
                 with alert_col2:
                     if st.button("Dismiss / Resolve ✅", key=f"resolve_charge_{alert['id']}", use_container_width=True):
                         with st.spinner("Processing alert resolution..."):
@@ -428,7 +428,7 @@ if not st.session_state.logged_in:
 elif st.session_state.show_recovery_prompt:
     _, alert_box, _ = st.columns([1, 2, 1])
     with alert_box:
-        st.info("System unexpected shutdown detect hua hai. Last active session data mehfooz hai.")
+        st.info("Unexpected system shutdown detected. Last active session data has been safely recovered.")
         col_res, col_new = st.columns(2)
         with col_res:
             if st.button("🔄 RESUME INTERRUPTED SESSION", use_container_width=True):
@@ -563,17 +563,14 @@ else:
                 status_progress_text.text("Scanning master datastore for cross-duplications... (75% Complete)")
                 progress_bar_control.progress(75)
                 
-                # Global Matching Logic Engine (Transaction No -> Fallback to Article ID)
+                # Global Matching Logic Engine based strictly on the selected Duplication column mapping
                 is_duplicate_by_transaction = uploaded_records_df["transaction_no"].isin(master_ledger_df["transaction_no"]) & (uploaded_records_df["transaction_no"] != "") & (uploaded_records_df["transaction_no"] != "nan")
-                is_duplicate_by_article = uploaded_records_df["article_id"].isin(master_ledger_df["article_id"]) & (uploaded_records_df["article_id"] != "") & (uploaded_records_df["article_id"] != "nan")
+                global_duplication_mask = is_duplicate_by_transaction
                 
-                global_duplication_mask = is_duplicate_by_transaction | is_duplicate_by_article
-                
-                # Filter Unique Rows & Strip Self-contained Sheet Duplicates
+                # Filter Unique Rows & Strip Self-contained Sheet Duplicates based on selected deduplication column
                 clean_unique_records = uploaded_records_df[~global_duplication_mask]
                 if "transaction_no" in clean_unique_records.columns:
                     clean_unique_records = clean_unique_records.drop_duplicates(subset=["transaction_no"])
-                clean_unique_records = clean_unique_records.drop_duplicates(subset=["article_id"])
                 
                 total_duplicates_cleared = total_input_count - len(clean_unique_records)
                 
@@ -597,7 +594,7 @@ else:
                     status_progress_text.empty()
                     progress_bar_control.empty()
                     
-                    st.success(f"🟢 Success: File processed successfully! Is file mein {total_duplicates_cleared} duplicate entries thien (Transaction No / Article ID ke mutabiq), jinhe remove kar diya gaya hai aur baqi unique data save ho chuka hai.")
+                    st.success(f"🟢 Success: File processed successfully! Out of {total_input_count} total records, {total_duplicates_cleared} duplicate entries were detected and removed based on the selected deduplication parameters. The remaining unique records have been securely saved.")
                 except Exception as store_ex:
                     st.error(f"Failed to synchronize master stream archive: {store_ex}")
 
@@ -679,7 +676,7 @@ else:
                 
                 # Check for questionnaire status rule warning alerts
                 if target_profile["status"] in ["Delivered", "Issue / Complaint"]:
-                    st.warning(f"⚠️ Note: Is patient ka questionnaire pehle hi process ho chuka hai! Current Status: [{target_profile['status']}]")
+                    st.warning(f"⚠️ Note: The questionnaire for this patient has already been processed! Current Status: [{target_profile['status']}]")
 
                 st.markdown("<hr>", unsafe_allow_html=True)
                 l_panel, r_panel = st.columns(2)
@@ -780,7 +777,7 @@ else:
     # PAGE 4: SECURE DATA EXPORT NODE
     elif st.session_state.current_navigation_tab == "📥 Secure Reports Export Center":
         st.markdown("### 📥 Secure Data Export & Cloud Records Center")
-        st.info("💡 Note: Saara real-time backup pehle hi cloud storage data-nodes par fully updated aur safe hai.")
+        st.info("💡 Note: All real-time backups are already fully updated and securely stored on the cloud storage data nodes.")
         
         try:
             with st.spinner("Fetching data logs matrix..."):
