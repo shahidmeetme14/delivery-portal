@@ -87,7 +87,6 @@ else:
     }
     """
 
-# Fixed f-string curly braces syntax issue by escaping CSS rules with double curly braces {{ }}
 st.markdown(f"""
     <style>
     div[data-testid="stToolbar"] {{ visibility: hidden !important; display: none !important; }}
@@ -107,7 +106,6 @@ st.markdown(f"""
         padding: 30px !important;
     }}
     
-    /* Hide default Streamlit form submission helper texts and input instructions */
     div[data-testid="stForm"] small, [data-testid="InputInstructions"] {{
         display: none !important;
     }}
@@ -135,7 +133,6 @@ st.markdown(f"""
         transform: translateY(2px) !important;
     }}
     
-    /* 📥 COMFORTABLE LIGHT THEME CONTROLS ENGINE */
     div[data-testid="stSelectbox"] > div[data-baseweb="select"], 
     div[data-testid="stDateInput"] > div,
     div[data-testid="stTextInput"] > div {{
@@ -155,7 +152,6 @@ st.markdown(f"""
         box-shadow: 0px 2px 4px rgba(166,28,28,0.08) !important;
     }}
 
-    /* Target input text color inside controls */
     div[data-testid="stSelectbox"] *, 
     div[data-testid="stDateInput"] input,
     div[data-testid="stTextInput"] input {{
@@ -168,7 +164,6 @@ st.markdown(f"""
         color: #1e293b !important;
     }}
     
-    /* 📱 Premium 3D Clickable Phone Display Button */
     .big-phone-display {{ 
         font-family: 'Segoe UI', -apple-system, sans-serif; 
         font-size: 22px !important; 
@@ -208,7 +203,6 @@ st.markdown(f"""
         box-sizing: border-box;
     }}
     
-    /* 🏷️ Premium Left Panel Data Display */
     .data-card {{
         background: #ffffff;
         padding: 18px;
@@ -244,7 +238,6 @@ st.markdown(f"""
     }}
     .patient-card-header {{ font-size: 22px !important; font-weight: 700 !important; color: #a61c1c; border-left: 5px solid #d4af37; padding-left: 10px; margin-bottom: 15px; }}
     
-    /* High-Specificity Sidebar Identity Typography Styling for Crystal Black Theme */
     section[data-testid="stSidebar"] .sb-headline-custom {{ font-size: 20px !important; font-weight: bold !important; color: #d4af37 !important; margin-bottom: 15px; }}
     section[data-testid="stSidebar"] .sb-login-label {{ margin-top: 15px; color: #cbd5e1 !important; font-size: 14px; }}
     section[data-testid="stSidebar"] .sb-username-display {{ font-size: 18px !important; font-weight: bold !important; color: #d4af37 !important; margin-bottom: 10px; }}
@@ -255,7 +248,6 @@ st.markdown(f"""
         text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14, 0 0 20px #39ff14 !important;
     }}
     
-    /* 🖨️ Clean CSS Print Optimizations (Isolated Singular Manifest Layout Canvas Fix) */
     @media print {{
         html, body {{
             height: auto !important;
@@ -266,7 +258,6 @@ st.markdown(f"""
         body * {{ 
             visibility: hidden !important; 
         }}
-        /* Fixed: Removed .stMarkdown from display: none to prevent container deletion */
         [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], .stDeployButton, footer, button, iframe, .stButton {{
             display: none !important;
             visibility: hidden !important;
@@ -277,7 +268,6 @@ st.markdown(f"""
         .print-manifest-card table, .print-manifest-card tr, .print-manifest-card td, .print-manifest-card h2, .print-manifest-card p, .print-manifest-card div, .print-manifest-card span, .print-manifest-card b {{
             visibility: visible !important;
         }}
-        /* Fixed: Changed position to absolute for reliable printing layout overlay */
         .print-manifest-card {{ 
             position: absolute !important; 
             left: 0 !important; 
@@ -344,9 +334,6 @@ if st.session_state.logged_in:
         st.session_state.last_activity = time.time()
         st.query_params["t"] = str(st.session_state.last_activity)
 
-if st.session_state.logged_in and st.session_state.current_navigation_tab is None:
-    st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine" if st.session_state.role == "admin" else "📞 Outbound Communications Hub"
-
 def map_status(raw_status):
     s = raw_status.lower().strip()
     if "undelivered" in s: return "Undelivered"
@@ -389,58 +376,12 @@ def fetch_live_emtts_status(article_id):
     except Exception as e:
         return None, f"Server Timeout / Failed: {str(e)}"
 
-if st.session_state.logged_in:
-    with st.sidebar:
-        st.markdown("<div class='sb-headline-custom'>🖥️ Enterprise Console</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='sb-login-label'>Logged in as:</div><div class='sb-username-display'>{st.session_state.full_name}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='sb-privilege-label'>Privilege Cluster: <span>{st.session_state.role.upper()}</span></div>", unsafe_allow_html=True)
-        st.markdown("<br><hr style='border-top:1px solid rgba(212,175,55,0.3);'><br>", unsafe_allow_html=True)
-        if st.button("Terminate Session 🚪", use_container_width=True):
-            with st.spinner("Processing session termination..."):
-                st.session_state.logged_in = False
-                st.query_params.clear()
-                st.rerun()
 
-st.markdown("<div class='brand-title'>📮 SHC & Pak Post | Delivery System</div>", unsafe_allow_html=True)
-st.markdown("<div class='brand-subtitle'>Secure Audit & Communication Engine</div>", unsafe_allow_html=True)
+# ==========================================
+# 📑 MULTI-PAGE DECLARATIONS (VIEWS)
+# ==========================================
 
-# 🚨 ADMIN COMPLAINT RADAR (Postman Extra Money Charged Alert Engine)
-if st.session_state.logged_in and st.session_state.role == "admin":
-    try:
-        unauthorized_charges = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes").execute().data
-        if unauthorized_charges:
-            st.markdown("### 🚨 Critical Corruption & Extra Charges Alerts")
-            for alert in unauthorized_charges:
-                alert_col1, alert_col2 = st.columns([4, 1])
-                with alert_col1:
-                    st.error(f"⚠️ **Postman Alert (Extra Charges Issue):** Extra money requested/charged for **{alert['patient_name']}** (MRN: {alert.get('mrn_no', 'N/A')}, Consignment ID: {alert['article_id']}). Stamped by Operator: **{alert.get('operator_stamp', 'Staff')}**\n\n*(Note: This log will display extended postman information upon questionnaire configuration updates)*")
-                with alert_col2:
-                    if st.button("Dismiss / Resolve ✅", key=f"resolve_charge_{alert['id']}", use_container_width=True):
-                        with st.spinner("Processing alert resolution..."):
-                            supabase.table("patient_deliveries").update({"extra_money_charged": "Yes (Resolved)"}).eq("id", alert["id"]).execute()
-                            st.success("Alert successfully cleared from active view!")
-                            time.sleep(0.5)
-                            st.rerun()
-            st.markdown("<hr style='border-top: 1px solid #cc2424;'>", unsafe_allow_html=True)
-            
-        # 📁 HISTORICAL SECURE LOGS ARCHIVE VIEWER ENGINE
-        resolved_charges = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes (Resolved)").execute().data
-        if resolved_charges:
-            with st.expander("📁 View Resolved Alert History Logs (Past Reports Archive - Extra Charges Issues)"):
-                history_df = pd.DataFrame(resolved_charges)
-                column_mapping_view = {
-                    "patient_name": "Patient Name",
-                    "mrn_no": "MRN Number",
-                    "article_id": "Consignment ID",
-                    "operator_stamp": "Reported By (Operator)",
-                    "booking_date": "Booking Date"
-                }
-                history_df_filtered = history_df[[col for col in column_mapping_view.keys() if col in history_df.columns]].rename(columns=column_mapping_view)
-                st.dataframe(history_df_filtered, use_container_width=True, hide_index=True)
-    except:
-        pass
-
-if not st.session_state.logged_in:
+def login_view():
     _, center_col, _ = st.columns([1, 1.4, 1])
     with center_col:
         st.markdown("<div style='background-color:#a61c1c; color:#ffffff; padding:12px; font-weight:700; font-size:13px; border-radius:6px 6px 0px 0px; border:1px solid #801414; text-align:center;'>SECURE PORTAL AUTHENTICATION</div>", unsafe_allow_html=True)
@@ -472,7 +413,8 @@ if not st.session_state.logged_in:
                             else: st.error("ACCESS DENIED: Invalid credentials.")
                         except Exception as ex: st.error(f"Database Sync Failure: {ex}")
 
-elif st.session_state.show_recovery_prompt:
+
+def recovery_view():
     _, alert_box, _ = st.columns([1, 2, 1])
     with alert_box:
         st.info("Unexpected system shutdown detected. Last active session data has been safely recovered.")
@@ -493,557 +435,574 @@ elif st.session_state.show_recovery_prompt:
                     save_operator_state()
                     st.rerun()
 
-else:
-    # 🔘 NAVIGATION MATRIX BAR
-    cols_count = 4 if st.session_state.role == "admin" else 2
-    nc = st.columns(cols_count)
-    
-    if st.session_state.role == "admin":
-        with nc[0]:
-            t1 = "active-nav-btn" if st.session_state.current_navigation_tab == "📊 Administrative Ingestion Engine" else ""
-            st.markdown(f"<div class='{t1}'>", unsafe_allow_html=True)
-            if st.button("📊 Ingestion Engine", use_container_width=True): 
-                with st.spinner("Processing content routing..."):
-                    st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine"; st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
-        with nc[1]:
-            t2 = "active-nav-btn" if st.session_state.current_navigation_tab == "👥 Operator Matrix & Security Audit Logs" else ""
-            st.markdown(f"<div class='{t2}'>", unsafe_allow_html=True)
-            if st.button("👥 Operator Matrix", use_container_width=True): 
-                with st.spinner("Processing content routing..."):
-                    st.session_state.current_navigation_tab = "👥 Operator Matrix & Security Audit Logs"; st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
-        with nc[2]:
-            t3 = "active-nav-btn" if st.session_state.current_navigation_tab == "📞 Outbound Communications Hub" else ""
-            st.markdown(f"<div class='{t3}'>", unsafe_allow_html=True)
-            if st.button("📞 Communications Desk", use_container_width=True): 
-                with st.spinner("Processing content routing..."):
-                    st.session_state.current_navigation_tab = "📞 Outbound Communications Hub"; st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
-        with nc[3]:
-            t4 = "active-nav-btn" if st.session_state.current_navigation_tab == "📥 Secure Reports Export Center" else ""
-            st.markdown(f"<div class='{t4}'>", unsafe_allow_html=True)
-            if st.button("📥 Export Center & Backup", use_container_width=True): 
-                with st.spinner("Processing content routing..."):
-                    st.session_state.current_navigation_tab = "📥 Secure Reports Export Center"; st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
-    else:
-        with nc[0]:
-            t1 = "active-nav-btn" if st.session_state.current_navigation_tab == "📞 Outbound Communications Hub" else ""
-            st.markdown(f"<div class='{t1}'>", unsafe_allow_html=True)
-            if st.button("📞 Communications Desk", use_container_width=True): 
-                with st.spinner("Processing content routing..."):
-                    st.session_state.current_navigation_tab = "📞 Outbound Communications Hub"; st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
-        with nc[1]:
-            t2 = "active-nav-btn" if st.session_state.current_navigation_tab == "📥 Secure Reports Export Center" else ""
-            st.markdown(f"<div class='{t2}'>", unsafe_allow_html=True)
-            if st.button("📥 My Exports & Backup", use_container_width=True): 
-                with st.spinner("Processing content routing..."):
-                    st.session_state.current_navigation_tab = "📥 Secure Reports Export Center"; st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
+def ingestion_view():
+    st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine"
+    st.markdown("### 📥 Bulk Logistics Ingestion Engine")
+    source_file = st.file_uploader("Upload Parcel Manifest Sheet", type=["xlsx", "csv"])
+    if source_file is not None:
+        file_key = f"cached_df_{source_file.name}_{source_file.size}"
+        if file_key not in st.session_state:
+            df = pd.read_excel(source_file) if source_file.name.endswith('.xlsx') else pd.read_csv(source_file)
+            st.session_state[file_key] = df
+        else: df = st.session_state[file_key]
+        
+        mc1, mc2, mc3 = st.columns(3)
+        with mc1:
+            c_article = st.selectbox("Article ID Column:", df.columns, index=calculate_mapped_index(df.columns, "map_article", "Article ID"))
+            c_name = st.selectbox("Patient Name Column:", df.columns, index=calculate_mapped_index(df.columns, "map_name", "Name"))
+            c_mrn = st.selectbox("MRN No. Column:", df.columns, index=calculate_mapped_index(df.columns, "map_mrn", "MRN No"))
+        with mc2:
+            c_phone = st.selectbox("Contact Number Column:", df.columns, index=calculate_mapped_index(df.columns, "map_phone", "MobileNo"))
+            c_date = st.selectbox("Booking Date Column:", df.columns, index=calculate_mapped_index(df.columns, "map_date", "Booking Date"))
+            c_address = st.selectbox("Address Column:", df.columns, index=calculate_mapped_index(df.columns, "map_address", "Address"))
+        with mc3:
+            c_city = st.selectbox("City Column:", df.columns, index=calculate_mapped_index(df.columns, "map_city", "City"))
+            c_bo = st.selectbox("Booking Office Column:", df.columns, index=calculate_mapped_index(df.columns, "map_bo", "Booking Office"))
+            c_dup = st.selectbox("Duplication Log Column:", df.columns, index=calculate_mapped_index(df.columns, "map_dup", "Duplicate"))
 
-    # PAGE 1: INGESTION (SMART GLOBAL DE-DUPLICATION ENGINE TO STORAGE)
-    if st.session_state.current_navigation_tab == "📊 Administrative Ingestion Engine" and st.session_state.role == "admin":
-        st.markdown("### 📥 Bulk Logistics Ingestion Engine")
-        source_file = st.file_uploader("Upload Parcel Manifest Sheet", type=["xlsx", "csv"])
-        if source_file is not None:
-            file_key = f"cached_df_{source_file.name}_{source_file.size}"
-            if file_key not in st.session_state:
-                df = pd.read_excel(source_file) if source_file.name.endswith('.xlsx') else pd.read_csv(source_file)
-                st.session_state[file_key] = df
-            else: df = st.session_state[file_key]
+        if st.button("🚀 Push Verified Records to Cloud Database & Storage Bucket", use_container_width=True):
+            status_progress_text = st.empty()
+            progress_bar_control = st.progress(0)
             
-            mc1, mc2, mc3 = st.columns(3)
-            with mc1:
-                c_article = st.selectbox("Article ID Column:", df.columns, index=calculate_mapped_index(df.columns, "map_article", "Article ID"))
-                c_name = st.selectbox("Patient Name Column:", df.columns, index=calculate_mapped_index(df.columns, "map_name", "Name"))
-                c_mrn = st.selectbox("MRN No. Column:", df.columns, index=calculate_mapped_index(df.columns, "map_mrn", "MRN No"))
-            with mc2:
-                c_phone = st.selectbox("Contact Number Column:", df.columns, index=calculate_mapped_index(df.columns, "map_phone", "MobileNo"))
-                c_date = st.selectbox("Booking Date Column:", df.columns, index=calculate_mapped_index(df.columns, "map_date", "Booking Date"))
-                c_address = st.selectbox("Address Column:", df.columns, index=calculate_mapped_index(df.columns, "map_address", "Address"))
-            with mc3:
-                c_city = st.selectbox("City Column:", df.columns, index=calculate_mapped_index(df.columns, "map_city", "City"))
-                c_bo = st.selectbox("Booking Office Column:", df.columns, index=calculate_mapped_index(df.columns, "map_bo", "Booking Office"))
-                c_dup = st.selectbox("Duplication Log Column:", df.columns, index=calculate_mapped_index(df.columns, "map_dup", "Duplicate"))
-
-            if st.button("🚀 Push Verified Records to Cloud Database & Storage Bucket", use_container_width=True):
-                # UI Realtime Progress Bar Integration
-                status_progress_text = st.empty()
-                progress_bar_control = st.progress(0)
-                
-                status_progress_text.text("Connecting with cloud storage nodes... (15% Complete)")
-                progress_bar_control.progress(15)
-                
-                # 📥 GLOBAL MASTER ARCHIVE LOOKUP
-                try:
-                    existing_master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
-                    master_ledger_df = pd.read_csv(io.BytesIO(existing_master_bytes), dtype=str)
-                except Exception:
-                    master_ledger_df = pd.DataFrame(columns=[
-                        "article_id", "patient_name", "phone_number", "booking_date", 
-                        "address", "patient_city", "mrn_no", "booking_office", "transaction_no"
-                    ])
-
-                status_progress_text.text("Analyzing spreadsheet matrix structures... (45% Complete)")
-                progress_bar_control.progress(45)
-                
-                new_manifest_rows = []
-                for _, row_data in df.iterrows():
-                    new_manifest_rows.append({
-                        "article_id": str(row_data[c_article]).strip(),
-                        "patient_name": str(row_data[c_name]).strip(),
-                        "phone_number": str(row_data[c_phone]).strip(),
-                        "booking_date": str(row_data[c_date])[:10],
-                        "address": str(row_data[c_address]).strip(),
-                        "patient_city": str(row_data[c_city]).strip(),
-                        "mrn_no": str(row_data[c_mrn]).strip(),
-                        "booking_office": str(row_data[c_bo]).strip() if c_bo in df.columns else "Lahore GPO",
-                        "transaction_no": str(row_data[c_dup]).strip() if c_dup in df.columns else ""
-                    })
-                uploaded_records_df = pd.DataFrame(new_manifest_rows, dtype=str)
-                total_input_count = len(uploaded_records_df)
-
-                status_progress_text.text("Scanning master datastore for cross-duplications... (75% Complete)")
-                progress_bar_control.progress(75)
-                
-                # Global Matching Logic Engine based strictly on the selected Duplication column mapping
-                is_duplicate_by_transaction = uploaded_records_df["transaction_no"].isin(master_ledger_df["transaction_no"]) & (uploaded_records_df["transaction_no"] != "") & (uploaded_records_df["transaction_no"] != "nan")
-                global_duplication_mask = is_duplicate_by_transaction
-                
-                # Filter Unique Rows & Strip Self-contained Sheet Duplicates based on selected deduplication column
-                clean_unique_records = uploaded_records_df[~global_duplication_mask]
-                if "transaction_no" in clean_unique_records.columns:
-                    clean_unique_records = clean_unique_records.drop_duplicates(subset=["transaction_no"])
-                
-                total_duplicates_cleared = total_input_count - len(clean_unique_records)
-                
-                # Merge into Global Master Matrix
-                final_consolidated_df = pd.concat([master_ledger_df, clean_unique_records], ignore_index=True)
-                
-                status_progress_text.text("Synchronizing clean ledger stream into cloud core... (95% Complete)")
-                progress_bar_control.progress(95)
-                
-                # Push Consolidated Stream to Supabase Storage Node
-                master_csv_buffer = io.StringIO()
-                final_consolidated_df.to_csv(master_csv_buffer, index=False)
-                master_csv_bytes = master_csv_buffer.getvalue().encode('utf-8')
-                
-                try:
-                    try: supabase.storage.from_("manifests").remove(["master_manifest_store.csv"])
-                    except: pass
-                    
-                    supabase.storage.from_("manifests").upload(path="master_manifest_store.csv", file=master_csv_bytes, file_options={"content-type": "text/csv"})
-                    
-                    status_progress_text.empty()
-                    progress_bar_control.empty()
-                    
-                    st.success(f"🟢 Success: File processed successfully! Out of {total_input_count} total records, {total_duplicates_cleared} duplicate entries were detected and removed based on the selected deduplication parameters. The remaining unique records have been securely saved.")
-                except Exception as store_ex:
-                    st.error(f"Failed to synchronize master stream archive: {store_ex}")
-
-    # PAGE 2: OPERATOR MATRIX
-    elif st.session_state.current_navigation_tab == "👥 Operator Matrix & Security Audit Logs" and st.session_state.role == "admin":
-        st.markdown("### 👥 Operational Account Provisioning")
-        nf = st.text_input("Operator Full Name")
-        nu = st.text_input("Operational Username / ID")
-        np = st.text_input("Assigned Initial Password", type="password")
-        if st.button("Register Operator Account", use_container_width=True):
-            with st.spinner("Processing operator provisioning logic..."):
-                if nf and nu and np:
-                    try:
-                        supabase.table("app_users").insert({"username": nu.strip(), "password": np.strip(), "full_name": nf.strip(), "role": "staff"}).execute()
-                        st.success("Operator registered successfully!")
-                    except Exception as e: st.error(f"Error: {e}")
-
-    # PAGE 3: OUTBOUND HUB (CASCADE MASTER FILE DESK READ)
-    elif st.session_state.current_navigation_tab == "📞 Outbound Communications Hub":
-        st.markdown("### 📞 Outbound Communications Desk")
-        
-        query_date = st.date_input("Filter Manifest Records by Booking Date:", datetime.date.today())
-        
-        with st.spinner("Processing cloud storage lookup and database audit..."):
+            status_progress_text.text("Connecting with cloud storage nodes... (15% Complete)")
+            progress_bar_control.progress(15)
+            
             try:
                 existing_master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
                 master_ledger_df = pd.read_csv(io.BytesIO(existing_master_bytes), dtype=str)
-                filtered_master_rows = master_ledger_df[master_ledger_df["booking_date"] == str(query_date)]
-                raw_date_recs = filtered_master_rows.to_dict(orient="records")
             except Exception:
-                raw_date_recs = []
-                
-            try:
-                # Get operational response states mapped inside table
-                db_action_logs = supabase.table("patient_deliveries").select("*").eq("booking_date", str(query_date)).execute().data
-                db_logs_dictionary = {str(item["article_id"]).strip(): item for item in db_action_logs}
-            except Exception:
-                db_logs_dictionary = {}
-                
-        if not raw_date_recs: 
-            st.info("No record found against selected date.")
-        else:
-            # Inject Operational States into Raw Manifest Profiles
-            for profile in raw_date_recs:
-                article_key = str(profile["article_id"]).strip()
-                if article_key in db_logs_dictionary:
-                    profile["id"] = db_logs_dictionary[article_key]["id"]
-                    profile["status"] = db_logs_dictionary[article_key].get("status", "Pending")
-                    profile["delivery_date"] = db_logs_dictionary[article_key].get("delivery_date")
-                    profile["received_mode"] = db_logs_dictionary[article_key].get("received_mode")
-                    profile["extra_money_charged"] = db_logs_dictionary[article_key].get("extra_money_charged")
-                    profile["issue_reason"] = db_logs_dictionary[article_key].get("issue_reason")
-                    profile["operator_stamp"] = db_logs_dictionary[article_key].get("operator_stamp")
-                else:
-                    profile["id"] = None
-                    profile["status"] = "Pending"
+                master_ledger_df = pd.DataFrame(columns=[
+                    "article_id", "patient_name", "phone_number", "booking_date", 
+                    "address", "patient_city", "mrn_no", "booking_office", "transaction_no"
+                ])
 
-            unique_offices = sorted(list(set([str(r.get('booking_office', 'Lahore GPO')).strip() for r in raw_date_recs])))
-            unique_offices.insert(0, "All Offices")
+            status_progress_text.text("Analyzing spreadsheet matrix structures... (45% Complete)")
+            progress_bar_control.progress(45)
             
-            filter_col1, filter_col2 = st.columns(2)
-            with filter_col1: selected_office = st.selectbox("🏥 Filter by Booking Office / GPO Node:", unique_offices)
-            with filter_col2: search_term = st.text_input("🔎 Smart Search (Name, Article ID, or MRN):").strip().lower()
-                
-            filtered_by_office = raw_date_recs if selected_office == "All Offices" else [r for r in raw_date_recs if str(r.get('booking_office')).strip() == selected_office]
-            if search_term:
-                final_recs = [r for r in filtered_by_office if search_term in str(r.get('patient_name','')).lower() or search_term in str(r.get('article_id','')).lower() or search_term in str(r.get('mrn_no','')).lower()]
-            else: final_recs = filtered_by_office
+            new_manifest_rows = []
+            for _, row_data in df.iterrows():
+                new_manifest_rows.append({
+                    "article_id": str(row_data[c_article]).strip(),
+                    "patient_name": str(row_data[c_name]).strip(),
+                    "phone_number": str(row_data[c_phone]).strip(),
+                    "booking_date": str(row_data[c_date])[:10],
+                    "address": str(row_data[c_address]).strip(),
+                    "patient_city": str(row_data[c_city]).strip(),
+                    "mrn_no": str(row_data[c_mrn]).strip(),
+                    "booking_office": str(row_data[c_bo]).strip() if c_bo in df.columns else "Lahore GPO",
+                    "transaction_no": str(row_data[c_dup]).strip() if c_dup in df.columns else ""
+                })
+            uploaded_records_df = pd.DataFrame(new_manifest_rows, dtype=str)
+            total_input_count = len(uploaded_records_df)
 
-            if not final_recs: st.warning("No records matched filters.")
+            status_progress_text.text("Scanning master datastore for cross-duplications... (75% Complete)")
+            progress_bar_control.progress(75)
+            
+            is_duplicate_by_transaction = uploaded_records_df["transaction_no"].isin(master_ledger_df["transaction_no"]) & (uploaded_records_df["transaction_no"] != "") & (uploaded_records_df["transaction_no"] != "nan")
+            global_duplication_mask = is_duplicate_by_transaction
+            
+            clean_unique_records = uploaded_records_df[~global_duplication_mask]
+            if "transaction_no" in clean_unique_records.columns:
+                clean_unique_records = clean_unique_records.drop_duplicates(subset=["transaction_no"])
+            
+            total_duplicates_cleared = total_input_count - len(clean_unique_records)
+            
+            final_consolidated_df = pd.concat([master_ledger_df, clean_unique_records], ignore_index=True)
+            
+            status_progress_text.text("Synchronizing clean ledger stream into cloud core... (95% Complete)")
+            progress_bar_control.progress(95)
+            
+            master_csv_buffer = io.StringIO()
+            final_consolidated_df.to_csv(master_csv_buffer, index=False)
+            master_csv_bytes = master_csv_buffer.getvalue().encode('utf-8')
+            
+            try:
+                try: supabase.storage.from_("manifests").remove(["master_manifest_store.csv"])
+                except: pass
+                
+                supabase.storage.from_("manifests").upload(path="master_manifest_store.csv", file=master_csv_bytes, file_options={"content-type": "text/csv"})
+                
+                status_progress_text.empty()
+                progress_bar_control.empty()
+                
+                st.success(f"🟢 Success: File processed successfully! Out of {total_input_count} total records, {total_duplicates_cleared} duplicate entries were detected and removed based on the selected deduplication parameters. The remaining unique records have been securely saved.")
+            except Exception as store_ex:
+                st.error(f"Failed to synchronize master stream archive: {store_ex}")
+
+
+def operator_matrix_view():
+    st.session_state.current_navigation_tab = "👥 Operator Matrix & Security Audit Logs"
+    st.markdown("### 👥 Operational Account Provisioning")
+    nf = st.text_input("Operator Full Name")
+    nu = st.text_input("Operational Username / ID")
+    np = st.text_input("Assigned Initial Password", type="password")
+    if st.button("Register Operator Account", use_container_width=True):
+        with st.spinner("Processing operator provisioning logic..."):
+            if nf and nu and np:
+                try:
+                    supabase.table("app_users").insert({"username": nu.strip(), "password": np.strip(), "full_name": nf.strip(), "role": "staff"}).execute()
+                    st.success("Operator registered successfully!")
+                except Exception as e: st.error(f"Error: {e}")
+
+
+def communications_view():
+    st.session_state.current_navigation_tab = "📞 Outbound Communications Hub"
+    st.markdown("### 📞 Outbound Communications Desk")
+    
+    query_date = st.date_input("Filter Manifest Records by Booking Date:", datetime.date.today())
+    
+    with st.spinner("Processing cloud storage lookup and database audit..."):
+        try:
+            existing_master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
+            master_ledger_df = pd.read_csv(io.BytesIO(existing_master_bytes), dtype=str)
+            filtered_master_rows = master_ledger_df[master_ledger_df["booking_date"] == str(query_date)]
+            raw_date_recs = filtered_master_rows.to_dict(orient="records")
+        except Exception:
+            raw_date_recs = []
+            
+        try:
+            db_action_logs = supabase.table("patient_deliveries").select("*").eq("booking_date", str(query_date)).execute().data
+            db_logs_dictionary = {str(item["article_id"]).strip(): item for item in db_action_logs}
+        except Exception:
+            db_logs_dictionary = {}
+            
+    if not raw_date_recs: 
+        st.info("No record found against selected date.")
+    else:
+        for profile in raw_date_recs:
+            article_key = str(profile["article_id"]).strip()
+            if article_key in db_logs_dictionary:
+                profile["id"] = db_logs_dictionary[article_key]["id"]
+                profile["status"] = db_logs_dictionary[article_key].get("status", "Pending")
+                profile["delivery_date"] = db_logs_dictionary[article_key].get("delivery_date")
+                profile["received_mode"] = db_logs_dictionary[article_key].get("received_mode")
+                profile["extra_money_charged"] = db_logs_dictionary[article_key].get("extra_money_charged")
+                profile["issue_reason"] = db_logs_dictionary[article_key].get("issue_reason")
+                profile["operator_stamp"] = db_logs_dictionary[article_key].get("operator_stamp")
             else:
-                options_list = [f"{r['patient_name']} (MRN: {r.get('mrn_no', 'N/A')}) - [{r['status']}]" for r in final_recs]
-                if st.session_state.selected_profile_index >= len(options_list): st.session_state.selected_profile_index = 0
-                    
-                selected_prof_str = st.selectbox("Select Patient Profile to Process:", options_list, index=st.session_state.selected_profile_index, key="outbound_profile_select")
-                
-                actual_index = options_list.index(selected_prof_str) if selected_prof_str in options_list else 0
-                target_profile = final_recs[actual_index]
-                
-                # Check for questionnaire status rule warning alerts
-                if target_profile["status"] in ["Delivered", "Issue / Complaint"]:
-                    st.warning(f"⚠️ Note: The questionnaire for this patient has already been processed! Current Status: [{target_profile['status']}]")
+                profile["id"] = None
+                profile["status"] = "Pending"
 
-                st.markdown("<hr>", unsafe_allow_html=True)
-                l_panel, r_panel = st.columns(2)
+        unique_offices = sorted(list(set([str(r.get('booking_office', 'Lahore GPO')).strip() for r in raw_date_recs])))
+        unique_offices.insert(0, "All Offices")
+        
+        filter_col1, filter_col2 = st.columns(2)
+        with filter_col1: selected_office = st.selectbox("🏥 Filter by Booking Office / GPO Node:", unique_offices)
+        with filter_col2: search_term = st.text_input("🔎 Smart Search (Name, Article ID, or MRN):").strip().lower()
+            
+        filtered_by_office = raw_date_recs if selected_office == "All Offices" else [r for r in raw_date_recs if str(r.get('booking_office')).strip() == selected_office]
+        if search_term:
+            final_recs = [r for r in filtered_by_office if search_term in str(r.get('patient_name','')).lower() or search_term in str(r.get('article_id','')).lower() or search_term in str(r.get('mrn_no','')).lower()]
+        else: final_recs = filtered_by_office
+
+        if not final_recs: st.warning("No records matched filters.")
+        else:
+            options_list = [f"{r['patient_name']} (MRN: {r.get('mrn_no', 'N/A')}) - [{r['status']}]" for r in final_recs]
+            if st.session_state.selected_profile_index >= len(options_list): st.session_state.selected_profile_index = 0
                 
-                with l_panel:
-                    st.markdown(f"<div class='patient-card-header'>👤 {target_profile['patient_name']}</div>", unsafe_allow_html=True)
+            selected_prof_str = st.selectbox("Select Patient Profile to Process:", options_list, index=st.session_state.selected_profile_index, key="outbound_profile_select")
+            
+            actual_index = options_list.index(selected_prof_str) if selected_prof_str in options_list else 0
+            target_profile = final_recs[actual_index]
+            
+            if target_profile["status"] in ["Delivered", "Issue / Complaint"]:
+                st.warning(f"⚠️ Note: The questionnaire for this patient has already been processed! Current Status: [{target_profile['status']}]")
+
+            st.markdown("<hr>", unsafe_allow_html=True)
+            l_panel, r_panel = st.columns(2)
+            
+            with l_panel:
+                st.markdown(f"<div class='patient-card-header'>👤 {target_profile['patient_name']}</div>", unsafe_allow_html=True)
+                
+                st.markdown(f"""
+                    <div class='data-card'>
+                        <div class='data-row'>🔢 <b>MRN Number:</b><br><span class='data-value'>{target_profile.get('mrn_no', 'N/A')}</span></div>
+                        <div class='data-row'>📦 <b>Consignment ID (Article):</b><br><span class='data-value-alt'>{target_profile['article_id']}</span></div>
+                        <div class='data-row'>🏥 <b>Booking GPO Station:</b><br><span style='font-size:18px; font-weight:600; color:#1e293b;'>{target_profile.get('booking_office', 'Unknown GPO')}</span></div>
+                        <div class='data-row'>🏠 <b>Address:</b><br><span style='font-size:17px; font-weight:600; color:#1e293b; background:#f8fafc; padding:6px; display:block; border-radius:4px; border:1px solid #e2e8f0; margin-top:4px;'>{target_profile['address']}</span></div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                st.markdown("#### 🌐 Pakistan Post Live EMTTS Tracking")
+                opt_col1, opt_col2 = st.columns(2)
+                with opt_col1: data_mode = st.radio("Display Transformation:", ["Fetch Live (Raw Mode)", "Fetch Snipped Data (Mapped Mode)"])
+                with opt_col2: report_scope = st.radio("Reporting Scope Evaluation:", ["Only Last Status", "All Statuses (Full History)"])
+                
+                if st.button("🔍 Fetch Live Status from PakPost Server", use_container_width=True):
+                    with st.spinner("Connecting to EMTTS Logistics..."):
+                        data, err = fetch_live_emtts_status(target_profile['article_id'])
+                        if err: st.error(err)
+                        elif data and data["history"]:
+                            st.session_state.fetched_emtts_data[target_profile['article_id']] = data
+                            
+                            history_list = data["history"]
+                            last_entry = history_list[-1]
+                            last_status_lower = last_entry["status"].lower()
+                            
+                            is_historical_anomaly = any("delivered" in h["status"].lower() or "return" in h["status"].lower() or "rts" in h["status"].lower() for h in history_list[:-1])
+                            is_last_delivered = "delivered" in last_status_lower
+                            is_last_rts = "return" in last_status_lower or "rts" in last_status_lower
+                            
+                            if is_historical_anomaly and not (is_last_delivered or is_last_rts):
+                                st.markdown("<div style='background-color:#dc2626; color:white; padding:14px; border-radius:6px; font-weight:800; text-align:center;'>⚠️ ANOMALY DETECTED: Marked Delivered/RTS in history but NOT currently!</div>", unsafe_allow_html=True)
+                            
+                            if is_last_delivered: st.success(f"✅ FINAL STATUS: {last_entry['status']} ({last_entry['datetime']})")
+                            elif is_last_rts: st.error(f"❌ FINAL STATUS: {last_entry['status']} ({last_entry['datetime']})")
+                            else: st.info(f"📍 CURRENT STATUS: {last_entry['status']} ({last_entry['office']})")
+
+                            use_mapped = (data_mode == "Fetch Snipped Data (Mapped Mode)")
+                            if report_scope == "All Statuses (Full History)":
+                                processed_rows = [{"Event": i+1, "Timestamp": h["datetime"], "Office": h["office"], "Status": map_status(h["status"]) if use_mapped else h["status"]} for i, h in enumerate(history_list)]
+                               st.dataframe(pd.DataFrame(processed_rows), use_container_width=True)
+                            else:
+                                final_status_str = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
+                                st.markdown(f"""
+                                    <div style='background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px; margin-bottom: 15px;'>
+                                        <div style='font-size: 13px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;'>Latest Status</div>
+                                        <div style='font-size: 20px; font-weight: 700; color: #1e293b; line-height: 1.3; word-wrap: break-word;'>{final_status_str}</div>
+                                    </div>
+                                """, unsafe_allow_html=True)
+
+                st.markdown("<div style='font-size: 22px; font-weight: 800; color: #334155; margin-bottom: 6px;'>🎴 DIAL THIS PHONE NUMBER FROM LANDLINE:</div>", unsafe_allow_html=True)
+                
+                raw_phone = str(target_profile.get('phone_number', '')).strip()
+                if not raw_phone or raw_phone.lower() in ['none', 'nan', 'null', ''] or len(raw_phone) < 5:
+                    st.markdown("<div class='no-phone-display'>⚠️ No Contact Number Available</div>", unsafe_allow_html=True)
+                    raw_phone = ""
+                else:
+                    if not raw_phone.startswith('0') and raw_phone.isdigit():
+                        raw_phone = '0' + raw_phone
+                    st.markdown(f"<div class='big-phone-display'>{raw_phone}</div>", unsafe_allow_html=True)
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                with st.expander("🖨️ Individual Profile Print Desk"):
+                    print_operator = target_profile.get('operator_stamp', st.session_state.full_name)
                     
+                    print_status = target_profile.get('status', 'Pending')
+                    print_status_detail = f"[{print_status}]"
+                    if print_status == "Delivered":
+                        delivery_date = target_profile.get('delivery_date', 'N/A')
+                        received_mode = target_profile.get('received_mode', 'N/A')
+                        extra_money = target_profile.get('extra_money_charged', 'N/A')
+                        print_status_detail = f"""
+                        <b style="color: green;">Delivered</b><br>
+                        <span style="font-size: 13px; font-weight: 600; color: #334155; line-height: 1.4;">
+                            • Date: {delivery_date}<br>
+                            • Mode: {received_mode}<br>
+                            • Extra Money Requested/Tips: <b style="color: {'#dc2626' if extra_money == 'Yes' else '#1e293b'}">{extra_money}</b>
+                        </span>
+                        """
+                    elif print_status == "Issue / Complaint":
+                        issue_reason = target_profile.get('issue_reason', 'N/A')
+                        print_status_detail = f"""
+                        <b style="color: #dc2626;">Issue / Complaint</b><br>
+                        <span style="font-size: 13px; font-weight: 600; color: #334155; line-height: 1.4;">
+                            • Reason: {issue_reason}
+                        </span>
+                        """
+                    else:
+                        print_status_detail = f"<b style='color: #475569;'>Pending Verification</b>"
+
+                    current_article_id = target_profile['article_id']
+                    cached_emtts = st.session_state.fetched_emtts_data.get(current_article_id)
+
+                    if not cached_emtts:
+                        st.info("ℹ️ Live tracking status has not been fetched from the main engine above.")
+                        st.markdown("##### 📥 Fetch EMTTS Live Status Directly in Print Desk")
+                        print_data_mode = st.radio("Print Display Transformation:", ["Fetch Live (Raw Mode)", "Fetch Snipped Data (Mapped Mode)"], key="print_data_mode_sel")
+                        print_report_scope = st.radio("Print Reporting Scope:", ["Only Last Status", "All Statuses (Full History)"], key="print_report_scope_sel")
+                        
+                        if st.button("🔍 Fetch Status inside Print Card", use_container_width=True, key="print_direct_fetch_btn"):
+                            with st.spinner("Connecting to EMTTS Logistics..."):
+                                data, err = fetch_live_emtts_status(current_article_id)
+                                if err:
+                                    st.error(err)
+                                else:
+                                    st.session_state.fetched_emtts_data[current_article_id] = data
+                                    st.success("Successfully loaded live status! Now you can print.")
+                                    st.rerun()
+                    
+                    cached_emtts = st.session_state.fetched_emtts_data.get(current_article_id)
+
+                    if cached_emtts and "history" in cached_emtts:
+                        history_list = cached_emtts["history"]
+                        active_data_mode = st.session_state.get("print_data_mode_sel", data_mode)
+                        use_mapped = (active_data_mode == "Fetch Snipped Data (Mapped Mode)")
+                        
+                        last_entry = history_list[-1]
+                        status_val = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
+                        
+                        print_historical_anomaly = any("delivered" in h["status"].lower() or "return" in h["status"].lower() or "rts" in h["status"].lower() for h in history_list[:-1])
+                        last_status_lower_print = last_entry["status"].lower()
+                        print_last_delivered = "delivered" in last_status_lower_print
+                        print_last_rts = "return" in last_status_lower_print or "rts" in last_status_lower_print
+                        
+                        print_anomaly_box_html = ""
+                        if print_historical_anomaly and not (print_last_delivered or print_last_rts):
+                            print_anomaly_box_html = """
+                            <div style="background-color: #dc2626; color: #ffffff; padding: 10px; border-radius: 4px; font-weight: bold; font-size: 13px; margin-bottom: 10px; border: 1px solid #b91c1c; word-wrap: break-word; white-space: normal; line-height: 1.4;">
+                                ⚠️ ANOMALY DETECTED: Marked Delivered/RTS in history but NOT currently!
+                            </div>
+                            """
+                        
+                        emtts_status_html = f"""
+                        {print_anomaly_box_html}
+                        <div style="font-weight: bold; color: #1e293b; font-size: 15px; word-wrap: break-word; white-space: normal; line-height: 1.4;">{status_val}</div>
+                        <div style="font-size: 12px; color: #475569; margin-top: 4px; line-height: 1.3;">
+                            📍 Office: {last_entry['office']} <br> 🕒 Date-Time: {last_entry['datetime']}
+                        </div>
+                        """
+                    else:
+                        emtts_status_html = "<span style='color: #94a3b8; font-style: italic; font-size: 13px;'>Live status not fetched yet (Use options above to fetch)</span>"
+
                     st.markdown(f"""
-                        <div class='data-card'>
-                            <div class='data-row'>🔢 <b>MRN Number:</b><br><span class='data-value'>{target_profile.get('mrn_no', 'N/A')}</span></div>
-                            <div class='data-row'>📦 <b>Consignment ID (Article):</b><br><span class='data-value-alt'>{target_profile['article_id']}</span></div>
-                            <div class='data-row'>🏥 <b>Booking GPO Station:</b><br><span style='font-size:18px; font-weight:600; color:#1e293b;'>{target_profile.get('booking_office', 'Unknown GPO')}</span></div>
-                            <div class='data-row'>🏠 <b>Address:</b><br><span style='font-size:17px; font-weight:600; color:#1e293b; background:#f8fafc; padding:6px; display:block; border-radius:4px; border:1px solid #e2e8f0; margin-top:4px;'>{target_profile['address']}</span></div>
+                        <div class="print-manifest-card" style="background: #ffffff; border: 2px dashed #cbd5e1; padding: 25px; border-radius: 8px; font-family: 'Segoe UI', sans-serif; color: #000000;">
+                            <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 10px; margin-bottom: 20px;">
+                                <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST LOGISTICS MANIFEST</h2>
+                                <p style="margin: 5px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Quality Verification & Consignee Audit Certificate</p>
+                            </div>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 15px; color: #000000;">
+                                <tr>
+                                    <td style="padding: 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['patient_name']}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">MRN Number:</td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('mrn_no', 'N/A')}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Consignment ID (Article):</td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: 700; color: #a61c1c;">{target_profile['article_id']}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Contact Number:</td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{raw_phone if raw_phone else 'N/A'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Booking GPO Station:</td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('booking_office', 'N/A')}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Mailing Address:</td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['address']}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">EMTTS Tracking Status:</td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top;">{emtts_status_html}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Verification Status:</td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{print_status_detail}</td>
+                                </tr>
+                            </table>
+                            <div style="margin-top: 35px; display: flex; justify-content: space-between; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 15px; color: #475569;">
+                                <div><b>Verified By (Operator ID):</b> {print_operator}</div>
+                                <div><b>System Print Timestamp:</b> {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
+                            </div>
                         </div>
                     """, unsafe_allow_html=True)
-                    
-                    st.markdown("#### 🌐 Pakistan Post Live EMTTS Tracking")
-                    opt_col1, opt_col2 = st.columns(2)
-                    with opt_col1: data_mode = st.radio("Display Transformation:", ["Fetch Live (Raw Mode)", "Fetch Snipped Data (Mapped Mode)"])
-                    with opt_col2: report_scope = st.radio("Reporting Scope Evaluation:", ["Only Last Status", "All Statuses (Full History)"])
-                    
-                    if st.button("🔍 Fetch Live Status from PakPost Server", use_container_width=True):
-                        with st.spinner("Connecting to EMTTS Logistics..."):
-                            data, err = fetch_live_emtts_status(target_profile['article_id'])
-                            if err: st.error(err)
-                            elif data and data["history"]:
-                                # Save the successfully fetched tracking result to session state cache for the print layout
-                                st.session_state.fetched_emtts_data[target_profile['article_id']] = data
-                                
-                                history_list = data["history"]
-                                last_entry = history_list[-1]
-                                last_status_lower = last_entry["status"].lower()
-                                
-                                is_historical_anomaly = any("delivered" in h["status"].lower() or "return" in h["status"].lower() or "rts" in h["status"].lower() for h in history_list[:-1])
-                                is_last_delivered = "delivered" in last_status_lower
-                                is_last_rts = "return" in last_status_lower or "rts" in last_status_lower
-                                
-                                if is_historical_anomaly and not (is_last_delivered or is_last_rts):
-                                    st.markdown("<div style='background-color:#dc2626; color:white; padding:14px; border-radius:6px; font-weight:800; text-align:center;'>⚠️ ANOMALY DETECTED: Marked Delivered/RTS in history but NOT currently!</div>", unsafe_allow_html=True)
-                                
-                                if is_last_delivered: st.success(f"✅ FINAL STATUS: {last_entry['status']} ({last_entry['datetime']})")
-                                elif is_last_rts: st.error(f"❌ FINAL STATUS: {last_entry['status']} ({last_entry['datetime']})")
-                                else: st.info(f"📍 CURRENT STATUS: {last_entry['status']} ({last_entry['office']})")
 
-                                use_mapped = (data_mode == "Fetch Snipped Data (Mapped Mode)")
-                                if report_scope == "All Statuses (Full History)":
-                                    processed_rows = [{"Event": i+1, "Timestamp": h["datetime"], "Office": h["office"], "Status": map_status(h["status"]) if use_mapped else h["status"]} for i, h in enumerate(history_list)]
-                                    st.dataframe(pd.DataFrame(processed_rows), use_container_width=True)
-                                else:
-                                    final_status_str = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
-                                    # Modified: Decent background color box with reduced font size for cleaner presentation look
-                                    st.markdown(f"""
-                                        <div style='background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px; margin-bottom: 15px;'>
-                                            <div style='font-size: 13px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;'>Latest Status</div>
-                                            <div style='font-size: 20px; font-weight: 700; color: #1e293b; line-height: 1.3; word-wrap: break-word;'>{final_status_str}</div>
-                                        </div>
-                                    """, unsafe_allow_html=True)
+                    components.html("""
+                    <button onclick="window.parent.print()" style="
+                        background: linear-gradient(180deg, #cc2424 0%, #a61c1c 100%);
+                        color: #ffffff;
+                        border: 1px solid #801414;
+                        border-bottom: 4px solid #590d0d;
+                        border-radius: 6px;
+                        padding: 12px 24px;
+                        font-weight: 700;
+                        font-size: 14px;
+                        font-family: 'Segoe UI', sans-serif;
+                        box-shadow: 0px 4px 8px rgba(0,0,0,0.12);
+                        cursor: pointer;
+                        width: 100%;
+                        margin-top: 15px;
+                        transition: all 0.1s ease;
+                    ">🖨️ PRINT LOGISTICS MANIFEST</button>
+                    <style>
+                        button:hover {
+                            background: linear-gradient(180deg, #e53e3e 0%, #cc2424 100%);
+                        }
+                        button:active {
+                            transform: scale(0.99);
+                            box-shadow: inset 0px 2px 5px rgba(0,0,0,0.3);
+                        }
+                    </style>
+                    """, height=65)
 
-                    st.markdown("<div style='font-size: 22px; font-weight: 800; color: #334155; margin-bottom: 6px;'>🎴 DIAL THIS PHONE NUMBER FROM LANDLINE:</div>", unsafe_allow_html=True)
+                    st.markdown('<p style="font-size:12px; color:#64748b; margin-top:8px; text-align:center;">💡 Tip: Clicking the button above or pressing <b>Ctrl + P</b> will cleanly print only this manifest certificate on a full page.</p>', unsafe_allow_html=True)
+            
+            with r_panel:
+                st.markdown("#### 📝 Live Quality Verification & Audit Questionnaire")
+                is_delivered = st.radio("Has the consignee physically received the delivery?", ["Select Assessment Option", "Yes", "No"])
+                payload_buffer = {}
+                
+                if is_delivered == "Yes":
+                    payload_buffer["status"] = "Delivered"
+                    payload_buffer["delivery_date"] = str(st.date_input("Delivery Verification Date", datetime.date.today()))
+                    payload_buffer["received_mode"] = st.radio("Delivery Execution Mode:", ["Delivered by postman to home address", "Collected directly from local post office branch"])
+                    payload_buffer["extra_money_charged"] = st.radio("Did the delivery agent request any unauthorized monetary payment/tips?", ["No", "Yes"])
+                elif is_delivered == "No":
+                    payload_buffer["status"] = "Issue / Complaint"
+                    payload_buffer["issue_reason"] = st.selectbox("Select Primary Failure Mode:", ["Wrong Delivery Status on EMTTS", "Incomplete Address / Premises Locked", "Logistics Delay", "Formal Institutional Dispute"])
                     
-                    raw_phone = str(target_profile.get('phone_number', '')).strip()
-                    if not raw_phone or raw_phone.lower() in ['none', 'nan', 'null', ''] or len(raw_phone) < 5:
-                        st.markdown("<div class='no-phone-display'>⚠️ No Contact Number Available</div>", unsafe_allow_html=True)
-                        raw_phone = ""
-                    else:
-                        if not raw_phone.startswith('0') and raw_phone.isdigit():
-                            raw_phone = '0' + raw_phone
-                        st.markdown(f"<div class='big-phone-display'>{raw_phone}</div>", unsafe_allow_html=True)
-                    
-                    # New Feature: Print Manifest Certificate Area (Updated for detailed verification status, print button, and EMTTS live status option)
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    with st.expander("🖨️ Individual Profile Print Desk"):
-                        print_operator = target_profile.get('operator_stamp', st.session_state.full_name)
-                        
-                        # 1. Verification Status Detailed Evaluation
-                        print_status = target_profile.get('status', 'Pending')
-                        print_status_detail = f"[{print_status}]"
-                        if print_status == "Delivered":
-                            delivery_date = target_profile.get('delivery_date', 'N/A')
-                            received_mode = target_profile.get('received_mode', 'N/A')
-                            extra_money = target_profile.get('extra_money_charged', 'N/A')
-                            print_status_detail = f"""
-                            <b style="color: green;">Delivered</b><br>
-                            <span style="font-size: 13px; font-weight: 600; color: #334155; line-height: 1.4;">
-                                • Date: {delivery_date}<br>
-                                • Mode: {received_mode}<br>
-                                • Extra Money Requested/Tips: <b style="color: {'#dc2626' if extra_money == 'Yes' else '#1e293b'}">{extra_money}</b>
-                            </span>
-                            """
-                        elif print_status == "Issue / Complaint":
-                            issue_reason = target_profile.get('issue_reason', 'N/A')
-                            print_status_detail = f"""
-                            <b style="color: #dc2626;">Issue / Complaint</b><br>
-                            <span style="font-size: 13px; font-weight: 600; color: #334155; line-height: 1.4;">
-                                • Reason: {issue_reason}
-                            </span>
-                            """
+                if st.button("💾 Finalize Session & Commit Logs", use_container_width=True):
+                    with st.spinner("Processing transaction submission rules..."):
+                        if is_delivered == "Select Assessment Option": st.error("Select verification response.")
                         else:
-                            print_status_detail = f"<b style='color: #475569;'>Pending Verification</b>"
-
-                        # 2. EMTTS Tracking Live Evaluation for Print Manifest
-                        current_article_id = target_profile['article_id']
-                        cached_emtts = st.session_state.fetched_emtts_data.get(current_article_id)
-
-                        # Check if data has been fetched from the main page tracking engine
-                        if not cached_emtts:
-                            st.info("ℹ️ Live tracking status has not been fetched from the main engine above.")
+                            payload_buffer["operator_stamp"] = st.session_state.full_name
+                            payload_buffer["article_id"] = target_profile["article_id"]
+                            payload_buffer["patient_name"] = target_profile["patient_name"]
+                            payload_buffer["phone_number"] = target_profile["phone_number"]
+                            payload_buffer["booking_date"] = target_profile["booking_date"]
+                            payload_buffer["address"] = target_profile["address"]
+                            payload_buffer["patient_city"] = target_profile["patient_city"]
+                            payload_buffer["mrn_no"] = target_profile["mrn_no"]
+                            payload_buffer["booking_office"] = target_profile["booking_office"]
                             
-                            # Embed fetch options inside the print container since it wasn't fetched earlier
-                            st.markdown("##### 📥 Fetch EMTTS Live Status Directly in Print Desk")
-                            print_data_mode = st.radio("Print Display Transformation:", ["Fetch Live (Raw Mode)", "Fetch Snipped Data (Mapped Mode)"], key="print_data_mode_sel")
-                            print_report_scope = st.radio("Print Reporting Scope:", ["Only Last Status", "All Statuses (Full History)"], key="print_report_scope_sel")
-                            
-                            if st.button("🔍 Fetch Status inside Print Card", use_container_width=True, key="print_direct_fetch_btn"):
-                                with st.spinner("Connecting to EMTTS Logistics..."):
-                                    data, err = fetch_live_emtts_status(current_article_id)
-                                    if err:
-                                        st.error(err)
-                                    elif data and data["history"]:
-                                        st.session_state.fetched_emtts_data[current_article_id] = data
-                                        st.success("Successfully loaded live status! Now you can print.")
-                                        st.rerun()
-                        
-                        # Re-evaluate cache after internal click
-                        cached_emtts = st.session_state.fetched_emtts_data.get(current_article_id)
+                            try:
+                                supabase.table("patient_deliveries").upsert(payload_buffer, on_conflict="article_id").execute()
+                                st.success("Updated with operator identity stamp!")
+                                st.session_state.selected_profile_index += 1
+                                save_operator_state()
+                                time.sleep(0.5)
+                                st.rerun()
+                            except Exception as e: st.error(f"Sync error: {e}")
 
-                        if cached_emtts and "history" in cached_emtts:
-                            history_list = cached_emtts["history"]
-                            # Detect which radio settings were used to build the preview (either print-specific or primary panel depending on active view)
-                            active_data_mode = st.session_state.get("print_data_mode_sel", data_mode)
-                            use_mapped = (active_data_mode == "Fetch Snipped Data (Mapped Mode)")
-                            
-                            # Always target the last status entry for print view display logic
-                            last_entry = history_list[-1]
-                            status_val = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
-                            
-                            # Structural cross-examination for background historical delivered or RTS events anomalies
-                            print_historical_anomaly = any("delivered" in h["status"].lower() or "return" in h["status"].lower() or "rts" in h["status"].lower() for h in history_list[:-1])
-                            last_status_lower_print = last_entry["status"].lower()
-                            print_last_delivered = "delivered" in last_status_lower_print
-                            print_last_rts = "return" in last_status_lower_print or "rts" in last_status_lower_print
-                            
-                            print_anomaly_box_html = ""
-                            if print_historical_anomaly and not (print_last_delivered or print_last_rts):
-                                print_anomaly_box_html = """
-                                <div style="background-color: #dc2626; color: #ffffff; padding: 10px; border-radius: 4px; font-weight: bold; font-size: 13px; margin-bottom: 10px; border: 1px solid #b91c1c; word-wrap: break-word; white-space: normal; line-height: 1.4;">
-                                    ⚠️ ANOMALY DETECTED: Marked Delivered/RTS in history but NOT currently!
-                                </div>
-                                """
-                            
-                            emtts_status_html = f"""
-                            {print_anomaly_box_html}
-                            <div style="font-weight: bold; color: #1e293b; font-size: 15px; word-wrap: break-word; white-space: normal; line-height: 1.4;">{status_val}</div>
-                            <div style="font-size: 12px; color: #475569; margin-top: 4px; line-height: 1.3;">
-                                📍 Office: {last_entry['office']} <br> 🕒 Date-Time: {last_entry['datetime']}
-                            </div>
-                            """
-                        else:
-                            emtts_status_html = "<span style='color: #94a3b8; font-style: italic; font-size: 13px;'>Live status not fetched yet (Use options above to fetch)</span>"
 
-                        st.markdown(f"""
-                            <div class="print-manifest-card" style="background: #ffffff; border: 2px dashed #cbd5e1; padding: 25px; border-radius: 8px; font-family: 'Segoe UI', sans-serif; color: #000000;">
-                                <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 10px; margin-bottom: 20px;">
-                                    <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST LOGISTICS MANIFEST</h2>
-                                    <p style="margin: 5px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Quality Verification & Consignee Audit Certificate</p>
-                                </div>
-                                <table style="width: 100%; border-collapse: collapse; font-size: 15px; color: #000000;">
-                                    <tr>
-                                        <td style="padding: 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td>
-                                        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['patient_name']}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">MRN Number:</td>
-                                        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('mrn_no', 'N/A')}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Consignment ID (Article):</td>
-                                        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: 700; color: #a61c1c;">{target_profile['article_id']}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Contact Number:</td>
-                                        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{raw_phone if raw_phone else 'N/A'}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Booking GPO Station:</td>
-                                        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('booking_office', 'N/A')}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Mailing Address:</td>
-                                        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['address']}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">EMTTS Tracking Status:</td>
-                                        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top;">{emtts_status_html}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Verification Status:</td>
-                                        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{print_status_detail}</td>
-                                    </tr>
-                                </table>
-                                <div style="margin-top: 35px; display: flex; justify-content: space-between; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 15px; color: #475569;">
-                                    <div><b>Verified By (Operator ID):</b> {print_operator}</div>
-                                    <div><b>System Print Timestamp:</b> {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
-                                </div>
-                            </div>
-                        """, unsafe_allow_html=True)
-
-                        # Premium, responsive client-side Print button component targeting the layout
-                        components.html("""
-                        <button onclick="window.parent.print()" style="
-                            background: linear-gradient(180deg, #cc2424 0%, #a61c1c 100%);
-                            color: #ffffff;
-                            border: 1px solid #801414;
-                            border-bottom: 4px solid #590d0d;
-                            border-radius: 6px;
-                            padding: 12px 24px;
-                            font-weight: 700;
-                            font-size: 14px;
-                            font-family: 'Segoe UI', sans-serif;
-                            box-shadow: 0px 4px 8px rgba(0,0,0,0.12);
-                            cursor: pointer;
-                            width: 100%;
-                            margin-top: 15px;
-                            transition: all 0.1s ease;
-                        ">🖨️ PRINT LOGISTICS MANIFEST</button>
-                        <style>
-                            button:hover {
-                                background: linear-gradient(180deg, #e53e3e 0%, #cc2424 100%);
-                            }
-                            button:active {
-                                transform: scale(0.99);
-                                box-shadow: inset 0px 2px 5px rgba(0,0,0,0.3);
-                            }
-                        </style>
-                        """, height=65)
-
-                        st.markdown('<p style="font-size:12px; color:#64748b; margin-top:8px; text-align:center;">💡 Tip: Clicking the button above or pressing <b>Ctrl + P</b> will cleanly print only this manifest certificate on a full page.</p>', unsafe_allow_html=True)
+def export_center_view():
+    st.session_state.current_navigation_tab = "📥 Secure Reports Export Center"
+    st.markdown("### 📥 Secure Data Export & Cloud Records Center")
+    st.info("💡 Note: All real-time backups are already fully updated and securely stored on the cloud storage data nodes.")
+    
+    try:
+        with st.spinner("Fetching data logs matrix..."):
+            all_records = supabase.table("patient_deliveries").select("*").execute().data
+        if all_records:
+            df_export = pd.DataFrame(all_records)
+            
+            if "operator_stamp" not in df_export.columns:
+                df_export["operator_stamp"] = "Unassigned Logs"
+            
+            if st.session_state.role == "admin":
+                st.markdown("#### 🛠️ Admin Export Panel (Full Ledger Control)")
+                distinct_operators = list(df_export["operator_stamp"].dropna().unique())
+                distinct_operators.insert(0, "Download Everything (All Operators combined)")
                 
-                with r_panel:
-                    st.markdown("#### 📝 Live Quality Verification & Audit Questionnaire")
-                    is_delivered = st.radio("Has the consignee physically received the delivery?", ["Select Assessment Option", "Yes", "No"])
-                    payload_buffer = {}
-                    
-                    if is_delivered == "Yes":
-                        payload_buffer["status"] = "Delivered"
-                        payload_buffer["delivery_date"] = str(st.date_input("Delivery Verification Date", datetime.date.today()))
-                        payload_buffer["received_mode"] = st.radio("Delivery Execution Mode:", ["Delivered by postman to home address", "Collected directly from local post office branch"])
-                        payload_buffer["extra_money_charged"] = st.radio("Did the delivery agent request any unauthorized monetary payment/tips?", ["No", "Yes"])
-                    elif is_delivered == "No":
-                        payload_buffer["status"] = "Issue / Complaint"
-                        payload_buffer["issue_reason"] = st.selectbox("Select Primary Failure Mode:", ["Wrong Delivery Status on EMTTS", "Incomplete Address / Premises Locked", "Logistics Delay", "Formal Institutional Dispute"])
-                        
-                    if st.button("💾 Finalize Session & Commit Logs", use_container_width=True):
-                        with st.spinner("Processing transaction submission rules..."):
-                            if is_delivered == "Select Assessment Option": st.error("Select verification response.")
-                            else:
-                                payload_buffer["operator_stamp"] = st.session_state.full_name
-                                # Populate master reference descriptors for decoupled storage structure compatibility
-                                payload_buffer["article_id"] = target_profile["article_id"]
-                                payload_buffer["patient_name"] = target_profile["patient_name"]
-                                payload_buffer["phone_number"] = target_profile["phone_number"]
-                                payload_buffer["booking_date"] = target_profile["booking_date"]
-                                payload_buffer["address"] = target_profile["address"]
-                                payload_buffer["patient_city"] = target_profile["patient_city"]
-                                payload_buffer["mrn_no"] = target_profile["mrn_no"]
-                                payload_buffer["booking_office"] = target_profile["booking_office"]
-                                
-                                try:
-                                    supabase.table("patient_deliveries").upsert(payload_buffer, on_conflict="article_id").execute()
-                                    st.success("Updated with operator identity stamp!")
-                                    st.session_state.selected_profile_index += 1
-                                    save_operator_state()
-                                    time.sleep(0.5)
-                                    st.rerun()
-                                except Exception as e: st.error(f"Sync error: {e}")
-
-    # PAGE 4: SECURE DATA EXPORT NODE
-    elif st.session_state.current_navigation_tab == "📥 Secure Reports Export Center":
-        st.markdown("### 📥 Secure Data Export & Cloud Records Center")
-        st.info("💡 Note: All real-time backups are already fully updated and securely stored on the cloud storage data nodes.")
-        
-        try:
-            with st.spinner("Fetching data logs matrix..."):
-                all_records = supabase.table("patient_deliveries").select("*").execute().data
-            if all_records:
-                df_export = pd.DataFrame(all_records)
-                
-                if "operator_stamp" not in df_export.columns:
-                    df_export["operator_stamp"] = "Unassigned Logs"
-                
-                if st.session_state.role == "admin":
-                    st.markdown("#### 🛠️ Admin Export Panel (Full Ledger Control)")
-                    distinct_operators = list(df_export["operator_stamp"].dropna().unique())
-                    distinct_operators.insert(0, "Download Everything (All Operators combined)")
-                    
-                    target_selection = st.selectbox("Select Data Slice / Operator Filter Target:", distinct_operators)
-                    if target_selection != "Download Everything (All Operators combined)":
-                        df_final_download = df_export[df_export["operator_stamp"] == target_selection]
-                    else:
-                        df_final_download = df_export
+                target_selection = st.selectbox("Select Data Slice / Operator Filter Target:", distinct_operators)
+                if target_selection != "Download Everything (All Operators combined)":
+                    df_final_download = df_export[df_export["operator_stamp"] == target_selection]
                 else:
-                    st.markdown("#### 🔒 Operator Export Panel (Your Individual Action Log)")
-                    df_final_download = df_export[df_export["operator_stamp"] == st.session_state.full_name]
-                    st.write(f"Total verified entries stamped under your account: `{len(df_final_download)}`")
-                
-                if not df_final_download.empty:
-                    csv_buffer = io.StringIO()
-                    df_final_download.to_csv(csv_buffer, index=False)
-                    csv_data = csv_buffer.getvalue().encode('utf-8')
-                    
-                    st.download_button(
-                        label="📥 Download Authenticated Security Sheet (.CSV File)",
-                        data=csv_data,
-                        file_name=f"Verified_Deliveries_Log_{datetime.date.today()}.csv",
-                        mime="text/csv",
-                        use_container_width=True
-                    )
-                else:
-                    st.warning("No recorded data matching your credentials or filters found inside the backup matrix.")
+                    df_final_download = df_export
             else:
-                st.warning("Cloud database nodes are currently empty.")
-        except Exception as err:
-            st.error(f"Failed to compile export ledger sheets: {err}")
+                st.markdown("#### 🔒 Operator Export Panel (Your Individual Action Log)")
+                df_final_download = df_export[df_export["operator_stamp"] == st.session_state.full_name]
+                st.write(f"Total verified entries stamped under your account: `{len(df_final_download)}`")
+            
+            if not df_final_download.empty:
+                csv_buffer = io.StringIO()
+                df_final_download.to_csv(csv_buffer, index=False)
+                csv_data = csv_buffer.getvalue().encode('utf-8')
+                
+                st.download_button(
+                    label="📥 Download Authenticated Security Sheet (.CSV File)",
+                    data=csv_data,
+                    file_name=f"Verified_Deliveries_Log_{datetime.date.today()}.csv",
+                    mime="text/csv",
+                    use_container_width=True
+                )
+            else:
+                st.warning("No recorded data matching your credentials or filters found inside the backup matrix.")
+        else:
+            st.warning("Cloud database nodes are currently empty.")
+    except Exception as err:
+        st.error(f"Failed to compile export ledger sheets: {err}")
+
+
+# ==========================================
+# 🗺️ DYNAMIC PORTAL ROUTING ENGINE
+# ==========================================
+
+# 1. Global Header Branding & Complaints Alert Engine (Will render on all sub-pages automatically)
+st.markdown("<div class='brand-title'>📮 SHC & Pak Post | Delivery System</div>", unsafe_allow_html=True)
+st.markdown("<div class='brand-subtitle'>Secure Audit & Communication Engine</div>", unsafe_allow_html=True)
+
+if st.session_state.logged_in and st.session_state.role == "admin":
+    try:
+        unauthorized_charges = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes").execute().data
+        if unauthorized_charges:
+            st.markdown("### 🚨 Critical Corruption & Extra Charges Alerts")
+            for alert in unauthorized_charges:
+                alert_col1, alert_col2 = st.columns([4, 1])
+                with alert_col1:
+                    st.error(f"⚠️ **Postman Alert (Extra Charges Issue):** Extra money requested/charged for **{alert['patient_name']}** (MRN: {alert.get('mrn_no', 'N/A')}, Consignment ID: {alert['article_id']}). Stamped by Operator: **{alert.get('operator_stamp', 'Staff')}**\n\n*(Note: This log will display extended postman information upon questionnaire configuration updates)*")
+                with alert_col2:
+                    if st.button("Dismiss / Resolve ✅", key=f"resolve_charge_{alert['id']}", use_container_width=True):
+                        with st.spinner("Processing alert resolution..."):
+                            supabase.table("patient_deliveries").update({"extra_money_charged": "Yes (Resolved)"}).eq("id", alert["id"]).execute()
+                            st.success("Alert successfully cleared from active view!")
+                            time.sleep(0.5)
+                            st.rerun()
+            st.markdown("<hr style='border-top: 1px solid #cc2424;'>", unsafe_allow_html=True)
+            
+        resolved_charges = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes (Resolved)").execute().data
+        if resolved_charges:
+            with st.expander("📁 View Resolved Alert History Logs (Past Reports Archive - Extra Charges Issues)"):
+                history_df = pd.DataFrame(resolved_charges)
+                column_mapping_view = {
+                    "patient_name": "Patient Name",
+                    "mrn_no": "MRN Number",
+                    "article_id": "Consignment ID",
+                    "operator_stamp": "Reported By (Operator)",
+                    "booking_date": "Booking Date"
+                }
+                history_df_filtered = history_df[[col for col in column_mapping_view.keys() if col in history_df.columns]].rename(columns=column_mapping_view)
+                st.dataframe(history_df_filtered, use_container_width=True, hide_index=True)
+    except:
+        pass
+
+
+# 2. Render Sidebar Session Meta Information & Session Kill Switch
+if st.session_state.logged_in:
+    with st.sidebar:
+        st.markdown("<div class='sb-headline-custom'>🖥️ Enterprise Console</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='sb-login-label'>Logged in as:</div><div class='sb-username-display'>{st.session_state.full_name}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='sb-privilege-label'>Privilege Cluster: <span>{st.session_state.role.upper()}</span></div>", unsafe_allow_html=True)
+        st.markdown("<br><hr style='border-top:1px solid rgba(212,175,55,0.3);'><br>", unsafe_allow_html=True)
+        if st.button("Terminate Session 🚪", use_container_width=True):
+            with st.spinner("Processing session termination..."):
+                st.session_state.logged_in = False
+                st.query_params.clear()
+                st.rerun()
+
+
+# 3. Dynamic Native Page Mapping based on Security Context and States
+if not st.session_state.logged_in:
+    # Login Mode - Safe Isolation without navigation links
+    pages_to_display = [
+        st.Page(login_view, title="Authentication Desk", icon="🔒")
+    ]
+elif st.session_state.show_recovery_prompt:
+    # Session Recovery Override State
+    pages_to_display = [
+        st.Page(recovery_view, title="Session Recovery", icon="🔄")
+    ]
+else:
+    # Active Account Operational Matrix Setup
+    if st.session_state.role == "admin":
+        pages_to_display = [
+            st.Page(ingestion_view, title="Ingestion Engine", icon="📊"),
+            st.Page(operator_matrix_view, title="Operator Matrix", icon="👥"),
+            st.Page(communications_view, title="Communications Desk", icon="📞"),
+            st.Page(export_center_view, title="Export Center & Backup", icon="📥")
+        ]
+    else:
+        pages_to_display = [
+            st.Page(communications_view, title="Communications Desk", icon="📞"),
+            st.Page(export_center_view, title="My Exports & Backup", icon="📥")
+        ]
+
+# 4. Streamlit Routing Engine Execution
+selected_navigation_route = st.navigation(pages_to_display)
+selected_navigation_route.run()
