@@ -255,24 +255,41 @@ st.markdown(f"""
         text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14, 0 0 20px #39ff14 !important;
     }}
     
-    /* 🖨️ Clean CSS Print Optimizations (f-string escaped properly) */
+    /* 🖨️ Clean CSS Print Optimizations (Isolated Singular Manifest Layout Canvas Fix) */
     @media print {{
-        body * {{ visibility: hidden !important; }}
-        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], .stDeployButton, footer, button, iframe, .stButton {{
+        html, body {{
+            height: auto !important;
+            overflow: hidden !important;
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+        }}
+        body * {{ 
+            visibility: hidden !important; 
+        }}
+        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], .stDeployButton, footer, button, iframe, .stButton, .stMarkdown {{
             display: none !important;
             visibility: hidden !important;
         }}
-        .print-manifest-card, .print-manifest-card * {{ visibility: visible !important; }}
+        .print-manifest-card, .print-manifest-card * {{ 
+            visibility: visible !important; 
+            display: block !important;
+        }}
+        .print-manifest-card table, .print-manifest-card tr, .print-manifest-card td, .print-manifest-card h2, .print-manifest-card p, .print-manifest-card div, .print-manifest-card span, .print-manifest-card b {{
+            visibility: visible !important;
+            display: auto !important;
+        }}
         .print-manifest-card {{ 
-            position: absolute !important; 
+            position: fixed !important; 
             left: 0 !important; 
             top: 0 !important; 
             width: 100% !important; 
-            border: none !important; 
+            height: auto !important;
+            border: 2px dashed #cbd5e1 !important; 
             box-shadow: none !important; 
             background: #ffffff !important;
-            padding: 20px !important;
+            padding: 25px !important;
             margin: 0 !important;
+            box-sizing: border-box !important;
         }}
     }}
     </style>
@@ -836,46 +853,33 @@ else:
                             history_list = cached_emtts["history"]
                             # Detect which radio settings were used to build the preview (either print-specific or primary panel depending on active view)
                             active_data_mode = st.session_state.get("print_data_mode_sel", data_mode)
-                            active_report_scope = st.session_state.get("print_report_scope_sel", report_scope)
-                            
                             use_mapped = (active_data_mode == "Fetch Snipped Data (Mapped Mode)")
                             
-                            if active_report_scope == "All Statuses (Full History)":
-                                # Compact, highly polished HTML sub-table for Full History logs inside print Layout
-                                rows_html = ""
-                                for idx, h in enumerate(history_list):
-                                    status_val = map_status(h["status"]) if use_mapped else h["status"]
-                                    rows_html += f"""
-                                    <tr style="font-size: 11px; border-bottom: 1px solid #e2e8f0;">
-                                        <td style="padding: 4px; color: #334155;">{h['datetime']}</td>
-                                        <td style="padding: 4px; color: #334155;">{h['office']}</td>
-                                        <td style="padding: 4px; font-weight: bold; color: #a61c1c;">{status_val}</td>
-                                    </tr>
-                                    """
-                                emtts_status_html = f"""
-                                <table style="width: 100%; border-collapse: collapse; margin-top: 5px; border: 1px solid #cbd5e1;">
-                                    <thead>
-                                        <tr style="background: #f1f5f9; font-size: 11px; text-align: left;">
-                                            <th style="padding: 4px; border-bottom: 2px solid #cbd5e1; color: #1e293b;">Date/Time</th>
-                                            <th style="padding: 4px; border-bottom: 2px solid #cbd5e1; color: #1e293b;">Office</th>
-                                            <th style="padding: 4px; border-bottom: 2px solid #cbd5e1; color: #1e293b;">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {rows_html}
-                                    </tbody>
-                                </table>
-                                """
-                            else:
-                                # Last Status display format
-                                last_entry = history_list[-1]
-                                status_val = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
-                                emtts_status_html = f"""
-                                <div style="font-weight: bold; color: #1e293b; font-size: 14px;">{status_val}</div>
-                                <div style="font-size: 11px; color: #475569; margin-top: 2px;">
-                                    📍 Office: {last_entry['office']} | 🕒 Date-Time: {last_entry['datetime']}
+                            # Always target the last status entry for print view display logic
+                            last_entry = history_list[-1]
+                            status_val = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
+                            
+                            # Structural cross-examination for background historical delivered or RTS events anomalies
+                            print_historical_anomaly = any("delivered" in h["status"].lower() or "return" in h["status"].lower() or "rts" in h["status"].lower() for h in history_list[:-1])
+                            last_status_lower_print = last_entry["status"].lower()
+                            print_last_delivered = "delivered" in last_status_lower_print
+                            print_last_rts = "return" in last_status_lower_print or "rts" in last_status_lower_print
+                            
+                            print_anomaly_box_html = ""
+                            if print_historical_anomaly and not (print_last_delivered or print_last_rts):
+                                print_anomaly_box_html = """
+                                <div style="background-color: #dc2626; color: #ffffff; padding: 10px; border-radius: 4px; font-weight: bold; font-size: 13px; margin-bottom: 10px; border: 1px solid #b91c1c; word-wrap: break-word; white-space: normal; line-height: 1.4;">
+                                    ⚠️ ANOMALY DETECTED: Marked Delivered/RTS in history but NOT currently!
                                 </div>
                                 """
+                            
+                            emtts_status_html = f"""
+                            {print_anomaly_box_html}
+                            <div style="font-weight: bold; color: #1e293b; font-size: 15px; word-wrap: break-word; white-space: normal; line-height: 1.4;">{status_val}</div>
+                            <div style="font-size: 12px; color: #475569; margin-top: 4px; line-height: 1.3;">
+                                📍 Office: {last_entry['office']} <br> 🕒 Date-Time: {last_entry['datetime']}
+                            </div>
+                            """
                         else:
                             emtts_status_html = "<span style='color: #94a3b8; font-style: italic; font-size: 13px;'>Live status not fetched yet (Use options above to fetch)</span>"
 
@@ -912,7 +916,7 @@ else:
                                     </tr>
                                     <tr>
                                         <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">EMTTS Tracking Status:</td>
-                                        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{emtts_status_html}</td>
+                                        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top;">{emtts_status_html}</td>
                                     </tr>
                                     <tr>
                                         <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Verification Status:</td>
