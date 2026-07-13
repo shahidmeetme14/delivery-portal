@@ -89,18 +89,23 @@ else:
 
 st.markdown(f"""
     <style>
-    /* Complete Removal of Streamlit Watermarks, Headers, Footers & Badges */
+    /* Complete & Absolute Removal of Streamlit Watermarks, Headers, Footers, Badges & Links */
     div[data-testid="stToolbar"], #MainMenu, footer, header,
-    .stDeployButton, .stAppDeployButton,
-    [data-testid="stViewerBadge"], div[class^="viewerBadge"],
-    .viewerBadge_container__1616G,
-    div[data-testid="stDecoration"], div[data-testid="stStatusWidget"] {{
+    [data-testid="stHeader"], [data-testid="stDecoration"],
+    [data-testid="stStatusWidget"], [data-testid="stActionElements"],
+    .stDeployButton, .stAppDeployButton, button[kind="header"],
+    [data-testid="stViewerBadge"], div[class^="viewerBadge"], div[class*="viewerBadge"],
+    .viewerBadge_container__1616G, a[href*="streamlit.io"],
+    div[data-testid="stBottom"], div[data-testid="stBottomBlockContainer"] {{
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
         height: 0px !important;
         width: 0px !important;
+        max-height: 0px !important;
+        max-width: 0px !important;
         pointer-events: none !important;
+        overflow: hidden !important;
     }}
     {sidebar_css_rule}
     
@@ -166,70 +171,58 @@ st.markdown(f"""
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(0,0,0,0.3) !important;
     }}
 
-    /* 🟡 Glossy Gold Crystal Password Button */
-    section[data-testid="stSidebar"] div[data-testid="stElementContainer"]:has(.password-btn-anchor) + div[data-testid="stElementContainer"] button,
-    section[data-testid="stSidebar"] div[data-testid="element-container"]:has(.password-btn-anchor) + div[data-testid="element-container"] button,
-    section[data-testid="stSidebar"] div.password-btn-anchor + div button,
-    section[data-testid="stSidebar"] div:has(> .password-btn-anchor) + div button,
-    section[data-testid="stSidebar"] button:has(div:contains("Change User Password")),
-    section[data-testid="stSidebar"] button:has(p:contains("Change User Password")) {{
+    /* 🟡 Glossy Gold Crystal Password Button - Standard Bulletproof Selectors */
+    div:has(> .password-btn-anchor) + div button,
+    div:has(.password-btn-anchor) + div button,
+    div:has(> .password-btn-anchor) + div[data-testid^="st"] button {{
         background: linear-gradient(180deg, #ffd700 0%, #b8860b 100%) !important;
         color: #000000 !important;
-        border: 2px solid rgba(255, 255, 255, 0.5) !important;
+        border: 2px solid rgba(255, 255, 255, 0.6) !important;
         border-bottom: 5px solid #8b6508 !important;
         border-radius: 10px !important;
         padding: 10px 20px !important;
         backdrop-filter: blur(12px) !important;
         -webkit-backdrop-filter: blur(12px) !important;
-        box-shadow: 0 8px 32px 0 rgba(212, 175, 55, 0.4), inset 0 1px 3px rgba(255,255,255,0.6) !important;
+        box-shadow: 0 8px 25px rgba(212, 175, 55, 0.5), inset 0 1px 3px rgba(255,255,255,0.8) !important;
         transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
         font-weight: 800 !important;
-        text-shadow: 0px 1px 1px rgba(255, 255, 255, 0.5) !important;
+        text-shadow: 0px 1px 1px rgba(255, 255, 255, 0.6) !important;
     }}
-    section[data-testid="stSidebar"] button:has(div:contains("Change User Password")):hover,
-    section[data-testid="stSidebar"] button:has(p:contains("Change User Password")):hover {{
+    div:has(.password-btn-anchor) + div button:hover {{
         background: linear-gradient(180deg, #ffe44d 0%, #d4a017 100%) !important;
-        box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), inset 0 1px 4px rgba(255, 255, 255, 0.8) !important;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.9), inset 0 1px 4px rgba(255, 255, 255, 0.9) !important;
         transform: translateY(-1px) !important;
     }}
-    section[data-testid="stSidebar"] button:has(div:contains("Change User Password")):active,
-    section[data-testid="stSidebar"] button:has(p:contains("Change User Password")):active {{
+    div:has(.password-btn-anchor) + div button:active {{
         transform: translateY(3px) !important;
         border-bottom: 2px solid #8b6508 !important;
     }}
 
-    /* 🔴 Terminate Session Button - Robust CSS Hook for 3D Glossy Red Button Styling */
-    section[data-testid="stSidebar"] div[data-testid="stElementContainer"]:has(.terminate-btn-anchor) + div[data-testid="stElementContainer"] button,
-    section[data-testid="stSidebar"] div[data-testid="element-container"]:has(.terminate-btn-anchor) + div[data-testid="element-container"] button,
-    section[data-testid="stSidebar"] div.terminate-btn-anchor + div button,
-    section[data-testid="stSidebar"] div:has(> .terminate-btn-anchor) + div button,
-    section[data-testid="stSidebar"] button:has(div:contains("Terminate Session")),
-    section[data-testid="stSidebar"] button:has(p:contains("Terminate Session")) {{
+    /* 🔴 Terminate Session Button - Standard Bulletproof Selectors */
+    div:has(> .terminate-btn-anchor) + div button,
+    div:has(.terminate-btn-anchor) + div button,
+    div:has(> .terminate-btn-anchor) + div[data-testid^="st"] button {{
         background: linear-gradient(180deg, #ff4d4d 0%, #c31414 100%) !important;
         color: #ffffff !important;
-        border: 2px solid rgba(255, 255, 255, 0.3) !important;
+        border: 2px solid rgba(255, 255, 255, 0.4) !important;
         border-bottom: 5px solid #800a0a !important;
         border-radius: 10px !important;
         padding: 10px 20px !important;
         backdrop-filter: blur(12px) !important;
         -webkit-backdrop-filter: blur(12px) !important;
-        box-shadow: 0 8px 32px 0 rgba(195, 20, 20, 0.4), inset 0 1px 3px rgba(255,255,255,0.4) !important;
+        box-shadow: 0 8px 25px rgba(195, 20, 20, 0.5), inset 0 1px 3px rgba(255,255,255,0.4) !important;
         transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
         font-weight: 800 !important;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7) !important;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
     }}
-    section[data-testid="stSidebar"] button:has(div:contains("Terminate Session")):hover,
-    section[data-testid="stSidebar"] button:has(p:contains("Terminate Session")):hover {{
+    div:has(.terminate-btn-anchor) + div button:hover {{
         background: linear-gradient(180deg, #ff6666 0%, #d91616 100%) !important;
-        border-color: rgba(255, 255, 255, 0.6) !important;
-        box-shadow: 0 0 20px rgba(255, 59, 48, 0.7), inset 0 1px 4px rgba(255, 255, 255, 0.5) !important;
+        box-shadow: 0 0 20px rgba(255, 59, 48, 0.8), inset 0 1px 4px rgba(255, 255, 255, 0.6) !important;
         transform: translateY(-1px) !important;
     }}
-    section[data-testid="stSidebar"] button:has(div:contains("Terminate Session")):active,
-    section[data-testid="stSidebar"] button:has(p:contains("Terminate Session")):active {{
+    div:has(.terminate-btn-anchor) + div button:active {{
         transform: translateY(3px) !important;
         border-bottom: 2px solid #800a0a !important;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(0,0,0,0.3) !important;
     }}
     
     /* 🖨️ Parent-Level Custom Print Button */
@@ -378,28 +371,26 @@ st.markdown(f"""
     @media print {{
         @page {{
             size: A4 portrait !important;
-            margin: 10mm !important;
+            margin: 12mm !important;
         }}
         
-        html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stMainBlockContainer"], div, section {{
+        html, body {{
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
             background: #ffffff !important;
             background-color: #ffffff !important;
-            height: auto !important;
-            max-height: none !important;
-            overflow: visible !important;
-            position: static !important;
-            transform: none !important;
-            box-shadow: none !important;
-            border: none !important;
         }}
         
-        /* Hide everything by default */
-        body * {{ 
+        /* Hide everything by default from document layout flow */
+        body *, .stApp *, [data-testid="stAppViewContainer"] *, [data-testid="stMain"] * {{ 
             visibility: hidden !important; 
         }}
 
-        /* Clean out all generic Streamlit layout elements */
+        /* Clean out all generic Streamlit layout elements completely */
         [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"],
+        [data-testid="stDecoration"], [data-testid="stStatusWidget"], [data-testid="stActionElements"],
         footer, button, iframe, div.stButton, [data-testid="collapsedControl"],
         .stAppDeployButton, .stDeployButton, #MainMenu {{
             display: none !important;
@@ -416,15 +407,16 @@ st.markdown(f"""
             display: block !important;
         }}
 
-        /* Direct Positioning & Isolation on Page 1 */
+        /* Direct Positioning & Isolation on Page 1 (Strictly Single Page A4) */
         .print-manifest-card {{ 
-            position: absolute !important; 
+            position: fixed !important; 
             left: 0 !important; 
             top: 0 !important; 
             width: 100% !important; 
-            max-width: 100% !important;
+            height: auto !important;
+            max-height: 100vh !important;
             margin: 0 !important;
-            padding: 15px !important;
+            padding: 20px !important;
             border: 2px solid #000000 !important; 
             border-radius: 0px !important;
             background: #ffffff !important;
@@ -432,6 +424,8 @@ st.markdown(f"""
             page-break-inside: avoid !important;
             page-break-after: avoid !important;
             page-break-before: avoid !important;
+            break-inside: avoid !important;
+            overflow: hidden !important;
             z-index: 999999 !important;
         }}
 
@@ -589,9 +583,7 @@ def change_password_dialog():
 def login_view():
     _, center_col, _ = st.columns([1, 1.4, 1])
     with center_col:
-        st.markdown("<div class='brand-title' style='text-align:center; margin-top: 15px;'>📮 SHC & Pak Post | Delivery System</div>", unsafe_allow_html=True)
-        st.markdown("<div class='brand-subtitle' style='text-align:center; border-left: none; margin-bottom: 25px;'>Secure Audit & Communication Engine</div>", unsafe_allow_html=True)
-        st.markdown("<div style='background-color:#a61c1c; color:#ffffff; padding:12px; font-weight:700; font-size:13px; border-radius:6px 6px 0px 0px; border:1px solid #801414; text-align:center;'>SECURE PORTAL AUTHENTICATION</div>", unsafe_allow_html=True)
+        st.markdown("<div style='background-color:#a61c1c; color:#ffffff; padding:12px; font-weight:700; font-size:13px; border-radius:6px 6px 0px 0px; border:1px solid #801414; text-align:center; margin-top: 15px;'>SECURE PORTAL AUTHENTICATION</div>", unsafe_allow_html=True)
         with st.form("pyqt_enterprise_login"):
             input_user = st.text_input("OPERATOR ID / USERNAME", placeholder="Enter Username")
             input_pass = st.text_input("SECURITY ACCESS PASSWORD", type="password", placeholder="Enter Secure Key")
@@ -754,7 +746,7 @@ def operator_matrix_view():
 
 
 def communications_view():
-    st.session_state.current_navigation_tab = "📞 Outbound Communications Hub"
+    st.session_state.current_navigation_tab = "📞 Outbound Communications Desk"
     st.markdown("### 📞 Outbound Communications Desk")
     
     query_date = st.date_input("Filter Manifest Records by Booking Date:", datetime.date.today())
@@ -784,7 +776,7 @@ def communications_view():
                 profile["status"] = db_logs_dictionary[article_key].get("status", "Pending")
                 profile["delivery_date"] = db_logs_dictionary[article_key].get("delivery_date")
                 profile["received_mode"] = db_logs_dictionary[article_key].get("received_mode")
-                profile["extra_money_charged"] = db_logs_dictionary[alert_key].get("extra_money_charged") if 'alert_key' in locals() else db_logs_dictionary[article_key].get("extra_money_charged")
+                profile["extra_money_charged"] = db_logs_dictionary[article_key].get("extra_money_charged")
                 profile["issue_reason"] = db_logs_dictionary[article_key].get("issue_reason")
                 profile["operator_stamp"] = db_logs_dictionary[article_key].get("operator_stamp")
             else:
@@ -1174,44 +1166,43 @@ else:
 # Initialize Routing (Position set to hidden so default sidebar links don't show)
 selected_navigation_route = st.navigation(pages_to_display, position="hidden")
 
-# 2. Global Header Branding & Complaints Alert Engine (Will render on all sub-pages automatically EXCEPT Login Screen)
-if st.session_state.logged_in:
-    st.markdown("<div class='brand-title'>📮 SHC & Pak Post | Delivery System</div>", unsafe_allow_html=True)
-    st.markdown("<div class='brand-subtitle'>Secure Audit & Communication Engine</div>", unsafe_allow_html=True)
+# 2. Global Header Branding & Complaints Alert Engine (Renders cleanly at top on ALL pages including Login)
+st.markdown("<div class='brand-title'>📮 SHC & Pak Post | Delivery System</div>", unsafe_allow_html=True)
+st.markdown("<div class='brand-subtitle'>Secure Audit & Communication Engine</div>", unsafe_allow_html=True)
 
-    if st.session_state.role == "admin":
-        try:
-            unauthorized_charges = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes").execute().data
-            if unauthorized_charges:
-                st.markdown("### 🚨 Critical Corruption & Extra Charges Alerts")
-                for alert in unauthorized_charges:
-                    alert_col1, alert_col2 = st.columns([4, 1])
-                    with alert_col1:
-                        st.error(f"⚠️ **Postman Alert (Extra Charges Issue):** Extra money requested/charged for **{alert['patient_name']}** (MRN: {alert.get('mrn_no', 'N/A')}, Consignment ID: {alert['article_id']}). Stamped by Operator: **{alert.get('operator_stamp', 'Staff')}**\n\n*(Note: This log will display extended postman information upon questionnaire configuration updates)*")
-                    with alert_col2:
-                        if st.button("Dismiss / Resolve ✅", key=f"resolve_charge_{alert['id']}", use_container_width=True):
-                            with st.spinner("Processing alert resolution..."):
-                                supabase.table("patient_deliveries").update({"extra_money_charged": "Yes (Resolved)"}).eq("id", alert["id"]).execute()
-                                st.success("Alert successfully cleared from active view!")
-                                time.sleep(0.5)
-                                st.rerun()
-                st.markdown("<hr style='border-top: 1px solid #cc2424;'>", unsafe_allow_html=True)
-                
-            resolved_charges = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes (Resolved)").execute().data
-            if resolved_charges:
-                with st.expander("📁 View Resolved Alert History Logs (Past Reports Archive - Extra Charges Issues)"):
-                    history_df = pd.DataFrame(resolved_charges)
-                    column_mapping_view = {
-                        "patient_name": "Patient Name",
-                        "mrn_no": "MRN Number",
-                        "article_id": "Consignment ID",
-                        "operator_stamp": "Reported By (Operator)",
-                        "booking_date": "Booking Date"
-                    }
-                    history_df_filtered = history_df[[col for col in column_mapping_view.keys() if col in history_df.columns]].rename(columns=column_mapping_view)
-                    st.dataframe(history_df_filtered, use_container_width=True, hide_index=True)
-        except:
-            pass
+if st.session_state.logged_in and st.session_state.role == "admin":
+    try:
+        unauthorized_charges = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes").execute().data
+        if unauthorized_charges:
+            st.markdown("### 🚨 Critical Corruption & Extra Charges Alerts")
+            for alert in unauthorized_charges:
+                alert_col1, alert_col2 = st.columns([4, 1])
+                with alert_col1:
+                    st.error(f"⚠️ **Postman Alert (Extra Charges Issue):** Extra money requested/charged for **{alert['patient_name']}** (MRN: {alert.get('mrn_no', 'N/A')}, Consignment ID: {alert['article_id']}). Stamped by Operator: **{alert.get('operator_stamp', 'Staff')}**\n\n*(Note: This log will display extended postman information upon questionnaire configuration updates)*")
+                with alert_col2:
+                    if st.button("Dismiss / Resolve ✅", key=f"resolve_charge_{alert['id']}", use_container_width=True):
+                        with st.spinner("Processing alert resolution..."):
+                            supabase.table("patient_deliveries").update({"extra_money_charged": "Yes (Resolved)"}).eq("id", alert["id"]).execute()
+                            st.success("Alert successfully cleared from active view!")
+                            time.sleep(0.5)
+                            st.rerun()
+            st.markdown("<hr style='border-top: 1px solid #cc2424;'>", unsafe_allow_html=True)
+            
+        resolved_charges = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes (Resolved)").execute().data
+        if resolved_charges:
+            with st.expander("📁 View Resolved Alert History Logs (Past Reports Archive - Extra Charges Issues)"):
+                history_df = pd.DataFrame(resolved_charges)
+                column_mapping_view = {
+                    "patient_name": "Patient Name",
+                    "mrn_no": "MRN Number",
+                    "article_id": "Consignment ID",
+                    "operator_stamp": "Reported By (Operator)",
+                    "booking_date": "Booking Date"
+                }
+                history_df_filtered = history_df[[col for col in column_mapping_view.keys() if col in history_df.columns]].rename(columns=column_mapping_view)
+                st.dataframe(history_df_filtered, use_container_width=True, hide_index=True)
+    except:
+        pass
 
 
 # 3. Render Sidebar Session Meta Information, Navigation Buttons & Session Kill Switch
@@ -1243,7 +1234,7 @@ if st.session_state.logged_in:
                     
         st.markdown("<br><hr style='border-top: 2px solid rgba(212,175,55,0.4); margin: 10px 0;'><br>", unsafe_allow_html=True)
         
-        # Sibling Anchor for Custom Glossy Red Button Styling
+        # 🔴 Sibling Anchor for Custom Glossy Red Button Styling
         st.markdown("<div class='terminate-btn-anchor'></div>", unsafe_allow_html=True)
         if st.button("Terminate Session 🚪", use_container_width=True):
             with st.spinner("Processing session termination..."):
