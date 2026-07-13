@@ -4,19 +4,19 @@ import pandas as pd
 import datetime
 import io
 import time
-import urllib.request
+import requests
 from bs4 import BeautifulSoup
 
-# 🎛️ Page Structural Settings (No "Presented by SHAHID" as requested)
+# 🎛️ Page Structural Settings
 st.set_page_config(
-    page_title="EMTTS Delivery Portal | Pakistan Post", 
+    page_title="SHC & Pak Post | Delivery Portal", 
     page_icon="📮", 
     layout="wide", 
     initial_sidebar_state="expanded"
 )
 
-# 🔄 URL HYDRATION ENGINE
-SESSION_TIMEOUT = 30 * 60  
+# 🔄 URL HYDRATION ENGINE (Executed First to Prevent Refresh Layout Memory Glitch)
+SESSION_TIMEOUT = 30 * 60  # 🕒 Strict 30 Minutes Inactivity Boundary
 
 if "logged_in" not in st.session_state: 
     st.session_state.logged_in = False
@@ -44,19 +44,22 @@ if "current_navigation_tab" not in st.session_state: st.session_state.current_na
 if "selected_profile_index" not in st.session_state: st.session_state.selected_profile_index = 0
 if "show_recovery_prompt" not in st.session_state: st.session_state.show_recovery_prompt = False
 if "cached_recovery_data" not in st.session_state: st.session_state.cached_recovery_data = {}
+if "duplicate_log_csv" not in st.session_state: st.session_state.duplicate_log_csv = None
 
-# Initialize Column Mappings Memory
+# Initialize Persistent Column Mappings Memory
 mapping_keys = ["map_article", "map_name", "map_city", "map_phone", "map_date", "map_mrn", "map_address", "map_bo", "map_dup"]
 for key in mapping_keys:
     if key not in st.session_state:
         st.session_state[key] = None
 
-# 🎨 EP.GOV.PK Premium Red & Gold Theme + Frosted Glass Sidebar Styling
+# 🎨 Pakistan Post Premium 3D & Etched Glass UI Engine
 sidebar_css_rule = ""
 if not st.session_state.logged_in:
     sidebar_css_rule = """
     [data-testid="stSidebar"] { display: none !important; visibility: hidden !important; }
     [data-testid="collapsedControl"] { display: none !important; visibility: hidden !important; }
+    div[data-testid="stSidebarUserContent"] { display: none !important; }
+    .st-emotion-cache-1jicfl2 { padding-left: 1rem !important; padding-right: 1rem !important; }
     """
 else:
     sidebar_css_rule = """
@@ -66,148 +69,92 @@ else:
         display: block !important;
         visibility: visible !important;
         transform: translateX(0%) !important;
-        min-width: 270px !important;
-        max-width: 270px !important;
-        background: rgba(25, 25, 25, 0.85) !important;
-        backdrop-filter: blur(25px) saturate(180%) !important;
-        -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
-        border-right: 2px solid #D4AF37 !important;
-        box-shadow: 10px 0px 40px rgba(0, 0, 0, 0.5) !important;
+        min-width: 300px !important;
+        max-width: 300px !important;
+        background: rgba(255, 255, 255, 0.45) !important;
+        backdrop-filter: blur(20px) saturate(170%) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(170%) !important;
+        border-right: 2px solid rgba(0, 102, 51, 0.2) !important;
+        box-shadow: 5px 0px 30px rgba(0, 77, 38, 0.08) !important;
+    }
+    section[data-testid="stSidebar"] .stMarkdown {
+        text-shadow: 0.5px 0.5px 1px rgba(255,255,255,0.9);
     }
     """
 
 st.markdown(f"""
     <style>
-    /* Global Styling & Red-Gold Palette */
-    .block-container {{ padding-top: 1.0rem !important; padding-bottom: 1.0rem !important; }}
     div[data-testid="stToolbar"] {{ visibility: hidden !important; display: none !important; }}
     .stDeployButton {{ display: none !important; }}
-    footer {{ visibility: hidden !important; display: none !important; }}
-    [data-testid="stViewerBadge"] {{ display: none !important; }}
+    footer {{ visibility: hidden !important; }}
     
     {sidebar_css_rule}
     
-    /* Global Input Helper Text ("Press Enter to submit form" removal) */
-    div[data-testid="stInputHelperText"] {{
-        display: none !important;
-        visibility: hidden !important;
-        height: 0px !important;
-    }}
+    div[data-testid="stInputInstructions"] {{ display: none !important; }}
+    div[data-testid="InputInstructions"] {{ display: none !important; }}
+    small {{ display: none !important; }}
     
-    /* App Canvas styling */
-    .stApp {{ background-color: #faf8f5; }}
+    .stApp {{ background-color: #f4f8f5; }}
+    body {{ font-family: 'Segoe UI', -apple-system, sans-serif; }}
     
-    .brand-title {{ color: #A30000; font-weight: 800; font-size: 1.8rem; margin-bottom: 2px; line-height: 1.2; letter-spacing: 0.5px; }}
-    .brand-subtitle {{ color: #5a5a5a; font-size: 0.9rem; margin-bottom: 15px; font-weight: 600; border-left: 3px solid #D4AF37; padding-left: 8px; }}
+    .brand-title {{ color: #004d26; font-weight: 800; font-size: 2.1rem; letter-spacing: -0.04rem; margin-top: 5px; margin-bottom: 2px; text-shadow: 0px 1px 1px rgba(0,0,0,0.05); }}
+    .brand-subtitle {{ color: #3d5a4c; font-size: 1.05rem; margin-bottom: 25px; font-weight: 600; border-left: 4px solid #d4af37; padding-left: 12px; }}
     
-    /* Frosted Sidebar Custom Text */
-    .sb-section-title {{
-        color: #aeaeae !important;
-        font-size: 11px !important;
-        font-weight: 700 !important;
-        letter-spacing: 1.5px;
-        margin-bottom: 4px;
-        text-transform: uppercase;
-    }}
-    .sb-logged-name {{
-        color: #D4AF37 !important;
-        font-size: 20px !important;
-        font-weight: 800 !important;
-        text-shadow: 0px 2px 4px rgba(0,0,0,0.6);
-        letter-spacing: 0.5px;
-    }}
-    .sb-badge-privilege {{
-        color: #FFFFFF !important;
-        font-size: 11px !important;
-        font-weight: bold !important;
-        background: rgba(163, 0, 0, 0.45);
-        padding: 3px 10px;
-        border-radius: 4px;
-        border: 1px solid rgba(163, 0, 0, 0.6);
-        display: inline-block;
-        margin-top: 5px;
-        letter-spacing: 1px;
-    }}
-    
-    /* Login panel box styling */
-    div[data-testid="stForm"] {{
+    div[data-testid="stForm"], .pyqt-panel {{
         background: #ffffff !important;
         border-radius: 8px !important;
-        border: 1px solid #e0d5c1 !important;
-        box-shadow: 0 10px 25px rgba(163, 0, 0, 0.05) !important;
-        padding: 25px !important;
+        border: 1px solid #c2d1c9 !important;
+        box-shadow: 0 6px 12px -2px rgba(0,77,38,0.04) !important;
+        padding: 30px !important;
     }}
     
-    /* Red-Gold Premium Buttons with Animations */
+    label p {{
+        color: #2c4035 !important;
+        font-weight: 700 !important;
+        font-size: 12px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }}
+    
     div.stButton > button, div.stDownloadButton > button {{
-        background: linear-gradient(180deg, #A30000 0%, #7A0000 100%) !important;
+        background: linear-gradient(180deg, #008040 0%, #006633 100%) !important;
         color: #ffffff !important;
-        border: 1px solid #7A0000 !important;
-        border-bottom: 3.5px solid #5C0000 !important;
-        border-radius: 4px !important;
-        font-weight: 700;
-        font-size: 14px !important;
-        box-shadow: 0px 4px 10px rgba(163, 0, 0, 0.15) !important;
-        transition: all 0.15s ease-in-out !important;
+        border: 1px solid #004d26 !important;
+        border-bottom: 4px solid #00331a !important;
+        border-radius: 6px !important;
+        padding: 8px 24px !important;
+        font-weight: 700 !important;
+        font-size: 13.5px !important;
+        text-shadow: 0px 1px 2px rgba(0,0,0,0.4);
+        box-shadow: 0px 4px 8px rgba(0,0,0,0.12) !important;
+        transition: all 0.05s ease-in-out !important;
     }}
+    
     div.stButton > button:hover, div.stDownloadButton > button:hover {{
-        background: linear-gradient(180deg, #B50000 0%, #8A0000 100%) !important;
-        transform: translateY(-1px) !important;
-        box-shadow: 0px 6px 14px rgba(163, 0, 0, 0.25) !important;
+        background: linear-gradient(180deg, #00994d 0%, #007339 100%) !important;
+        color: #ffffff !important;
+        border-color: #004d26 !important;
     }}
+    
     div.stButton > button:active, div.stDownloadButton > button:active {{
-        transform: translateY(1.5px) !important;
-        border-bottom: 1px solid #5C0000 !important;
-        box-shadow: 0px 2px 4px rgba(0,0,0,0.2) !important;
+        border-bottom: 1px solid #00331a !important;
+        transform: translateY(3px) !important;
+        box-shadow: 0px 1px 3px rgba(0,0,0,0.2) !important;
     }}
     
-    /* Active tab buttons styling */
     .active-nav-btn div.stButton > button {{
-        background: linear-gradient(180deg, #D4AF37 0%, #AA8725 100%) !important;
-        color: #000000 !important;
-        border: 1px solid #AA8725 !important;
-        border-bottom: 2px solid #7D6114 !important;
+        background: linear-gradient(180deg, #004d26 0%, #00331a 100%) !important;
+        border-bottom: 1px solid #001a0d !important;
+        transform: translateY(2px) !important;
+        box-shadow: inset 0px 3px 6px rgba(0,0,0,0.4) !important;
     }}
     
-    /* Premium Dropdown & Selectbox Look Restored */
-    div[data-testid="stSelectbox"] > div[data-baseweb="select"], 
-    div[data-testid="stDateInput"] > div {{
-        background: #ffffff !important;
-        border: 1px solid #d4cfc5 !important;
-        border-radius: 4px !important;
-        box-shadow: none !important;
-    }}
+    .sb-headline {{ color: #004d26; font-weight: 800; font-size: 1.15rem; border-bottom: 2px solid rgba(0,102,51,0.2); padding-bottom: 6px; margin-bottom: 15px; }}
+    .sb-name-tag {{ font-size: 1.05rem; color: #1e293b; font-weight: 500; margin-bottom: 5px; }}
+    .sb-name-bold {{ color: #b48608; font-weight: 800; font-size: 1.2rem; text-shadow: 0px 1px 0px rgba(255,255,255,0.8); }}
     
-    /* Dynamic Contact Number Display */
-    .big-phone-display {{ 
-        font-family: 'Segoe UI', sans-serif; 
-        font-size: 22px !important; 
-        font-weight: 700 !important; 
-        color: #ffffff !important; 
-        background: linear-gradient(180deg, #A30000 0%, #7A0000 100%) !important; 
-        padding: 8px 15px; 
-        border-radius: 4px; 
-        text-align: center; 
-        border: 1px solid #7A0000; 
-        border-bottom: 3.5px solid #5C0000;
-        box-shadow: 0px 4px 12px rgba(163, 0, 0, 0.2);
-        letter-spacing: 1.5px;
-        margin: 5px 0;
-    }}
-    
-    .no-phone-display {{
-        font-family: 'Segoe UI', sans-serif; 
-        font-size: 15px !important; 
-        font-weight: 700 !important; 
-        color: #ffffff !important; 
-        background: #555555 !important; 
-        padding: 8px 12px; 
-        border-radius: 4px; 
-        text-align: center; 
-        margin: 5px 0;
-    }}
-    
-    .patient-card-header {{ font-size: 18px !important; font-weight: 700 !important; color: #A30000; border-left: 4px solid #D4AF37; padding-left: 8px; margin-bottom: 10px; }}
+    .big-phone-display {{ font-family: 'Courier New', monospace; font-size: 32px !important; font-weight: 700 !important; color: #166534 !important; background-color: #f0fdf4; padding: 10px; border-radius: 4px; text-align: center; border: 1px solid #bbf7d0; }}
+    .patient-card-header {{ font-size: 20px !important; font-weight: 700 !important; color: #004d26; border-left: 4px solid #d4af37; padding-left: 10px; margin-bottom: 12px; }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -262,243 +209,317 @@ if st.session_state.logged_in:
 if st.session_state.logged_in and st.session_state.current_navigation_tab is None:
     st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine" if st.session_state.role == "admin" else "📞 Outbound Communications Hub"
 
-def map_status(raw_status):
-    s = raw_status.lower().strip()
-    if "undelivered" in s: return "Undelivered"
-    if "sent out for delivery" in s: return "Sent out for delivery"
-    if "return" in s or "rts" in s: return "RTS"
-    if "delivered" in s: return "Delivered"
-    if s.startswith("dispatch") or "dispatch" in s: return "Dispatched"
-    if "deposit" in s: return "Deposit"
-    return raw_status.strip()
-
+# Improved Robust Live Tracking Engine with Emulated Payload Context
 def fetch_live_emtts_status(article_id):
     if not article_id or article_id.strip() == "":
-        return None, "⚠️ Invalid Article ID"
-    url = f"https://ep.gov.pk/emtts/EPTrack_Live.aspx?ArticleIDz={article_id.strip()}"
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        return "⚠️ Invalid Article ID", "No data mapped."
+    
+    tracking_url = "https://ep.gov.pk/tracking.asp"
+    payload = {'tracking_id': article_id.strip()}
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Origin': 'https://ep.gov.pk',
+        'Referer': 'https://ep.gov.pk/tracking.asp'
+    }
     try:
-        with urllib.request.urlopen(req, timeout=20.0) as response:
-            html = response.read().decode('utf-8', errors='ignore')
-            soup = BeautifulSoup(html, 'html.parser')
-            mrn = soup.find(id="lblMRNNumber").text.strip() if soup.find(id="lblMRNNumber") else ""
-            b_office = soup.find(id="LblBookingOffice").text.strip() if soup.find(id="LblBookingOffice") else ""
-            d_office = soup.find(id="LblDeliveryOffice").text.strip() if soup.find(id="LblDeliveryOffice") else ""
-            track_div = soup.find(id="TrackDetailDiv")
-            history = []
-            if track_div:
-                rows = track_div.find_all("tr")
-                current_date = ""
-                for row in rows:
-                    tds = row.find_all("td")
-                    if len(tds) == 1 and "20" in tds[0].text:
-                        current_date = tds[0].text.strip()
-                    if len(tds) >= 4:
-                        history.append({
-                            "datetime": f"{current_date} {tds[1].text.strip()}",
-                            "office": tds[2].text.strip(),
-                            "status": tds[3].text.strip()
-                        })
-            if not history: return None, "🔎 No tracking logs found for this Article ID."
-            return {"mrn": mrn, "booking_office": b_office, "delivery_office": d_office, "history": history}, None
+        response = requests.post(tracking_url, data=payload, headers=headers, timeout=20)
+        if response.status_code != 200: 
+            return "❌ Server Unreachable", f"HTTP Error Server Code: {response.status_code}."
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+        tables = soup.find_all('table')
+        
+        if len(tables) < 2: 
+            # Fallback evaluation context to handle simplified DOMs
+            page_text = soup.get_text()
+            if "not found" in page_text.lower() or "invalid" in page_text.lower():
+                return "🔎 Record Not Found", "No tracking records loaded yet on PakPost network endpoints."
+            return "🔎 Check History", "Data output rendered outside structural tables. Check complete network endpoints manually."
+            
+        tracking_logs = []
+        for table in tables:
+            for row in table.find_all('tr'):
+                cols = [ele.text.strip().replace('\n', ' ').replace('\r', '') for ele in row.find_all(['td', 'th'])]
+                cleaned_cols = [c for c in cols if c]
+                if cleaned_cols and not any('tracking id' in str(c).lower() for c in cleaned_cols):
+                    tracking_logs.append(" | ".join(cleaned_cols))
+                    
+        if not tracking_logs:
+            return "🔎 Record Not Found", "Server returned tracking structural frames but no logs."
+            
+        latest_status = "Data Found"
+        for log in tracking_logs:
+            if "delivered" in log.lower(): latest_status = "✅ Delivered"; break
+            elif "transit" in log.lower() or "dispatched" in log.lower(): latest_status = "🚚 In Transit"; break
+            elif "booked" in log.lower(): latest_status = "📦 Booked / Received"; break
+            
+        return latest_status, "\n".join(tracking_logs[:15])
+    except requests.exceptions.Timeout:
+        return "⏱️ Timeout Error", "PakPost network nodes timed out during data synchronization."
     except Exception as e:
-        return None, f"Server Timeout / Failed: {str(e)}"
+        return "❌ Script Error", f"Traceback breakdown: {str(e)}"
 
-# Glassmorphism Sidebar Render (With Gold Username & Proper Styling)
 if st.session_state.logged_in:
     with st.sidebar:
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        st.markdown("<div class='sb-section-title'>LOGGED IN AS:</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='sb-logged-name'>{st.session_state.full_name}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='sb-badge-privilege'>{st.session_state.role.upper()} PRIVILEGES</div>", unsafe_allow_html=True)
-        st.markdown("<br><hr style='border-top:1px solid rgba(255,255,255,0.15);'><br>", unsafe_allow_html=True)
-        if st.button("🚪 Terminate Session", use_container_width=True):
+        st.markdown("<div class='sb-headline'>🖥️ Enterprise Console</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='sb-name-tag'>Logged in as: <br><span class='sb-name-bold'>{st.session_state.full_name}</span></div>", unsafe_allow_html=True)
+        st.markdown(f"**Privilege Cluster:** `{st.session_state.role.upper()}`")
+        st.markdown("<br><hr style='border-top:1px solid rgba(0,102,51,0.2);'><br>", unsafe_allow_html=True)
+        if st.button("Terminate Session 🚪", use_container_width=True):
             st.session_state.logged_in = False
             st.query_params.clear()
             st.rerun()
 
-st.markdown("<div class='brand-title'>📮 EMTTS & Pak Post | Delivery System</div>", unsafe_allow_html=True)
-st.markdown("<div class='brand-subtitle'>Secure Audit & Communication Engine</div>", unsafe_allow_html=True)
+st.markdown("<div class='brand-title'>📮 SHC & Pak Post | Free Home Delivery of Medicine</div>", unsafe_allow_html=True)
+st.markdown("<div class='brand-subtitle'>Article Tracking & Patient Feedback Portal</div>", unsafe_allow_html=True)
 
-# LOGIN PAGE
 if not st.session_state.logged_in:
-    _, center_col, _ = st.columns([0.8, 1.4, 0.8])
+    _, center_col, _ = st.columns([1, 1.4, 1])
     with center_col:
-        st.markdown("<div style='background-color:#A30000; color:#ffffff; padding:12px; font-weight:700; font-size:14px; border-radius:6px 6px 0px 0px; border:1px solid #7A0000; text-align:center; letter-spacing: 0.5px;'>SECURE PORTAL AUTHENTICATION</div>", unsafe_allow_html=True)
+        st.markdown("<div style='background-color:#006633; color:#ffffff; padding:12px; font-weight:700; font-size:13px; border-radius:6px 6px 0px 0px; border:1px solid #004d26; text-align:center; letter-spacing:1px; box-shadow: 0px 2px 4px rgba(0,0,0,0.1);'>SECURE PORTAL AUTHENTICATION</div>", unsafe_allow_html=True)
         with st.form("pyqt_enterprise_login"):
             input_user = st.text_input("OPERATOR ID / USERNAME", placeholder="Enter Username")
             input_pass = st.text_input("SECURITY ACCESS PASSWORD", type="password", placeholder="Enter Secure Key")
-            btn_login = st.form_submit_button("LOGIN TO PORTAL", use_container_width=True)
+            btn_login = st.form_submit_button("UNLOCK TERMINAL", use_container_width=True)
+            
             if btn_login:
                 if input_user and input_pass:
-                    try:
-                        ud = supabase.table("app_users").select("*").eq("username", input_user.strip()).eq("password", input_pass.strip()).execute().data
-                        if ud:
-                            recovery_data = fetch_operator_state(ud[0]["username"])
-                            if recovery_data:
-                                st.session_state.cached_recovery_data = recovery_data
-                                st.session_state.show_recovery_prompt = True
-                                st.session_state.username = ud[0]["username"]
-                                st.session_state.full_name = ud[0]["full_name"]
-                                st.session_state.role = ud[0]["role"]
-                                st.session_state.last_activity = time.time()
-                                st.rerun()
+                    with st.spinner("VALIDATING CREDENTIALS... MATCHING SECURE HASH..."):
+                        try:
+                            ud = supabase.table("app_users").select("*").eq("username", input_user.strip()).eq("password", input_pass.strip()).execute().data
+                            if ud:
+                                recovery_data = fetch_operator_state(ud[0]["username"])
+                                if recovery_data:
+                                    st.session_state.cached_recovery_data = recovery_data
+                                    st.session_state.show_recovery_prompt = True
+                                    st.session_state.username = ud[0]["username"]
+                                    st.session_state.full_name = ud[0]["full_name"]
+                                    st.session_state.role = ud[0]["role"]
+                                    st.session_state.last_activity = time.time()
+                                    st.rerun()
+                                else:
+                                    current_ts = time.time()
+                                    st.session_state.logged_in = True
+                                    st.session_state.username = ud[0]["username"]
+                                    st.session_state.full_name = ud[0]["full_name"]
+                                    st.session_state.role = ud[0]["role"]
+                                    st.session_state.last_activity = current_ts
+                                    
+                                    st.query_params["usr"] = ud[0]["username"]
+                                    st.query_params["nm"] = ud[0]["full_name"]
+                                    st.query_params["rl"] = ud[0]["role"]
+                                    st.query_params["t"] = str(current_ts)
+                                    st.rerun()
                             else:
-                                st.session_state.logged_in = True
-                                st.session_state.username = ud[0]["username"]
-                                st.session_state.full_name = ud[0]["full_name"]
-                                st.session_state.role = ud[0]["role"]
-                                st.rerun()
-                        else: st.error("ACCESS DENIED: Invalid credentials.")
-                    except Exception as ex: st.error(f"Database Sync Failure: {ex}")
+                                st.error("ACCESS DENIED: Invalid configuration credentials.")
+                        except Exception as ex:
+                            st.error(f"Database Sync Failure: {ex}")
+                else:
+                    st.warning("All authentication fields must be filled.")
 
 elif st.session_state.show_recovery_prompt:
     _, alert_box, _ = st.columns([1, 2, 1])
     with alert_box:
-        st.info("System unexpected shutdown detect hua hai. Last active session data mehfooz hai.")
+        st.markdown("""
+        <div style='background-color:#fffbeb; border-left:5px solid #d97706; padding:15px; border-radius:4px; margin-bottom:15px;'>
+            <h4 style='margin:0; color:#92400e;'>⚠️ Interrupted Operational Activity Detected</h4>
+            <p style='margin:5px 0 0 0; font-size:13px; color:#78350f;'>
+                System unexpected shutdown ya power-loss detect hua hai. Aapka aakhri active data mehfooz hai.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        rec_info = st.session_state.cached_recovery_data
+        st.info(f"Last Position: Tab `{rec_info.get('last_tab')}` | Row Index `{rec_info.get('last_index')}`")
+        
         col_res, col_new = st.columns(2)
         with col_res:
             if st.button("🔄 RESUME INTERRUPTED SESSION", use_container_width=True):
                 st.session_state.logged_in = True
-                st.session_state.current_navigation_tab = st.session_state.cached_recovery_data.get('last_tab')
-                st.session_state.selected_profile_index = int(st.session_state.cached_recovery_data.get('last_index', 0))
+                st.session_state.current_navigation_tab = rec_info.get('last_tab')
+                st.session_state.selected_profile_index = int(rec_info.get('last_index', 0))
                 st.session_state.show_recovery_prompt = False
+                
+                st.query_params["usr"] = st.session_state.username
+                st.query_params["nm"] = st.session_state.full_name
+                st.query_params["rl"] = st.session_state.role
+                st.query_params["t"] = str(st.session_state.last_activity)
                 st.rerun()
+                
         with col_new:
             if st.button("🆕 START FRESH BLANK SESSION", use_container_width=True):
                 st.session_state.logged_in = True
                 st.session_state.show_recovery_prompt = False
+                
+                st.query_params["usr"] = st.session_state.username
+                st.query_params["nm"] = st.session_state.full_name
+                st.query_params["rl"] = st.session_state.role
+                st.query_params["t"] = str(st.session_state.last_activity)
                 save_operator_state()
                 st.rerun()
 
 else:
-    cols_count = 4 if st.session_state.role == "admin" else 2
-    nc = st.columns(cols_count)
-    
     if st.session_state.role == "admin":
-        with nc[0]:
-            t1 = "active-nav-btn" if st.session_state.current_navigation_tab == "📊 Administrative Ingestion Engine" else ""
-            st.markdown(f"<div class='{t1}'>", unsafe_allow_html=True)
-            if st.button("📊 Administrative Ingestion Engine", use_container_width=True): 
-                st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine"; st.rerun()
+        nc1, nc2, nc3 = st.columns(3)
+        with nc1:
+            t1_class = "active-nav-btn" if st.session_state.current_navigation_tab == "📊 Administrative Ingestion Engine" else ""
+            st.markdown(f"<div class='{t1_class}'>", unsafe_allow_html=True)
+            if st.button("📊 Administrative Ingestion Engine", use_container_width=True):
+                st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine"
+                save_operator_state()
+                st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
-        with nc[1]:
-            t2 = "active-nav-btn" if st.session_state.current_navigation_tab == "👥 Operator Matrix & Security Audit Logs" else ""
-            st.markdown(f"<div class='{t2}'>", unsafe_allow_html=True)
-            if st.button("👥 Operator Matrix & Security Audit Logs", use_container_width=True): 
-                st.session_state.current_navigation_tab = "👥 Operator Matrix & Security Audit Logs"; st.rerun()
+        with nc2:
+            t2_class = "active-nav-btn" if st.session_state.current_navigation_tab == "👥 Operator Matrix & Security Audit Logs" else ""
+            st.markdown(f"<div class='{t2_class}'>", unsafe_allow_html=True)
+            if st.button("👥 Operator Matrix & Logs", use_container_width=True):
+                st.session_state.current_navigation_tab = "👥 Operator Matrix & Security Audit Logs"
+                save_operator_state()
+                st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
-        with nc[2]:
-            t3 = "active-nav-btn" if st.session_state.current_navigation_tab == "📞 Outbound Communications Hub" else ""
-            st.markdown(f"<div class='{t3}'>", unsafe_allow_html=True)
-            if st.button("📞 Outbound Communications Hub", use_container_width=True): 
-                st.session_state.current_navigation_tab = "📞 Outbound Communications Hub"; st.rerun()
+        with nc3:
+            t3_class = "active-nav-btn" if st.session_state.current_navigation_tab == "📞 Outbound Communications Hub" else ""
+            st.markdown(f"<div class='{t3_class}'>", unsafe_allow_html=True)
+            if st.button("📞 Outbound Communications Hub", use_container_width=True):
+                st.session_state.current_navigation_tab = "📞 Outbound Communications Hub"
+                save_operator_state()
+                st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
-        with nc[3]:
-            t4 = "active-nav-btn" if st.session_state.current_navigation_tab == "📥 Secure Reports Export Center" else ""
-            st.markdown(f"<div class='{t4}'>", unsafe_allow_html=True)
-            if st.button("📥 Secure Reports Export Center", use_container_width=True): 
-                st.session_state.current_navigation_tab = "📥 Secure Reports Export Center"; st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
-    else:
-        with nc[0]:
-            t1 = "active-nav-btn" if st.session_state.current_navigation_tab == "📞 Outbound Communications Hub" else ""
-            st.markdown(f"<div class='{t1}'>", unsafe_allow_html=True)
-            if st.button("📞 Outbound Communications Hub", use_container_width=True): 
-                st.session_state.current_navigation_tab = "📞 Outbound Communications Hub"; st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
-        with nc[1]:
-            t2 = "active-nav-btn" if st.session_state.current_navigation_tab == "📥 Secure Reports Export Center" else ""
-            st.markdown(f"<div class='{t2}'>", unsafe_allow_html=True)
-            if st.button("📥 Secure Reports Export Center", use_container_width=True): 
-                st.session_state.current_navigation_tab = "📥 Secure Reports Export Center"; st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
-
-    # PAGE 1: HYBRID INGESTION
-    if st.session_state.current_navigation_tab == "📊 Administrative Ingestion Engine" and st.session_state.role == "admin":
-        st.markdown("### 🚨 Critical Security Red-Flag Alerts")
-        try:
-            flagged_recs = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes").execute().data
-            if flagged_recs:
-                for record in flagged_recs:
-                    col_alert, col_action = st.columns([4, 1])
-                    with col_alert:
-                        st.error(f"⚠️ **Extra Money Alert:** Postman demanded cash from **{record['patient_name']}** | Article: `{record['article_id']}` | Op Stamp: {record.get('operator_stamp')}")
-                    with col_action:
-                        # Action Button to Resolve Directly
-                        if st.button("Resolve Alert ✅", key=f"res_{record['id']}", use_container_width=True):
-                            supabase.table("patient_deliveries").update({"extra_money_charged": "No"}).eq("id", record["id"]).execute()
-                            st.success("Alert resolved successfully!")
-                            time.sleep(0.5)
-                            st.rerun()
-            else:
-                st.success("✅ No unauthorized monetary flags detected in current database pipeline.")
-        except:
-            pass
             
-        st.markdown("---")
-        st.markdown("### 📥 Bulk Logistics Ingestion Engine (Free Storage Mode)")
-        
-        target_upload_date = st.date_input("Assign Target Booking Date for Sheet:", datetime.date.today())
-        source_file = st.file_uploader("Upload Parcel Manifest Sheet", type=["xlsx", "csv"])
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # PAGE 1: ADMINISTRATIVE BULK MANIFEST DATA INGESTION
+    if st.session_state.current_navigation_tab == "📊 Administrative Ingestion Engine" and st.session_state.role == "admin":
+        st.markdown("### 📥 Bulk Logistics Ingestion Engine")
+        source_file = st.file_uploader("Upload Parcel Manifest Data Sheet (.xlsx or .csv)", type=["xlsx", "csv"])
         
         if source_file is not None:
             file_key = f"cached_df_{source_file.name}_{source_file.size}"
             if file_key not in st.session_state:
-                df = pd.read_excel(source_file) if source_file.name.endswith('.xlsx') else pd.read_csv(source_file)
-                st.session_state[file_key] = df
-            else: df = st.session_state[file_key]
+                with st.spinner("Parsing large manifest matrix into secure cache... Please wait."):
+                    if source_file.name.endswith('.xlsx'):
+                        all_sheets = pd.read_excel(source_file, sheet_name=None)
+                        df = pd.concat(all_sheets.values(), ignore_index=True)
+                        st.toast(f"📋 Loaded {len(all_sheets)} worksheets combined successfully.", icon="📋")
+                    else:
+                        df = pd.read_csv(source_file)
+                        st.toast("📋 CSV manifest matrix loaded successfully.", icon="📋")
+                    st.session_state[file_key] = df
+            else:
+                df = st.session_state[file_key]
             
+            idx_article = calculate_mapped_index(df.columns, "map_article", "Article ID")
+            idx_name = calculate_mapped_index(df.columns, "map_name", "Name")
+            idx_city = calculate_mapped_index(df.columns, "map_city", "City")
+            idx_phone = calculate_mapped_index(df.columns, "map_phone", "MobileNo")
+            idx_date = calculate_mapped_index(df.columns, "map_date", "Booking Date")
+            idx_mrn = calculate_mapped_index(df.columns, "map_mrn", "MRN No")
+            idx_address = calculate_mapped_index(df.columns, "map_address", "Address")
+            idx_bo = calculate_mapped_index(df.columns, "map_bo", "Booking Office")
+
             mc1, mc2, mc3 = st.columns(3)
             with mc1:
-                c_article = st.selectbox("Article ID Column:", df.columns, index=calculate_mapped_index(df.columns, "map_article", "Article ID"))
-                c_name = st.selectbox("Patient Name Column:", df.columns, index=calculate_mapped_index(df.columns, "map_name", "Name"))
+                c_article = st.selectbox("Article ID Column:", df.columns, index=idx_article)
+                c_name = st.selectbox("Patient Name Column:", df.columns, index=idx_name)
+                c_city = st.selectbox("Patient City Column:", df.columns, index=idx_city)
             with mc2:
-                c_phone = st.selectbox("Contact Number Column:", df.columns, index=calculate_mapped_index(df.columns, "map_phone", "MobileNo"))
-                c_date = st.selectbox("Booking Date Column:", df.columns, index=calculate_mapped_index(df.columns, "map_date", "Booking Date"))
+                c_phone = st.selectbox("Contact Number Column:", df.columns, index=idx_phone)
+                c_date = st.selectbox("Booking Date Column:", df.columns, index=idx_date)
+                c_mrn = st.selectbox("MRN No. Column:", df.columns, index=idx_mrn)
             with mc3:
-                c_mrn = st.selectbox("MRN No. Column:", df.columns, index=calculate_mapped_index(df.columns, "map_mrn", "MRN No"))
-                c_address = st.selectbox("Address Column:", df.columns, index=calculate_mapped_index(df.columns, "map_address", "Address"))
-                c_city = st.selectbox("City Column:", df.columns, index=calculate_mapped_index(df.columns, "map_city", "City"))
-                c_bo = st.selectbox("Booking Office Column:", df.columns, index=calculate_mapped_index(df.columns, "map_bo", "Booking Office"))
+                c_address = st.selectbox("Address Column:", df.columns, index=idx_address)
+                c_bo = st.selectbox("Booking Office Column:", df.columns, index=idx_bo)
+                
+                idx_dup = calculate_mapped_index(df.columns, "map_dup", c_article)
+                dup_target = st.selectbox("De-duplication Matrix Anchor:", df.columns, index=idx_dup)
 
-            if st.button("🚀 Push Sheet to Supabase Free Cloud Storage", use_container_width=True):
-                staging_area = []
-                for _, row in df.iterrows():
-                    staging_area.append({
-                        "article_id": str(row[c_article]).strip(),
-                        "patient_name": str(row[c_name]).strip(),
-                        "phone_number": str(row[c_phone]).strip(),
-                        "booking_date": str(row[c_date])[:10],
-                        "address": str(row[c_address]).strip(),
-                        "patient_city": str(row[c_city]).strip(),
-                        "mrn_no": str(row[c_mrn]).strip(),
-                        "booking_office": str(row[c_bo]).strip() if c_bo in df.columns else "Lahore GPO",
-                        "status": "Pending"
-                    })
-                
-                clean_df = pd.DataFrame(staging_area)
-                csv_buffer = io.BytesIO()
-                clean_df.to_csv(csv_buffer, index=False)
-                csv_bytes = csv_buffer.getvalue()
-                
-                filename = f"manifest_{str(target_upload_date)}.csv"
-                try:
-                    try: supabase.storage.from_("manifests").remove([filename])
-                    except: pass
+            st.session_state["map_article"] = c_article
+            st.session_state["map_name"] = c_name
+            st.session_state["map_city"] = c_city
+            st.session_state["map_phone"] = c_phone
+            st.session_state["map_date"] = c_date
+            st.session_state["map_mrn"] = c_mrn
+            st.session_state["map_address"] = c_address
+            st.session_state["map_bo"] = c_bo
+            st.session_state["map_dup"] = dup_target
+
+            if st.button("🚀 Push Verified Records to Cloud Database", use_container_width=True):
+                with st.spinner("Processing Manifest Sequence..."):
+                    df_anchored = df.drop_duplicates(subset=[dup_target], keep='first')
+                    duplicate_mask = df_anchored.duplicated(subset=[c_article], keep='first')
+                    df_duplicates = df_anchored[duplicate_mask]
                     
-                    supabase.storage.from_("manifests").upload(
-                        path=filename,
-                        file=csv_bytes,
-                        file_options={"content-type": "text/csv"}
-                    )
-                    st.success(f"🎉 Manifest backup file saved successfully as '{filename}'!")
-                except Exception as ex: 
-                    st.error(f"Cloud Bucket Storage Connection Error: {ex}. Please check that bucket 'manifests' is created in Supabase.")
+                    if not df_duplicates.empty:
+                        st.session_state.duplicate_log_csv = df_duplicates.to_csv(index=False).encode('utf-8')
+                    else:
+                        st.session_state.duplicate_log_csv = None
+                    
+                    cleaned_records = df_anchored[~duplicate_mask]
+                    
+                    staging_area = []
+                    for _, row in cleaned_records.iterrows():
+                        final_dt = str(datetime.date.today())
+                        try: final_dt = pd.to_datetime(row[c_date]).strftime('%Y-%m-%d')
+                        except: pass
+                        staging_area.append({
+                            "article_id": str(row[c_article]).strip(),
+                            "patient_name": str(row[c_name]).strip(),
+                            "phone_number": str(row[c_phone]).strip(),
+                            "booking_date": final_dt,
+                            "address": str(row[c_address]).strip(),
+                            "patient_city": str(row[c_city]).strip(),
+                            "mrn_no": str(row[c_mrn]).strip(),
+                            "booking_office": str(row[c_bo]).strip() if c_bo in df.columns else "Unknown GPO",
+                            "status": "Pending"
+                        })
+                    
+                    total_records = len(staging_area)
+                    if total_records > 0:
+                        try:
+                            CHUNK_SIZE = 500  # Smaller chunks to ensure granular percentage accuracy
+                            progress_bar = st.progress(0)
+                            status_text = st.empty()
+                            
+                            for i in range(0, total_records, CHUNK_SIZE):
+                                chunk = staging_area[i : i + CHUNK_SIZE]
+                                current_percentage = int((i / total_records) * 100)
+                                
+                                # 📈 Real-Time Percentage Display Node Added
+                                status_text.markdown(f"**⚡ Uploading Records Vector: {current_percentage}% Complete** *(Processing entries {i} to {min(i + CHUNK_SIZE, total_records)} of {total_records})*")
+                                
+                                supabase.table("patient_deliveries").upsert(chunk, on_conflict="article_id").execute()
+                                progress_bar.progress(min((i + CHUNK_SIZE) / total_records, 1.0))
+                            
+                            status_text.markdown("**🎉 Uploading Records Vector: 100% Completed Successfully!**")
+                            time.sleep(1)
+                            status_text.empty()
+                            progress_bar.empty()
+                            st.balloons()
+                            st.success(f"🎉 Synchronized {total_records} clean logs across cloud nodes successfully in chunks.")
+                            
+                            if st.session_state.duplicate_log_csv is not None:
+                                st.warning(f"⚠️ {len(df_duplicates)} duplicate Article IDs were filtered out to avoid database crash.")
+                        except Exception as ex:
+                            st.error(f"❌ Batch chunking exception: {ex}")
+                    else:
+                        st.info("No records found to push after parsing manifest sequence.")
 
-    # PAGE 2: OPERATOR MATRIX
+        if st.session_state.duplicate_log_csv is not None:
+            st.markdown("---")
+            st.markdown("#### 📥 Download Dropped Duplicates Log File")
+            st.download_button(
+                label="📥 Download Skipped Duplicates (CSV)",
+                data=st.session_state.duplicate_log_csv,
+                file_name=f"skipped_duplicates_{datetime.date.today()}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+
+    # PAGE 2: OPERATOR ACCOUNT MANAGEMENT
     elif st.session_state.current_navigation_tab == "👥 Operator Matrix & Security Audit Logs" and st.session_state.role == "admin":
-        st.markdown("### 👥 Operational Account Provisioning")
+        st.markdown("### 👥 Operational Account Provisioning Center")
         nf = st.text_input("Operator Full Name")
         nu = st.text_input("Operational Username / ID")
         np = st.text_input("Assigned Initial Password", type="password")
@@ -506,147 +527,105 @@ else:
             if nf and nu and np:
                 try:
                     supabase.table("app_users").insert({"username": nu.strip(), "password": np.strip(), "full_name": nf.strip(), "role": "staff"}).execute()
-                    st.success("Operator registered successfully!")
-                except Exception as e: st.error(f"Error: {e}")
+                    st.success("New operator mapped to security matrices.")
+                except Exception as e: st.error(f"Mapping rejection: {e}")
 
-    # PAGE 3: OUTBOUND COMMUNICATIONS HUB (With Animated Loader & "No Data Found" Check)
+    # PAGE 3: MAIN COMMUNICATIONS HUB (WITH CASCADE FILTERING & SMART GLOBAL SEARCH)
     elif st.session_state.current_navigation_tab == "📞 Outbound Communications Hub":
+        st.markdown("### 📞 Outbound Communications Desk")
         
-        sel_col1, sel_col2, sel_col3 = st.columns([1, 1.2, 1.8])
+        # 🗓️ Filter 1: Universal Booking Date Select
+        query_date = st.date_input("Filter Manifest Records by Booking Date:", datetime.date.today())
         
-        with sel_col1:
-            query_date = st.date_input("Select Booking Date:", datetime.date.today())
-        
-        raw_date_recs = []
-        is_loaded = False
-
-        # ⏳ Animated Loading Spinner during data fetching process
-        with st.spinner("⏳ Connecting to system and processing data nodes..."):
-            # Attempt 1: Fetch from Cloud Storage Bucket File
-            filename = f"manifest_{str(query_date)}.csv"
-            try:
-                storage_file_bytes = supabase.storage.from_("manifests").download(filename)
-                if storage_file_bytes:
-                    raw_date_recs = pd.read_csv(io.BytesIO(storage_file_bytes)).to_dict(orient="records")
-                    is_loaded = True
-            except:
-                raw_date_recs = []
-                
-            # Attempt 2 (Fallback): Query Database Table Directly (In case file isn't in Storage yet)
-            if not is_loaded:
-                try:
-                    db_recs = supabase.table("patient_deliveries").select("*").eq("booking_date", str(query_date)).execute().data
-                    if db_recs:
-                        raw_date_recs = db_recs
-                        is_loaded = True
-                except:
-                    pass
-
-        # ❌ If absolutely no records are found after processing
-        if not is_loaded or not raw_date_recs: 
-            st.error(f"❌ No data found against this date ({query_date}). Please upload a sheet first.")
+        # Pull complete data slice for that date to map secondary cascades
+        try: 
+            raw_date_recs = supabase.table("patient_deliveries").select("booking_office, patient_name, mrn_no, article_id, status, id, phone_number, address, patient_city").eq("booking_date", str(query_date)).execute().data
+        except Exception as e: 
+            st.error(f"Failed to scan cloud nodes: {e}")
+            raw_date_recs = []
+            
+        if not raw_date_recs:
+            st.info("No logs found matching this calendar timestamp.")
         else:
-            # Check DB for updates to overlay
-            try:
-                db_recs = supabase.table("patient_deliveries").select("*").eq("booking_date", str(query_date)).execute().data
-                db_map = {r['article_id']: r for r in db_recs} if db_recs else {}
-            except:
-                db_map = {}
-
-            # Overlay real-time statuses
-            for record in raw_date_recs:
-                art_id = str(record['article_id']).strip()
-                if art_id in db_map:
-                    record['id'] = db_map[art_id]['id']
-                    record['status'] = db_map[art_id]['status']
-                    record['extra_money_charged'] = db_map[art_id].get('extra_money_charged', 'No')
-                    record['operator_stamp'] = db_map[art_id].get('operator_stamp', '')
-                else:
-                    record['id'] = None # Flag for new insertion
-
-            unique_offices = sorted(list(set([str(r.get('booking_office', 'Lahore GPO')).strip() for r in raw_date_recs])))
-            unique_offices.insert(0, "All Offices")
-            
-            with sel_col2: 
-                selected_office = st.selectbox("Booking Office Node:", unique_offices)
-                
-            filtered_by_office = raw_date_recs if selected_office == "All Offices" else [r for r in raw_date_recs if str(r.get('booking_office')).strip() == selected_office]
-            
-            with sel_col3:
-                search_term = st.text_input("Smart Filter (Name / Article ID / MRN):").strip().lower()
-                
-            if search_term:
-                final_recs = [r for r in filtered_by_office if search_term in str(r.get('patient_name','')).lower() or search_term in str(r.get('article_id','')).lower() or search_term in str(r.get('mrn_no','')).lower()]
-            else: 
-                final_recs = filtered_by_office
-
-            if not final_recs: 
-                st.warning("No records matched the filter criteria.")
+            # Extract unique Booking Offices for Filter 2
+            unique_offices = sorted(list(set([str(r.get('booking_office', 'Unknown GPO')).strip() for r in raw_date_recs if r.get('booking_office')])))
+            if not unique_offices:
+                unique_offices = ["All Offices"]
             else:
-                options_list = [f"{r['patient_name']} (MRN: {r.get('mrn_no', 'N/A')}) - [{r['status']}]" for r in final_recs]
-                if st.session_state.selected_profile_index >= len(options_list): st.session_state.selected_profile_index = 0
+                unique_offices.insert(0, "All Offices")
+                
+            # Layout filtering parameters on top row panel
+            filter_col1, filter_col2 = st.columns([1, 1])
+            with filter_col1:
+                # 🏢 Filter 2: Booking Office Cascade Filter
+                selected_office = st.selectbox("🏥 Filter by Booking Office / GPO Node:", unique_offices)
+                
+            # Filter rows based on selected Booking Office
+            if selected_office == "All Offices":
+                filtered_by_office = raw_date_recs
+            else:
+                filtered_by_office = [r for r in raw_date_recs if str(r.get('booking_office')).strip() == selected_office]
+                
+            with filter_col2:
+                # 🔍 Filter 3: Direct Core Smart Search Input Box (Name/ID/MRN)
+                search_term = st.text_input("🔎 Smart Search (Type Name, Article ID, or MRN Number directly):").strip().lower()
+                
+            # Apply search term logic if present
+            if search_term:
+                final_processed_recs = []
+                for r in filtered_by_office:
+                    name_match = search_term in str(r.get('patient_name', '')).lower()
+                    article_match = search_term in str(r.get('article_id', '')).lower()
+                    mrn_match = search_term in str(r.get('mrn_no', '')).lower()
+                    if name_match or article_match or mrn_match:
+                        final_processed_recs.append(r)
+            else:
+                final_processed_recs = filtered_by_office
+
+            # Display final dynamic selection interface
+            if not final_processed_recs:
+                st.warning("No records matched your specific filter configurations or search criteria.")
+            else:
+                options_list = [f"{r['patient_name']} (MRN: {r.get('mrn_no', 'N/A')}) - [{r['status']}]" for r in final_processed_recs]
+                
+                if st.session_state.selected_profile_index >= len(options_list):
+                    st.session_state.selected_profile_index = 0
                     
-                st.selectbox("Select Patient Profile to Process:", options_list, index=st.session_state.selected_profile_index, key="outbound_profile_select")
-                target_profile = final_recs[st.session_state.selected_profile_index]
+                selected_key = st.selectbox(
+                    f"Select Patient Profile to Process ({len(options_list)} Records Found):", 
+                    options_list, 
+                    index=st.session_state.selected_profile_index
+                )
+                
+                current_choice_idx = options_list.index(selected_key)
+                if current_choice_idx != st.session_state.selected_profile_index:
+                    st.session_state.selected_profile_index = current_choice_idx
+                    save_operator_state()
+                    
+                target_profile = final_processed_recs[st.session_state.selected_profile_index]
                 
                 st.markdown("<hr>", unsafe_allow_html=True)
                 l_panel, r_panel = st.columns(2)
                 
                 with l_panel:
                     st.markdown(f"<div class='patient-card-header'>👤 {target_profile['patient_name']}</div>", unsafe_allow_html=True)
+                    st.write(f"🔢 **MRN Number:** `{target_profile.get('mrn_no', 'N/A')}`")
+                    st.write(f"📦 **Consignment ID (Article):** `{target_profile['article_id']}`")
+                    st.write(f"🏥 **Booking GPO Station:** `{target_profile.get('booking_office', 'Unknown GPO')}`")
+                    st.write(f"🏠 **Address:** {target_profile['address']}")
                     
-                    st.markdown(f"""
-                        <div style="background:#ffffff; padding:15px; border-radius:6px; border:1px solid #e2d8c5; margin-bottom:15px;">
-                            <div style="margin-bottom:8px;">🔢 <b>MRN Number:</b> <span style="font-weight:700; color:#A30000;">{target_profile.get('mrn_no', 'N/A')}</span></div>
-                            <div style="margin-bottom:8px;">📦 <b>Consignment ID:</b> <span style="font-weight:700; font-family:monospace; color:#A30000;">{target_profile['article_id']}</span></div>
-                            <div style="margin-bottom:8px;">🏥 <b>GPO Station:</b> <span style="font-weight:600;">{target_profile.get('booking_office', 'Unknown GPO')}</span></div>
-                            <div>🏠 <b>Address:</b> <span style="font-size:13px; font-weight:500; background:#f9f9f9; padding:4px 8px; display:inline-block; border-radius:4px; border:1px solid #eee; margin-top:3px;">{target_profile['address']}</span></div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown("#### 🌐 Pakistan Post Live EMTTS Tracking")
+                    if st.button("🔍 Fetch Live Status from PakPost Server", use_container_width=True):
+                        with st.spinner("Connecting to PakPost network nodes..."):
+                            live_status, trace_detail = fetch_live_emtts_status(target_profile['article_id'])
+                            st.metric(label="Latest Detected Status", value=live_status)
+                            st.text_area("Full EMTTS Tracking History Logs:", value=trace_detail, height=180)
                     
-                    st.markdown("#### 🌐 EMTTS Tracking Engine")
-                    opt_col1, opt_col2 = st.columns(2)
-                    with opt_col1: data_mode = st.radio("Mode Mapping:", ["Fetch Live (Raw)", "Fetch Snipped (Mapped)"])
-                    with opt_col2: report_scope = st.radio("History Scope:", ["Only Last Status", "Full History"])
-                    
-                    if st.button("🔍 Query PakPost Servers", use_container_width=True):
-                        with st.spinner("Connecting to EMTTS..."):
-                            data, err = fetch_live_emtts_status(target_profile['article_id'])
-                            if err: st.error(err)
-                            elif data and data["history"]:
-                                history_list = data["history"]
-                                last_entry = history_list[-1]
-                                
-                                history_has_delivered = any("delivered" in h["status"].lower() for h in history_list)
-                                history_has_rts = any("return" in h["status"].lower() or "rts" in h["status"].lower() for h in history_list)
-                                
-                                if history_has_delivered:
-                                    st.success(f"✅ Delivered Status Found in Tracking Path! Last Status: {last_entry['status']} ({last_entry['datetime']})")
-                                elif history_has_rts:
-                                    st.error(f"❌ RTS / Return Status Found in Tracking Path! Last Status: {last_entry['status']} ({last_entry['datetime']})")
-                                else:
-                                    st.info(f"📍 Current Status Log: {last_entry['status']} ({last_entry['office']})")
-
-                                use_mapped = (data_mode == "Fetch Snipped (Mapped)")
-                                
-                                if report_scope == "Full History":
-                                    processed_rows = [{"Event": i+1, "Timestamp": h["datetime"], "Office": h["office"], "Status": map_status(h["status"]) if use_mapped else h["status"]} for i, h in enumerate(history_list)]
-                                    st.dataframe(pd.DataFrame(processed_rows), use_container_width=True)
-                                else:
-                                    final_status_str = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
-                                    st.markdown(f"<div style='font-size:14px; font-weight:600; color:#A30000; background:#fdf2f2; padding:8px 12px; border-radius:4px; border:1px solid #f5c2c2;'><b>Latest Status Update:</b> {final_status_str} ({last_entry['datetime']})</div>", unsafe_allow_html=True)
-
-                    st.markdown("#### 🎴 DIAL THIS PHONE NUMBER:")
-                    raw_phone = str(target_profile.get('phone_number', '')).strip()
-                    if not raw_phone or raw_phone.lower() in ['none', 'nan', 'null', ''] or len(raw_phone) < 5:
-                        st.markdown("<div class='no-phone-display'>⚠️ No Contact Number Available</div>", unsafe_allow_html=True)
-                    else:
-                        if not raw_phone.startswith('0') and raw_phone.isdigit():
-                            raw_phone = '0' + raw_phone
-                        st.markdown(f"<div class='big-phone-display'>{raw_phone}</div>", unsafe_allow_html=True)
+                    st.markdown("#### 🎴 DIAL THIS PHONE NUMBER FROM LANDLINE:")
+                    st.markdown(f"<div class='big-phone-display'>{target_profile['phone_number']}</div>", unsafe_allow_html=True)
                 
                 with r_panel:
-                    st.markdown("#### 📝 Verification Audit Questionnaire")
+                    st.markdown("#### 📝 Live Quality Verification & Audit Questionnaire")
                     is_delivered = st.radio("Has the consignee physically received the delivery?", ["Select Assessment Option", "Yes", "No"])
                     payload_buffer = {}
                     
@@ -660,139 +639,15 @@ else:
                         payload_buffer["issue_reason"] = st.selectbox("Select Primary Failure Mode:", ["Wrong Delivery Status on EMTTS", "Incomplete Address / Premises Locked", "Logistics Delay", "Formal Institutional Dispute"])
                         
                     if st.button("💾 Finalize Session & Commit Logs", use_container_width=True):
-                        if is_delivered == "Select Assessment Option": st.error("Select verification response.")
+                        if is_delivered == "Select Assessment Option":
+                            st.error("Select verification response parameter before finalizing profile entry.")
                         else:
-                            payload_buffer["operator_stamp"] = st.session_state.full_name
-                            payload_buffer["article_id"] = target_profile["article_id"]
-                            payload_buffer["patient_name"] = target_profile["patient_name"]
-                            payload_buffer["mrn_no"] = target_profile.get('mrn_no', '')
-                            payload_buffer["booking_office"] = target_profile.get('booking_office', 'Lahore GPO')
-                            payload_buffer["booking_date"] = target_profile["booking_date"]
-                            payload_buffer["address"] = target_profile["address"]
-                            payload_buffer["phone_number"] = target_profile["phone_number"]
-                            
-                            try:
-                                if target_profile.get("id"):
+                            with st.spinner("Committing logs to cloud infrastructure..."):
+                                try:
                                     supabase.table("patient_deliveries").update(payload_buffer).eq("id", target_profile["id"]).execute()
-                                else:
-                                    supabase.table("patient_deliveries").upsert(payload_buffer, on_conflict="article_id").execute()
-                                    
-                                st.success("Updated cleanly with operator identity stamp!")
-                                st.session_state.selected_profile_index += 1
-                                save_operator_state()
-                                time.sleep(0.5)
-                                st.rerun()
-                            except Exception as e: st.error(f"Sync error: {e}")
-
-                    # 🖨️ HIGH-END OFFICIAL MANIFESTO DOCUMENT PRINT SYSTEM
-                    st.markdown("---")
-                    if st.button("🖨️ Print Official Manifesto Document", use_container_width=True):
-                        st.markdown(f"""
-                        <div class="print-manifest-card">
-                            <table style="width:100%; border-collapse:collapse; font-family:Arial, sans-serif;">
-                                <tr>
-                                    <td style="text-align:left; width:15%;"><span style="font-size:45px;">📮</span></td>
-                                    <td style="text-align:center; width:70%;">
-                                        <h2 style="margin:0; color:#A30000; font-size:24px; letter-spacing:1px;">PAKISTAN POST LOGISTICS REPORT</h2>
-                                        <h5 style="margin:4px 0; color:#555; font-size:12px;">LAHORE GENERAL POST OFFICE (GPO) | SECURE AUDIT</h5>
-                                    </td>
-                                    <td style="text-align:right; width:15%; font-size:11px; color:#444;"><b>CONFIDENTIAL</b></td>
-                                </tr>
-                            </table>
-                            <hr style="border:1.5px solid #A30000; margin:15px 0;">
-                            
-                            <table style="width:100%; font-size:14px; line-height:2; border-spacing:10px;">
-                                <tr>
-                                    <td style="width:25%;"><b>Patient Name:</b></td>
-                                    <td style="border-bottom:1px dotted #ccc;">{target_profile['patient_name']}</td>
-                                    <td style="width:20%;"><b>MRN Number:</b></td>
-                                    <td style="border-bottom:1px dotted #ccc;">{target_profile.get('mrn_no', 'N/A')}</td>
-                                </tr>
-                                <tr>
-                                    <td><b>Consignment ID:</b></td>
-                                    <td style="border-bottom:1px dotted #ccc; font-family:monospace; font-weight:bold; color:#A30000;">{target_profile['article_id']}</td>
-                                    <td><b>GPO Origin Node:</b></td>
-                                    <td style="border-bottom:1px dotted #ccc;">{target_profile.get('booking_office', 'Lahore GPO')}</td>
-                                </tr>
-                                <tr>
-                                    <td><b>Contact Number:</b></td>
-                                    <td style="border-bottom:1px dotted #ccc;">{target_profile.get('phone_number', 'N/A')}</td>
-                                    <td><b>Verification Date:</b></td>
-                                    <td style="border-bottom:1px dotted #ccc;">{datetime.date.today()}</td>
-                                </tr>
-                                <tr>
-                                    <td><b>Delivery Address:</b></td>
-                                    <td colspan="3" style="border-bottom:1px dotted #ccc;">{target_profile['address']}</td>
-                                </tr>
-                            </table>
-                            
-                            <div style="margin-top:25px; padding:15px; background:#faf4f4; border:1px solid #A30000; border-radius:4px;">
-                                <h4 style="margin:0 0 10px 0; color:#A30000;">AUDIT EVALUATION SUMMARY</h4>
-                                <table style="width:100%; font-size:13px;">
-                                    <tr>
-                                        <td><b>Physical Delivery Status:</b> {payload_buffer.get('status', target_profile['status'])}</td>
-                                        <td><b>Extra Tips/Charges Flagged:</b> {payload_buffer.get('extra_money_charged', target_profile.get('extra_money_charged', 'No'))}</td>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="2" style="padding-top:8px;"><b>Verified Officer Stamp:</b> {st.session_state.full_name} (System Operator)</td>
-                                    </tr>
-                                </table>
-                            </div>
-                            
-                            <table style="width:100%; margin-top:70px; font-size:13px;">
-                                <tr>
-                                    <td style="text-align:left; width:40%; border-top:1px solid #333;"><br>System Operator Signature</td>
-                                    <td style="width:20%;"></td>
-                                    <td style="text-align:right; width:40%; border-top:1px solid #333;"><br>Authorized Officer GPO Stamp</td>
-                                </tr>
-                            </table>
-                        </div>
-                        <script>window.print();</script>
-                        """, unsafe_allow_html=True)
-
-    # PAGE 4: SECURE DATA EXPORT NODE
-    elif st.session_state.current_navigation_tab == "📥 Secure Reports Export Center":
-        st.markdown("### 📥 Secure Data Export & Cloud Records Center")
-        st.info("💡 Note: Saara real-time backup pehle hi cloud storage data-nodes par fully updated aur safe hai.")
-        
-        try:
-            with st.spinner("Fetching data logs matrix..."):
-                all_records = supabase.table("patient_deliveries").select("*").execute().data
-            if all_records:
-                df_export = pd.DataFrame(all_records)
-                if "operator_stamp" not in df_export.columns:
-                    df_export["operator_stamp"] = "Unassigned Logs"
-                
-                if st.session_state.role == "admin":
-                    st.markdown("#### 🛠️ Admin Export Panel (Full Ledger Control)")
-                    distinct_operators = list(df_export["operator_stamp"].dropna().unique())
-                    distinct_operators.insert(0, "Download Everything (All Operators combined)")
-                    
-                    target_selection = st.selectbox("Select Data Slice / Operator Filter Target:", distinct_operators)
-                    if target_selection != "Download Everything (All Operators combined)":
-                        df_final_download = df_export[df_export["operator_stamp"] == target_selection]
-                    else:
-                        df_final_download = df_export
-                else:
-                    st.markdown("#### 🔒 Operator Export Panel (Your Individual Action Log)")
-                    df_final_download = df_export[df_export["operator_stamp"] == st.session_state.full_name]
-                    st.write(f"Total verified entries stamped under your account: `{len(df_final_download)}`")
-                
-                if not df_final_download.empty:
-                    csv_buffer = io.StringIO()
-                    df_final_download.to_csv(csv_buffer, index=False)
-                    csv_data = csv_buffer.getvalue().encode('utf-8')
-                    
-                    st.download_button(
-                        label="📥 Download Authenticated Security Sheet (.CSV File)",
-                        data=csv_data,
-                        file_name=f"Verified_Deliveries_Log_{datetime.date.today()}.csv",
-                        mime="text/csv",
-                        use_container_width=True
-                    )
-                else:
-                    st.warning("No recorded data matching your credentials or filters found inside the backup matrix.")
-            else:
-                st.warning("Cloud database nodes are currently empty.")
-        except Exception as err:
-            st.error(f"Failed to compile export ledger sheets: {err}")
+                                    st.success("Data node updated successfully.")
+                                    st.session_state.selected_profile_index += 1
+                                    save_operator_state()
+                                    time.sleep(0.5)
+                                    st.rerun()
+                                except Exception as e: st.error(f"Commit tracking sync error: {e}")
