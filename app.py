@@ -252,6 +252,7 @@ st.markdown(f"""
         box-shadow: inset 0px 2px 5px rgba(0,0,0,0.3) !important;
     }}
     
+    /* 3D Dropdowns & Inputs Fixes */
     div[data-testid="stSelectbox"] > div[data-baseweb="select"], 
     div[data-testid="stDateInput"] > div,
     div[data-testid="stTextInput"] > div {{
@@ -259,8 +260,15 @@ st.markdown(f"""
         border: 1px solid #cbd5e1 !important;
         border-bottom: 3px solid #b1bccd !important;
         border-radius: 6px !important;
-        box-shadow: 0px 1px 2px rgba(0,0,0,0.05) !important;
+        box-shadow: 0px 2px 4px rgba(0,0,0,0.08) !important;
         transition: all 0.15s ease-in-out;
+        overflow: hidden !important;
+    }}
+    
+    /* Selectbox baseui invisible overlay fix for 3D styling */
+    div[data-testid="stSelectbox"] > div[data-baseweb="select"] > div {{
+        background-color: transparent !important;
+        border: none !important;
     }}
     
     div[data-testid="stSelectbox"] > div[data-baseweb="select"]:hover, 
@@ -268,7 +276,7 @@ st.markdown(f"""
     div[data-testid="stTextInput"] > div:hover {{
         background: #ffffff !important;
         border-color: #a61c1c !important;
-        box-shadow: 0px 2px 4px rgba(166,28,28,0.08) !important;
+        box-shadow: 0px 2px 5px rgba(166,28,28,0.15) !important;
     }}
 
     div[data-testid="stSelectbox"] *, 
@@ -374,13 +382,14 @@ st.markdown(f"""
             margin: 5mm !important;
         }}
         
+        /* FIX FOR BLANK PAGE: Changed 100vh/overflow: hidden to auto/visible to prevent clipping */
         html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], .block-container, .stApp {{
-            height: 100vh !important;
-            width: 100vw !important;
-            max-height: 100vh !important;
+            height: auto !important;
+            width: 100% !important;
+            max-height: none !important;
             margin: 0 !important;
             padding: 0 !important;
-            overflow: hidden !important;
+            overflow: visible !important;
             background: #ffffff !important;
             background-color: #ffffff !important;
         }}
@@ -409,9 +418,9 @@ st.markdown(f"""
             display: block !important;
         }}
 
-        /* Direct Positioning & Isolation on Page 1 (Strictly Single Page A4) */
+        /* Direct Positioning & Isolation on Page 1 (FIXED position bypasses all iframe/dom issues) */
         .print-manifest-card {{ 
-            position: absolute !important; 
+            position: fixed !important; 
             left: 0 !important; 
             top: 0 !important; 
             width: 100% !important; 
@@ -424,7 +433,7 @@ st.markdown(f"""
             background: #ffffff !important;
             box-sizing: border-box !important;
             page-break-inside: avoid !important;
-            z-index: 99999 !important;
+            z-index: 999999 !important;
         }}
 
         .print-manifest-card table {{
@@ -1292,16 +1301,14 @@ if st.session_state.logged_in and st.session_state.role == "admin":
         resolved_charges = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes (Resolved)").execute().data
         if resolved_charges:
             with st.expander("📁 View Resolved Alert History Logs (Past Reports Archive - Extra Charges Issues)"):
-                history_df = pd.DataFrame(resolved_charges)
-                column_mapping_view = {
-                    "patient_name": "Patient Name",
-                    "mrn_no": "MRN Number",
-                    "article_id": "Consignment ID",
-                    "operator_stamp": "Reported By (Operator)",
-                    "booking_date": "Booking Date"
-                }
-                history_df_filtered = history_df[[col for col in column_mapping_view.keys() if col in history_df.columns]].rename(columns=column_mapping_view)
-                st.dataframe(history_df_filtered, use_container_width=True, hide_index=True)
+                for alert in resolved_charges:
+                    rc1, rc2 = st.columns([4, 1])
+                    with rc1:
+                        st.markdown(f"**Patient:** {alert.get('patient_name', 'N/A')} &nbsp; | &nbsp; **MRN:** {alert.get('mrn_no', 'N/A')} &nbsp; | &nbsp; **Article:** `{alert.get('article_id', 'N/A')}`")
+                    with rc2:
+                        if st.button("🖨️ Auto Manifest", key=f"print_res_alert_{alert['id']}", use_container_width=True):
+                            open_alert_manifest(alert)
+                st.markdown("<hr style='margin-top: 5px; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
     except:
         pass
 
