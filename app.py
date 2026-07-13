@@ -53,7 +53,7 @@ for key in mapping_keys:
     if key not in st.session_state:
         st.session_state[key] = None
 
-# 🎨 Premium UI Engine Styling
+# 🎨 Premium UI Engine Styling & Pakistan Post Etched Glass Sidebar Styles
 sidebar_css_rule = ""
 if not st.session_state.logged_in:
     sidebar_css_rule = """
@@ -74,8 +74,12 @@ else:
         max-width: 300px !important;
         background: rgba(255, 255, 255, 0.45) !important;
         backdrop-filter: blur(20px) saturate(170%) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(170%) !important;
         border-right: 2px solid rgba(0, 102, 51, 0.2) !important;
         box-shadow: 5px 0px 30px rgba(0, 77, 38, 0.08) !important;
+    }
+    section[data-testid="stSidebar"] .stMarkdown {
+        text-shadow: 0.5px 0.5px 1px rgba(255,255,255,0.9);
     }
     """
 
@@ -131,14 +135,19 @@ st.markdown(f"""
         box-shadow: 0px 7px 15px rgba(0, 102, 51, 0.12) !important;
     }}
     
-    /* 📱 Premium 3D Clickable Phone Display Button */
+    /* 🖥️ Sidebar Typographical Formats */
+    .sb-headline {{ color: #004d26; font-weight: 800; font-size: 1.15rem; border-bottom: 2px solid rgba(0,102,51,0.2); padding-bottom: 6px; margin-bottom: 15px; }}
+    .sb-name-tag {{ font-size: 1.05rem; color: #1e293b; font-weight: 500; margin-bottom: 5px; }}
+    .sb-name-bold {{ color: #b48608; font-weight: 800; font-size: 1.2rem; text-shadow: 0px 1px 0px rgba(255,255,255,0.8); }}
+    
+    /* 📱 Premium 3D Clickable Phone Display Button (Slightly Reduced Size) */
     .big-phone-display {{ 
         font-family: 'Segoe UI', -apple-system, sans-serif; 
-        font-size: 34px !important; 
+        font-size: 26px !important; 
         font-weight: 800 !important; 
         color: #ffffff !important; 
         background: linear-gradient(180deg, #10b981 0%, #059669 100%) !important; 
-        padding: 12px; 
+        padding: 8px; 
         border-radius: 8px; 
         text-align: center; 
         border: 1px solid #047857; 
@@ -149,14 +158,14 @@ st.markdown(f"""
         margin: 10px 0;
     }}
     
-    /* 🚨 High Visibility Fallback Red 3D Button for Missing Contacts */
+    /* 🚨 High Visibility Fallback Red 3D Button for Missing Contacts (Slightly Reduced Size) */
     .no-phone-display {{
         font-family: 'Segoe UI', -apple-system, sans-serif; 
-        font-size: 23px !important; 
+        font-size: 18px !important; 
         font-weight: 700 !important; 
         color: #ffffff !important; 
         background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%) !important; 
-        padding: 14px; 
+        padding: 10px; 
         border-radius: 8px; 
         text-align: center; 
         border: 1px solid #b91c1c; 
