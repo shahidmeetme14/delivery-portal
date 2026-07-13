@@ -241,11 +241,16 @@ st.markdown(f"""
     }}
     .patient-card-header {{ font-size: 22px !important; font-weight: 700 !important; color: #a61c1c; border-left: 5px solid #d4af37; padding-left: 10px; margin-bottom: 15px; }}
     
-    /* Custom Sidebar Identity Typography Styling for Crystal Black Theme */
-    .sb-headline-custom {{ font-size: 20px !important; font-weight: bold !important; color: #d4af37 !important; margin-bottom: 15px; }}
-    .sb-login-label {{ margin-top: 15px; color: #cbd5e1; font-size: 14px; }}
-    .sb-username-display {{ font-size: 18px !important; font-weight: bold !important; color: #d4af37 !important; margin-bottom: 10px; }}
-    .sb-privilege-label {{ margin-top: 10px; color: #cbd5e1; font-size: 14px; }}
+    /* High-Specificity Sidebar Identity Typography Styling for Crystal Black Theme */
+    section[data-testid="stSidebar"] .sb-headline-custom {{ font-size: 20px !important; font-weight: bold !important; color: #d4af37 !important; margin-bottom: 15px; }}
+    section[data-testid="stSidebar"] .sb-login-label {{ margin-top: 15px; color: #cbd5e1 !important; font-size: 14px; }}
+    section[data-testid="stSidebar"] .sb-username-display {{ font-size: 18px !important; font-weight: bold !important; color: #d4af37 !important; margin-bottom: 10px; }}
+    section[data-testid="stSidebar"] .sb-privilege-label {{ margin-top: 10px; color: #cbd5e1 !important; font-size: 14px; }}
+    section[data-testid="stSidebar"] .sb-privilege-label span {{
+        color: #39ff14 !important;
+        font-weight: bold !important;
+        text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14, 0 0 20px #39ff14 !important;
+    }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -346,7 +351,7 @@ if st.session_state.logged_in:
     with st.sidebar:
         st.markdown("<div class='sb-headline-custom'>🖥️ Enterprise Console</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='sb-login-label'>Logged in as:</div><div class='sb-username-display'>{st.session_state.full_name}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='sb-privilege-label'>Privilege Cluster: <span style='font-family: monospace; font-weight: bold; color: #39ff14; text-shadow: 0 0 8px rgba(57,255,20,0.6);'>{st.session_state.role.upper()}</span></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='sb-privilege-label'>Privilege Cluster: <span>{st.session_state.role.upper()}</span></div>", unsafe_allow_html=True)
         st.markdown("<br><hr style='border-top:1px solid rgba(212,175,55,0.3);'><br>", unsafe_allow_html=True)
         if st.button("Terminate Session 🚪", use_container_width=True):
             with st.spinner("Processing session termination..."):
