@@ -87,6 +87,7 @@ else:
     }
     """
 
+# Fixed f-string curly braces syntax issue by escaping CSS rules with double curly braces {{ }}
 st.markdown(f"""
     <style>
     div[data-testid="stToolbar"] {{ visibility: hidden !important; display: none !important; }}
@@ -254,15 +255,15 @@ st.markdown(f"""
         text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14, 0 0 20px #39ff14 !important;
     }}
     
-    /* 🖨️ Clean CSS Print Optimizations */
-    @media print {
-        body * { visibility: hidden !important; }
-        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], .stDeployButton, footer, button, iframe, .stButton {
+    /* 🖨️ Clean CSS Print Optimizations (f-string escaped properly) */
+    @media print {{
+        body * {{ visibility: hidden !important; }}
+        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], .stDeployButton, footer, button, iframe, .stButton {{
             display: none !important;
             visibility: hidden !important;
-        }
-        .print-manifest-card, .print-manifest-card * { visibility: visible !important; }
-        .print-manifest-card { 
+        }}
+        .print-manifest-card, .print-manifest-card * {{ visibility: visible !important; }}
+        .print-manifest-card {{ 
             position: absolute !important; 
             left: 0 !important; 
             top: 0 !important; 
@@ -272,8 +273,8 @@ st.markdown(f"""
             background: #ffffff !important;
             padding: 20px !important;
             margin: 0 !important;
-        }
-    }
+        }}
+    }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -809,11 +810,37 @@ else:
                         current_article_id = target_profile['article_id']
                         cached_emtts = st.session_state.fetched_emtts_data.get(current_article_id)
 
+                        # Check if data has been fetched from the main page tracking engine
+                        if not cached_emtts:
+                            st.info("ℹ️ Live tracking status has not been fetched from the main engine above.")
+                            
+                            # Embed fetch options inside the print container since it wasn't fetched earlier
+                            st.markdown("##### 📥 Fetch EMTTS Live Status Directly in Print Desk")
+                            print_data_mode = st.radio("Print Display Transformation:", ["Fetch Live (Raw Mode)", "Fetch Snipped Data (Mapped Mode)"], key="print_data_mode_sel")
+                            print_report_scope = st.radio("Print Reporting Scope:", ["Only Last Status", "All Statuses (Full History)"], key="print_report_scope_sel")
+                            
+                            if st.button("🔍 Fetch Status inside Print Card", use_container_width=True, key="print_direct_fetch_btn"):
+                                with st.spinner("Connecting to EMTTS Logistics..."):
+                                    data, err = fetch_live_emtts_status(current_article_id)
+                                    if err:
+                                        st.error(err)
+                                    elif data and data["history"]:
+                                        st.session_state.fetched_emtts_data[current_article_id] = data
+                                        st.success("Successfully loaded live status! Now you can print.")
+                                        st.rerun()
+                        
+                        # Re-evaluate cache after internal click
+                        cached_emtts = st.session_state.fetched_emtts_data.get(current_article_id)
+
                         if cached_emtts and "history" in cached_emtts:
                             history_list = cached_emtts["history"]
-                            use_mapped = (data_mode == "Fetch Snipped Data (Mapped Mode)")
+                            # Detect which radio settings were used to build the preview (either print-specific or primary panel depending on active view)
+                            active_data_mode = st.session_state.get("print_data_mode_sel", data_mode)
+                            active_report_scope = st.session_state.get("print_report_scope_sel", report_scope)
                             
-                            if report_scope == "All Statuses (Full History)":
+                            use_mapped = (active_data_mode == "Fetch Snipped Data (Mapped Mode)")
+                            
+                            if active_report_scope == "All Statuses (Full History)":
                                 # Compact, highly polished HTML sub-table for Full History logs inside print Layout
                                 rows_html = ""
                                 for idx, h in enumerate(history_list):
@@ -850,7 +877,7 @@ else:
                                 </div>
                                 """
                         else:
-                            emtts_status_html = "<span style='color: #94a3b8; font-style: italic; font-size: 13px;'>Live status not fetched yet (Click 'Fetch Live Status' above to populate)</span>"
+                            emtts_status_html = "<span style='color: #94a3b8; font-style: italic; font-size: 13px;'>Live status not fetched yet (Use options above to fetch)</span>"
 
                         st.markdown(f"""
                             <div class="print-manifest-card" style="background: #ffffff; border: 2px dashed #cbd5e1; padding: 25px; border-radius: 8px; font-family: 'Segoe UI', sans-serif; color: #000000;">
