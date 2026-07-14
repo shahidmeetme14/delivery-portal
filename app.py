@@ -241,7 +241,7 @@ st.markdown(f"""
     div:has(> .terminate-btn-anchor) + div button,
     div:has(.terminate-btn-anchor) + div button {{
         background: linear-gradient(180deg, #ff4d4d 0%, #c31414 100%) !important;
-        color: #ffffff !important;
+        color: #FF0033 !important;
         border: 2px solid rgba(255, 255, 255, 0.4) !important;
         border-bottom: 5px solid #800a0a !important;
         border-radius: 10px !important;
