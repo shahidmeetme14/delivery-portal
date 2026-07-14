@@ -649,7 +649,7 @@ def open_alert_manifest(alert_data):
         <div class="print-manifest-card" style="background: #ffffff; border: 3px double #a61c1c; padding: 25px; font-family: 'Segoe UI', sans-serif; color: #000000;">
             <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 10px; margin-bottom: 20px;">
                 <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
-                <p style="margin: 5px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Quality Verification & Consignee Audit Certificate</p>
+                <p style="margin: 5px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Pateint Feedback & Medicine Delivery Audit Certificate</p>
             </div>
             <table style="width: 100%; border-collapse: collapse; font-size: 15px; color: #000000;">
                 <tr><td style="padding: 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('patient_name', 'N/A')}</td></tr>
@@ -666,10 +666,7 @@ def open_alert_manifest(alert_data):
                     <b>Verified By (Operator ID):</b> {print_operator}<br>
                     <span style="font-size: 11px; color: #475569;">Timestamp: {current_pkt_time} (PKT)</span>
                 </div>
-                <div style="text-align: right; font-weight: bold; padding-bottom: 5px;">
-                    Sign / Stamp: ______________________
-                </div>
-            </div>
+             </div>
         </div>
     """, unsafe_allow_html=True)
     
