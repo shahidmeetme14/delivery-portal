@@ -28,18 +28,18 @@ if "logged_in" not in st.session_state:
 
 if not st.session_state.logged_in and "usr" in st.query_params:
     try:
-        param_time = float(st.query_params.get("t", 0))
+        param_time = float(st.query_params.get("t", time.time()))
         if time.time() - param_time < SESSION_TIMEOUT:
             st.session_state.logged_in = True
-            st.session_state.username = st.query_params.get("usr")
-            st.session_state.full_name = st.query_params.get("nm")
-            st.session_state.role = st.query_params.get("rl")
-            st.session_state.last_activity = param_time
+            st.session_state.username = str(st.query_params.get("usr", ""))
+            st.session_state.full_name = str(st.query_params.get("nm", ""))
+            st.session_state.role = str(st.query_params.get("rl", "staff"))
+            st.session_state.last_activity = time.time()  # Keep session alive on page refresh
             if "tab" in st.query_params:
-                st.session_state.current_navigation_tab = st.query_params.get("tab")
+                st.session_state.current_navigation_tab = str(st.query_params.get("tab"))
         else:
             st.query_params.clear()
-    except:
+    except Exception:
         pass
 
 # Initialize Global App States
@@ -290,28 +290,28 @@ st.markdown(f"""
     section[data-testid="stSidebar"] .sb-privilege-label {{ margin-top: 10px; color: #cbd5e1 !important; font-size: 14px; }}
     section[data-testid="stSidebar"] .sb-privilege-label span {{ color: #39ff14 !important; font-weight: bold !important; text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14 !important; }}
     
-    /* 🖨️ Absolute Print Media Optimization (Black Box Fix) */
+    /* 🖨️ Absolute Print Media Optimization (Black Box & Backdrop Overlay Fix) */
     @media print {{
         @page {{ size: A4 portrait !important; margin: 5mm !important; }}
-        html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], .block-container, .stApp {{
+        html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], .block-container, .stApp, div[data-baseweb="modal"], div[data-baseweb="backdrop"], div[role="dialog"] {{
             height: auto !important; width: 100% !important; max-height: none !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; 
-            background: #ffffff !important; background-color: #ffffff !important; color: #000000 !important;
+            background: #ffffff !important; background-color: #ffffff !important; color: #000000 !important; box-shadow: none !important; border: none !important;
         }}
         
-        div, span, header, footer {{ background-color: transparent !important; }}
+        div, span, header, footer, section, main, article {{ background-color: transparent !important; box-shadow: none !important; }}
         
         body *, .stApp *, [data-testid="stAppViewContainer"] *, [data-testid="stMain"] * {{ visibility: hidden !important; }}
-        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], footer, button {{ display: none !important; }}
+        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], footer, button, iframe, .stElementContainer:has(iframe) {{ display: none !important; }}
 
-        .print-manifest-card, .print-manifest-card * {{ visibility: visible !important; display: block !important; color: #000000 !important; background-color: transparent !important; }}
+        .print-manifest-card, .print-manifest-card * {{ visibility: visible !important; color: #000000 !important; background-color: transparent !important; box-shadow: none !important; text-shadow: none !important; }}
         .print-manifest-card {{ 
             position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; height: auto !important;
             margin: 0 !important; padding: 20px !important; border: 2px solid #000000 !important; 
-            background: #ffffff !important; background-color: #ffffff !important; box-sizing: border-box !important; page-break-inside: avoid !important; z-index: 999999 !important;
+            background: #ffffff !important; background-color: #ffffff !important; box-sizing: border-box !important; page-break-inside: avoid !important; z-index: 99999999 !important; display: block !important;
         }}
         .print-manifest-card table {{ width: 100% !important; display: table !important; border-collapse: collapse !important; margin-top: 15px !important; }}
         .print-manifest-card tr {{ display: table-row !important; page-break-inside: avoid !important; }}
-        .print-manifest-card td {{ display: table-cell !important; padding: 8px 10px !important; font-size: 14px !important; color: #000000 !important; border-bottom: 1px solid #cbd5e1 !important; }}
+        .print-manifest-card td, .print-manifest-card th {{ display: table-cell !important; padding: 8px 10px !important; font-size: 14px !important; color: #000000 !important; border-bottom: 1px solid #cbd5e1 !important; }}
         .screen-only-timestamp {{ display: none !important; }}
         * {{ -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }}
     }}
@@ -366,11 +366,11 @@ if st.session_state.logged_in:
     else:
         st.session_state.last_activity = time.time()
         st.query_params["t"] = str(st.session_state.last_activity)
-        st.query_params["usr"] = st.session_state.username
-        st.query_params["nm"] = st.session_state.full_name
-        st.query_params["rl"] = st.session_state.role
+        st.query_params["usr"] = str(st.session_state.username)
+        st.query_params["nm"] = str(st.session_state.full_name)
+        st.query_params["rl"] = str(st.session_state.role)
         if st.session_state.get("current_navigation_tab"):
-            st.query_params["tab"] = st.session_state.current_navigation_tab
+            st.query_params["tab"] = str(st.session_state.current_navigation_tab)
 
 def map_status(raw_status):
     s = raw_status.lower().strip()
@@ -589,6 +589,7 @@ def login_view():
                                     st.session_state.username = ud[0]["username"]
                                     st.session_state.full_name = ud[0]["full_name"]
                                     st.session_state.role = ud[0]["role"]
+                                    st.session_state.last_activity = time.time()
                                     st.rerun()
                             else: st.error("ACCESS DENIED: Invalid credentials.")
                         except Exception as ex: st.error(f"Database Sync Failure: {ex}")
@@ -605,6 +606,11 @@ def recovery_view():
                     st.session_state.current_navigation_tab = st.session_state.cached_recovery_data.get('last_tab')
                     st.session_state.selected_profile_index = int(st.session_state.cached_recovery_data.get('last_index', 0))
                     st.session_state.show_recovery_prompt = False
+                    st.session_state.last_activity = time.time()
+                    st.query_params["usr"] = st.session_state.username
+                    st.query_params["nm"] = st.session_state.full_name
+                    st.query_params["rl"] = st.session_state.role
+                    st.query_params["t"] = str(time.time())
                     if st.session_state.current_navigation_tab:
                         st.query_params["tab"] = st.session_state.current_navigation_tab
                     st.rerun()
@@ -615,6 +621,7 @@ def recovery_view():
                     st.session_state.show_recovery_prompt = False
                     st.session_state.current_navigation_tab = None
                     st.session_state.selected_profile_index = 0
+                    st.session_state.last_activity = time.time()
                     if "tab" in st.query_params:
                         del st.query_params["tab"]
                     save_operator_state()
@@ -623,11 +630,11 @@ def recovery_view():
 def ingestion_view():
     st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine"
     st.markdown("### 📥 Bulk Articles Ingestion Engine")
-    source_file = st.file_uploader("Upload Medicne Article Sheet", type=["xlsx", "csv"], key="bulk_uploader_main")
+    source_file = st.file_uploader("Upload Medicine Article Sheet", type=["xlsx", "csv"], key="bulk_uploader_main")
     if source_file is not None:
         file_key = f"cached_df_{source_file.name}_{source_file.size}"
         if file_key not in st.session_state:
-            df = pd.read_excel(source_file) if source_file.name.endswith('.xlsx') else pd.read_csv(source_file)
+            df = pd.read_excel(source_file, dtype=str) if source_file.name.endswith('.xlsx') else pd.read_csv(source_file, low_memory=False, dtype=str)
             st.session_state[file_key] = df
         else: df = st.session_state[file_key]
         
@@ -667,20 +674,18 @@ def ingestion_view():
             status_progress_text.text("Analyzing spreadsheet matrix structures... (45% Complete)")
             progress_bar_control.progress(45)
             
-            new_manifest_rows = []
-            for _, row_data in df.iterrows():
-                new_manifest_rows.append({
-                    "article_id": str(row_data[c_article]).strip(),
-                    "patient_name": str(row_data[c_name]).strip(),
-                    "phone_number": str(row_data[c_phone]).strip(),
-                    "booking_date": str(row_data[c_date])[:10],
-                    "address": str(row_data[c_address]).strip(),
-                    "patient_city": str(row_data[c_city]).strip(),
-                    "mrn_no": str(row_data[c_mrn]).strip(),
-                    "booking_office": str(row_data[c_bo]).strip() if c_bo in df.columns else "Lahore GPO",
-                    "transaction_no": str(row_data[c_dup]).strip() if c_dup in df.columns else ""
-                })
-            uploaded_records_df = pd.DataFrame(new_manifest_rows, dtype=str)
+            # High-speed vectorized string mapping to support 50MB files without cloud timeout
+            uploaded_records_df = pd.DataFrame({
+                "article_id": df[c_article].astype(str).str.strip(),
+                "patient_name": df[c_name].astype(str).str.strip(),
+                "phone_number": df[c_phone].astype(str).str.strip(),
+                "booking_date": df[c_date].astype(str).str.slice(0, 10),
+                "address": df[c_address].astype(str).str.strip(),
+                "patient_city": df[c_city].astype(str).str.strip(),
+                "mrn_no": df[c_mrn].astype(str).str.strip(),
+                "booking_office": df[c_bo].astype(str).str.strip() if c_bo in df.columns else "Lahore GPO",
+                "transaction_no": df[c_dup].astype(str).str.strip() if c_dup in df.columns else ""
+            })
             total_input_count = len(uploaded_records_df)
 
             status_progress_text.text("Scanning master datastore for cross-duplications... (75% Complete)")
@@ -708,7 +713,7 @@ def ingestion_view():
                 try: supabase.storage.from_("manifests").remove(["master_manifest_store.csv"])
                 except: pass
                 
-                supabase.storage.from_("manifests").upload(path="master_manifest_store.csv", file=master_csv_bytes, file_options={"content-type": "text/csv"})
+                supabase.storage.from_("manifests").upload(path="master_manifest_store.csv", file=master_csv_bytes, file_options={"content-type": "text/csv", "upsert": "true"})
                 status_progress_text.empty()
                 progress_bar_control.empty()
                 ui_blocker.empty()
@@ -725,7 +730,7 @@ def ingestion_view():
     
     if match_file is not None:
         try:
-            df_match = pd.read_excel(match_file) if match_file.name.endswith('.xlsx') else pd.read_csv(match_file)
+            df_match = pd.read_excel(match_file, dtype=str) if match_file.name.endswith('.xlsx') else pd.read_csv(match_file, low_memory=False, dtype=str)
             
             with st.spinner("Fetching cloud database for matching..."):
                 try:
@@ -1117,7 +1122,7 @@ def communications_view():
                             
                     elif contact_status == "Yes":
                         payload_buffer["contact_status"] = "Yes"
-                        is_delivered = st.radio("📦 According to the patient, have they received the medicine?", ["Select Option", "Yes", "No"])
+                        is_delivered = st.radio("📦 According to the patient, have they physically received the medicine?", ["Select Option", "Yes", "No"])
                         
                         if is_delivered == "Yes":
                             payload_buffer["status"] = "Delivered"
@@ -1329,48 +1334,47 @@ if st.session_state.logged_in and st.session_state.role == "admin":
         active_alerts = [a for a in alert_records_query if a.get("extra_money_charged") in ["Yes", "Under Enquiry"]]
         
         if active_alerts:
-            st.markdown("### 🚨 Critical Corruption & Extra Charges Alerts")
-            
-            # 📋 List View Header
-            hc1, hc2, hc3, hc4, hc5 = st.columns([2.5, 2, 1.5, 1.5, 2])
-            hc1.markdown("**👤 Patient & MRN**")
-            hc2.markdown("**📦 Article ID**")
-            hc3.markdown("**🛠️ Operator**")
-            hc4.markdown("**📌 Status**")
-            hc5.markdown("**⚙️ Actions**")
-            st.markdown("<hr style='margin-top: 5px; margin-bottom: 10px; border-top: 2px solid #cc2424;'>", unsafe_allow_html=True)
-            
-            for alert in active_alerts:
-                is_enquiry = (alert.get("extra_money_charged") == "Under Enquiry")
-                enquiry_flag = "🚩 Under Enquiry" if is_enquiry else "🔴 Alert Active"
+            with st.expander("🚨 Critical Corruption & Extra Charges Alerts", expanded=False):
+                # 📋 List View Header
+                hc1, hc2, hc3, hc4, hc5 = st.columns([2.5, 2, 1.5, 1.5, 2])
+                hc1.markdown("**👤 Patient & MRN**")
+                hc2.markdown("**📦 Article ID**")
+                hc3.markdown("**🛠️ Operator**")
+                hc4.markdown("**📌 Status**")
+                hc5.markdown("**⚙️ Actions**")
+                st.markdown("<hr style='margin-top: 5px; margin-bottom: 10px; border-top: 2px solid #cc2424;'>", unsafe_allow_html=True)
                 
-                ac1, ac2, ac3, ac4, ac5, ac6, ac7 = st.columns([2.5, 2, 1.5, 1.5, 0.6, 0.7, 0.7])
-                
-                ac1.markdown(f"**{alert['patient_name']}**<br><span style='font-size:12px; color:#64748b;'>MRN: {alert.get('mrn_no', 'N/A')}</span>", unsafe_allow_html=True)
-                ac2.write(f"`{alert['article_id']}`")
-                ac3.write(f"{alert.get('operator_stamp', 'Staff')}")
-                ac4.write(f"**{enquiry_flag}**")
-                
-                with ac5:
-                    if st.button("🖨️", key=f"print_alert_{alert['id']}", help="Print Auto Manifest", use_container_width=True): 
-                        open_alert_manifest(alert)
-                with ac6:
-                    if not is_enquiry:
-                        if st.button("🚩", key=f"enquiry_charge_{alert['id']}", help="Mark Under Enquiry", use_container_width=True):
+                for alert in active_alerts:
+                    is_enquiry = (alert.get("extra_money_charged") == "Under Enquiry")
+                    enquiry_flag = "🚩 Under Enquiry" if is_enquiry else "🔴 Alert Active"
+                    
+                    ac1, ac2, ac3, ac4, ac5, ac6, ac7 = st.columns([2.5, 2, 1.5, 1.5, 0.6, 0.7, 0.7])
+                    
+                    ac1.markdown(f"**{alert['patient_name']}**<br><span style='font-size:12px; color:#64748b;'>MRN: {alert.get('mrn_no', 'N/A')}</span>", unsafe_allow_html=True)
+                    ac2.write(f"`{alert['article_id']}`")
+                    ac3.write(f"{alert.get('operator_stamp', 'Staff')}")
+                    ac4.write(f"**{enquiry_flag}**")
+                    
+                    with ac5:
+                        if st.button("🖨️", key=f"print_alert_{alert['id']}", help="Print Auto Manifest", use_container_width=True): 
+                            open_alert_manifest(alert)
+                    with ac6:
+                        if not is_enquiry:
+                            if st.button("🚩", key=f"enquiry_charge_{alert['id']}", help="Mark Under Enquiry", use_container_width=True):
+                                with st.spinner("..."):
+                                    supabase.table("patient_deliveries").update({"extra_money_charged": "Under Enquiry"}).eq("id", alert["id"]).execute()
+                                    time.sleep(0.5)
+                                    st.rerun()
+                        else:
+                            st.markdown("<div style='text-align:center; padding-top:5px; color:#94a3b8;'>⏳</div>", unsafe_allow_html=True)
+                    with ac7:
+                        if st.button("✅", key=f"resolve_charge_{alert['id']}", help="Resolve Alert", use_container_width=True):
                             with st.spinner("..."):
-                                supabase.table("patient_deliveries").update({"extra_money_charged": "Under Enquiry"}).eq("id", alert["id"]).execute()
+                                supabase.table("patient_deliveries").update({"extra_money_charged": "Yes (Resolved)"}).eq("id", alert["id"]).execute()
                                 time.sleep(0.5)
                                 st.rerun()
-                    else:
-                        st.markdown("<div style='text-align:center; padding-top:5px; color:#94a3b8;'>⏳</div>", unsafe_allow_html=True)
-                with ac7:
-                    if st.button("✅", key=f"resolve_charge_{alert['id']}", help="Resolve Alert", use_container_width=True):
-                        with st.spinner("..."):
-                            supabase.table("patient_deliveries").update({"extra_money_charged": "Yes (Resolved)"}).eq("id", alert["id"]).execute()
-                            time.sleep(0.5)
-                            st.rerun()
-                
-                st.markdown("<hr style='margin-top: 5px; margin-bottom: 10px; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
+                    
+                    st.markdown("<hr style='margin-top: 5px; margin-bottom: 10px; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
             
         resolved_or_history_alerts = [a for a in alert_records_query if a.get("extra_money_charged") in ["Yes (Resolved)", "Under Enquiry"]]
         if resolved_or_history_alerts:
