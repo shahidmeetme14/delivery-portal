@@ -9,7 +9,7 @@ import urllib.request
 from bs4 import BeautifulSoup
 import streamlit.components.v1 as components
 
-# 🇵🇰 Pakistan Standard Time (PKT) Setup
+# 🇵🇰 Pakistan Standard Time (PKT) Setup - No external libraries needed
 PKT_TZ = datetime.timezone(datetime.timedelta(hours=5))
 
 # 🎛️ Page Structural Settings
@@ -20,7 +20,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🔄 URL HYDRATION ENGINE (Fixed for Refresh Lock & Error from Image)
+# 🔄 URL HYDRATION ENGINE (Fixed for Refresh Lock)
 SESSION_TIMEOUT = 30 * 60  
 
 if "logged_in" not in st.session_state: 
@@ -28,16 +28,13 @@ if "logged_in" not in st.session_state:
 
 if not st.session_state.logged_in and "usr" in st.query_params:
     try:
-        # Fixed: Safely getting parameter to avoid ValueError or TypeError crash
-        t_param = st.query_params.get("t")
-        param_time = float(t_param) if t_param else time.time()
-        
+        param_time = float(st.query_params.get("t", time.time()))
         if time.time() - param_time < SESSION_TIMEOUT:
             st.session_state.logged_in = True
             st.session_state.username = str(st.query_params.get("usr", ""))
             st.session_state.full_name = str(st.query_params.get("nm", ""))
             st.session_state.role = str(st.query_params.get("rl", "staff"))
-            st.session_state.last_activity = time.time()
+            st.session_state.last_activity = time.time()  # Keep session alive on page refresh
             if "tab" in st.query_params:
                 st.session_state.current_navigation_tab = str(st.query_params.get("tab"))
         else:
@@ -95,22 +92,31 @@ else:
     }
     """
 
+# --- Step 1: Admin Alert Expanders Highlighting in Closed View ---
 generic_expander_highlight_css = """
+/* 📦 Admin Alert Expanders - Generic Styling in closed view for highlighting */
 div[data-testid="stExpander"] {
-    border: 2px solid rgba(212, 175, 55, 0.4) !important;
+    border: 2px solid rgba(212, 175, 55, 0.4) !important; /* Gold border */
     border-radius: 8px !important;
-    background-color: rgba(212, 175, 55, 0.05) !important;
+    background-color: rgba(212, 175, 55, 0.05) !important; /* Subtle gold tint */
     box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
     margin-bottom: 20px !important;
     transition: all 0.3s ease !important;
 }
+
 div[data-testid="stExpander"] button[data-testid="stExpanderHeader"] p {
     font-weight: 800 !important;
+    color: #5c1414 !important; /* Deep red matching subtitle */
+}
+
+div[data-testid="stExpander"] button[data-testid="stExpanderHeader"] p span {
     color: #5c1414 !important;
 }
+
 div[data-testid="stExpander"] button[data-testid="stExpanderHeader"] [data-testid="stExpanderToggleIcon"] {
-    color: #d4af37 !important;
+    color: #d4af37 !important; /* Gold */
 }
+
 div[data-testid="stExpander"] > div[data-testid="stExpanderBody"] {
     padding-top: 10px !important;
     background-color: transparent !important;
@@ -119,12 +125,12 @@ div[data-testid="stExpander"] > div[data-testid="stExpanderBody"] {
 
 st.markdown(f"""
     <style>
-    /* Complete Removal of Streamlit UI Clutter */
+    /* Complete & Absolute Removal of Streamlit Watermarks, Headers, Footers, Badges & Links */
     div[data-testid="stToolbar"], #MainMenu, footer, header,
     [data-testid="stHeader"], [data-testid="stDecoration"],
     [data-testid="stStatusWidget"], [data-testid="stActionElements"],
     .stDeployButton, .stAppDeployButton, button[kind="header"],
-    [data-testid="stViewerBadge"], div[class^="viewerBadge"],
+    [data-testid="stViewerBadge"], div[class^="viewerBadge"], div[class*="viewerBadge"],
     .viewerBadge_container__1616G, a[href*="streamlit.io"],
     div[data-testid="stBottom"], div[data-testid="stBottomBlockContainer"] {{
         display: none !important;
@@ -132,7 +138,10 @@ st.markdown(f"""
         opacity: 0 !important;
         height: 0px !important;
         width: 0px !important;
+        max-height: 0px !important;
+        max-width: 0px !important;
         pointer-events: none !important;
+        overflow: hidden !important;
     }}
     
     {generic_expander_highlight_css} 
@@ -142,6 +151,7 @@ st.markdown(f"""
     .brand-title {{ color: #a61c1c; font-weight: 800; font-size: 2.1rem; margin-bottom: 2px; }}
     .brand-subtitle {{ color: #5c1414; font-size: 1.05rem; margin-bottom: 25px; font-weight: 600; border-left: 4px solid #d4af37; padding-left: 12px; }}
     
+    /* 📦 3D Premium Cards for Admin Alerts */
     .alert-3d-card {{
         background: linear-gradient(145deg, #ffffff, #fdfbf7);
         border-radius: 12px;
@@ -149,37 +159,180 @@ st.markdown(f"""
         border-left: 6px solid #cc2424;
         padding: 18px 22px;
         margin-bottom: 12px;
+        border-top: 1px solid #f1f5f9;
+        border-right: 1px solid #f1f5f9;
+        border-bottom: 1px solid #f1f5f9;
         transition: all 0.3s ease;
     }}
-    .alert-3d-card:hover {{ transform: translateY(-3px); box-shadow: 8px 8px 20px rgba(0,0,0,0.12); }}
+    .alert-3d-card:hover {{
+        transform: translateY(-3px);
+        box-shadow: 8px 8px 20px rgba(0,0,0,0.12), -8px -8px 20px rgba(255,255,255,0.9);
+    }}
     .alert-3d-title {{ font-size: 19px; font-weight: 800; color: #1e293b; margin-bottom: 5px; }}
     .alert-3d-subtitle {{ font-size: 14px; color: #64748b; font-weight: 500; }}
-    .alert-3d-badge {{ background: #fee2e2; color: #dc2626; padding: 5px 12px; border-radius: 20px; font-weight: 700; font-size: 13px; border: 1px solid #fecaca; }}
+    .alert-3d-badge {{ background: #fee2e2; color: #dc2626; padding: 5px 12px; border-radius: 20px; font-weight: 700; font-size: 13px; border: 1px solid #fecaca; box-shadow: 0px 2px 4px rgba(220, 38, 38, 0.1); }}
 
     div[data-testid="stForm"], .pyqt-panel {{
-        background: #ffffff !important; border-radius: 8px !important; border: 1px solid #d1c2c2 !important; box-shadow: 0 6px 12px -2px rgba(166,28,28,0.04) !important; padding: 30px !important;
+        background: #ffffff !important;
+        border-radius: 8px !important;
+        border: 1px solid #d1c2c2 !important;
+        box-shadow: 0 6px 12px -2px rgba(166,28,28,0.04) !important;
+        padding: 30px !important;
     }}
     
-    div[data-testid="stForm"] small, [data-testid="InputInstructions"] {{ display: none !important; }}
+    div[data-testid="stForm"] small, [data-testid="InputInstructions"] {{
+        display: none !important;
+    }}
     
     div.stButton > button, div.stDownloadButton > button {{
-        background: linear-gradient(180deg, #cc2424 0%, #a61c1c 100%) !important; color: #ffffff !important; border: 1px solid #801414 !important; border-bottom: 4px solid #590d0d !important; border-radius: 6px !important; padding: 8px 24px !important; font-weight: 700; box-shadow: 0px 4px 8px rgba(0,0,0,0.12) !important;
+        background: linear-gradient(180deg, #cc2424 0%, #a61c1c 100%) !important;
+        color: #ffffff !important;
+        border: 1px solid #801414 !important;
+        border-bottom: 4px solid #590d0d !important;
+        border-radius: 6px !important;
+        padding: 8px 24px !important;
+        font-weight: 700;
+        box-shadow: 0px 4px 8px rgba(0,0,0,0.12) !important;
+        transition: all 0.1s ease;
     }}
     
+    div.stButton > button:active, div.stDownloadButton > button:active {{
+        transform: scale(0.98);
+        box-shadow: inset 0px 2px 5px rgba(0,0,0,0.3) !important;
+    }}
+    
+    /* 💎 Crystal Style Navigation Buttons */
     section[data-testid="stSidebar"] div.stButton > button {{
-        background: rgba(255, 255, 255, 0.05) !important; color: #ffffff !important; border: 2px solid rgba(212, 175, 55, 0.5) !important; border-bottom: 5px solid rgba(179, 146, 46, 0.9) !important; border-radius: 10px !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        color: #ffffff !important;
+        border: 2px solid rgba(212, 175, 55, 0.5) !important;
+        border-bottom: 5px solid rgba(179, 146, 46, 0.9) !important;
+        border-radius: 10px !important;
+        padding: 10px 20px !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 2px rgba(255,255,255,0.1) !important;
+        transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        font-weight: 700 !important;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9) !important;
     }}
     
-    div:has(> .password-btn-anchor) + div button {{ background: linear-gradient(180deg, #ffd700 0%, #b8860b 100%) !important; color: #000000 !important; border: 2px solid rgba(255, 255, 255, 0.6) !important; border-bottom: 5px solid #8b6508 !important; border-radius: 10px !important; font-weight: 800 !important; }}
-    div:has(> .terminate-btn-anchor) + div button {{ background: linear-gradient(180deg, #ff4d4d 0%, #c31414 100%) !important; color: #ffffff !important; border: 2px solid rgba(255, 255, 255, 0.4) !important; border-bottom: 5px solid #800a0a !important; border-radius: 10px !important; font-weight: 800 !important; }}
+    section[data-testid="stSidebar"] div.stButton > button:hover {{
+        background: rgba(212, 175, 55, 0.15) !important;
+        border-color: rgba(212, 175, 55, 0.9) !important;
+        box-shadow: 0 0 15px rgba(212, 175, 55, 0.4), inset 0 1px 3px rgba(255, 255, 255, 0.2) !important;
+        transform: translateY(-1px) !important;
+    }}
+
+    /* 🟡 Glossy Gold Crystal Password Button */
+    div:has(> .password-btn-anchor) + div button,
+    div:has(.password-btn-anchor) + div button {{
+        background: linear-gradient(180deg, #ffd700 0%, #b8860b 100%) !important;
+        color: #000000 !important;
+        border: 2px solid rgba(255, 255, 255, 0.6) !important;
+        border-bottom: 5px solid #8b6508 !important;
+        border-radius: 10px !important;
+        padding: 10px 20px !important;
+        font-weight: 800 !important;
+        text-shadow: 0px 1px 1px rgba(255, 255, 255, 0.6) !important;
+    }}
+    
+    /* 🔴 Terminate Session Button */
+    div:has(> .terminate-btn-anchor) + div button,
+    div:has(.terminate-btn-anchor) + div button {{
+        background: linear-gradient(180deg, #ff4d4d 0%, #c31414 100%) !important;
+        color: #ffffff !important;
+        border: 2px solid rgba(255, 255, 255, 0.4) !important;
+        border-bottom: 5px solid #800a0a !important;
+        border-radius: 10px !important;
+        padding: 10px 20px !important;
+        font-weight: 800 !important;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
+    }}
+    
+    /* ✨ 3D Dropdowns, Inputs & Textareas */
+    div[data-baseweb="select"] > div, 
+    div[data-testid="stSelectbox"] div[data-baseweb="select"],
+    div[data-testid="stDateInput"] > div,
+    div[data-testid="stTextInput"] > div,
+    div[data-testid="stNumberInput"] > div,
+    div[data-testid="stTextArea"] > div {{
+        background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%) !important;
+        border: 1px solid #94a3b8 !important;
+        border-bottom: 4px solid #64748b !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.7) !important;
+        transition: all 0.15s ease-in-out !important;
+        overflow: hidden !important;
+    }}
+    
+    div[data-baseweb="select"] > div > div {{
+        background-color: transparent !important;
+    }}
+    
+    div[data-baseweb="select"] > div:hover, 
+    div[data-testid="stDateInput"] > div:hover,
+    div[data-testid="stTextInput"] > div:hover,
+    div[data-testid="stTextArea"] > div:hover {{
+        border-color: #a61c1c !important;
+        border-bottom: 4px solid #a61c1c !important;
+        transform: translateY(-1px);
+    }}
+
+    div[data-baseweb="select"] *, 
+    div[data-testid="stDateInput"] input,
+    div[data-testid="stTextInput"] input,
+    div[data-testid="stTextArea"] textarea {{
+        color: #1e293b !important;
+        font-weight: 600 !important;
+    }}
     
     /* 🎨 Right Column Questionnaire Background */
-    [data-testid="column"]:nth-of-type(2) {{ background: linear-gradient(135deg, #ffffff 0%, #fdfbf7 100%); border: 1px solid #e2e8f0; border-top: 4px solid #d4af37; border-radius: 10px; padding: 22px; box-shadow: 0px 8px 20px -5px rgba(0,0,0,0.06); }}
+    [data-testid="column"]:nth-of-type(2) {{
+        background: linear-gradient(135deg, #ffffff 0%, #fdfbf7 100%);
+        border: 1px solid #e2e8f0;
+        border-top: 4px solid #d4af37;
+        border-radius: 10px;
+        padding: 22px;
+        box-shadow: 0px 8px 20px -5px rgba(0,0,0,0.06);
+    }}
 
-    .big-phone-display {{ font-family: 'Segoe UI', sans-serif; font-size: 22px !important; font-weight: 800 !important; color: #ffffff !important; background: linear-gradient(180deg, #d4af37 0%, #b3922e 100%) !important; padding: 6px 12px; border-radius: 4px; text-align: center; border-bottom: 3px solid #8c7120; display: block; width: 100%; }}
-    .no-phone-display {{ font-family: 'Segoe UI', sans-serif; font-size: 22px !important; font-weight: 700 !important; color: #ffffff !important; background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%) !important; padding: 6px 12px; border-radius: 4px; text-align: center; border-bottom: 3px solid #991b1b; display: block; width: 100%; }}
+    .big-phone-display {{ 
+        font-family: 'Segoe UI', -apple-system, sans-serif; 
+        font-size: 22px !important; 
+        font-weight: 800 !important; 
+        color: #ffffff !important; 
+        background: linear-gradient(180deg, #d4af37 0%, #b3922e 100%) !important; 
+        padding: 6px 12px; 
+        border-radius: 4px; 
+        text-align: center; 
+        border: 1px solid #b3922e; 
+        border-bottom: 3px solid #8c7120;
+        box-shadow: 0px 2px 5px rgba(212, 175, 55, 0.15);
+        margin: 4px 0;
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }}
     
-    .data-card {{ background: #ffffff; padding: 18px; border-radius: 8px; border: 1px solid #cbd5e1; }}
+    .no-phone-display {{
+        font-family: 'Segoe UI', -apple-system, sans-serif; 
+        font-size: 22px !important; 
+        font-weight: 700 !important; 
+        color: #ffffff !important; 
+        background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%) !important; 
+        padding: 6px 12px; 
+        border-radius: 4px; 
+        text-align: center; 
+        border: 1px solid #b91c1c; 
+        border-bottom: 3px solid #991b1b;
+        margin: 4px 0;
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }}
+    
+    .data-card {{ background: #ffffff; padding: 18px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }}
     .data-card .data-row {{ margin-bottom: 12px; font-size: 15px; color: #334155; }}
     .data-card .data-value {{ font-size: 19px !important; font-weight: 700 !important; color: #a61c1c; background: #fff5f5; padding: 2px 8px; border-radius: 4px; border: 1px solid #fecaca; display: inline-block; }}
     .data-card .data-value-alt {{ font-size: 19px !important; font-weight: 700 !important; color: #b45309; font-family: monospace; background: #fffbeb; padding: 2px 8px; border-radius: 4px; border: 1px solid #fef3c7; display: inline-block; }}
@@ -189,25 +342,100 @@ st.markdown(f"""
     section[data-testid="stSidebar"] .sb-login-label {{ margin-top: 15px; color: #cbd5e1 !important; font-size: 14px; }}
     section[data-testid="stSidebar"] .sb-username-display {{ font-size: 18px !important; font-weight: bold !important; color: #d4af37 !important; margin-bottom: 10px; }}
     section[data-testid="stSidebar"] .sb-privilege-label {{ margin-top: 10px; color: #cbd5e1 !important; font-size: 14px; }}
-    section[data-testid="stSidebar"] .sb-privilege-label span {{ color: #39ff14 !important; font-weight: bold !important; }}
+    section[data-testid="stSidebar"] .sb-privilege-label span {{ color: #39ff14 !important; font-weight: bold !important; text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14 !important; }}
     
-    /* 🖨️ Absolute Print Media Optimization (Forced A4) */
+    /* 🖨️ Absolute Print Media Optimization (Fully Forced on Single Page A4 Portrait) */
     @media print {{
-        @page {{ size: A4 portrait !important; margin: 10mm 15mm 10mm 15mm !important; }}
-        html, body {{ height: auto !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; background: #ffffff !important; }}
-        body * {{ visibility: hidden !important; }}
-        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], header, footer, iframe, .stElementContainer:has(iframe), button, .custom-print-btn {{ display: none !important; visibility: hidden !important; opacity: 0 !important; }}
+        @page {{ 
+            size: A4 portrait !important; 
+            margin: 10mm 15mm 10mm 15mm !important; 
+        }}
         
-        .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], .block-container {{ position: relative !important; top: 0 !important; left: 0 !important; height: auto !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; border: none !important; }}
+        html, body {{ 
+            height: auto !important; 
+            margin: 0 !important; 
+            padding: 0 !important; 
+            overflow: visible !important; 
+            background: #ffffff !important; 
+        }}
+        
+        body * {{ 
+            visibility: hidden !important; 
+        }}
+        
+        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], header, footer, iframe, .stElementContainer:has(iframe), button, .custom-print-btn {{ 
+            display: none !important; 
+            visibility: hidden !important; 
+            opacity: 0 !important;
+        }}
+        
+        .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], .block-container {{
+            position: relative !important; 
+            top: 0 !important; 
+            left: 0 !important;
+            height: auto !important; 
+            overflow: visible !important; 
+            padding: 0 !important; 
+            margin: 0 !important; 
+            border: none !important;
+        }}
 
-        .print-manifest-card, .print-manifest-card * {{ visibility: visible !important; color: #000000 !important; background-color: #ffffff !important; box-shadow: none !important; text-shadow: none !important; }}
-        .print-manifest-card {{ position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; max-height: 270mm !important; margin: 0 !important; padding: 20px !important; border: 2px solid #000000 !important; background: #ffffff !important; box-sizing: border-box !important; page-break-inside: avoid !important; display: block !important; overflow: hidden !important; z-index: 99999999 !important; }}
+        .print-manifest-card, .print-manifest-card * {{ 
+            visibility: visible !important; 
+            color: #000000 !important; 
+            background-color: #ffffff !important; 
+            box-shadow: none !important; 
+            text-shadow: none !important; 
+        }}
         
-        .print-manifest-card table {{ width: 100% !important; display: table !important; border-collapse: collapse !important; margin-top: 15px !important; }}
-        .print-manifest-card tr {{ display: table-row !important; page-break-inside: avoid !important; }}
-        .print-manifest-card td, .print-manifest-card th {{ display: table-cell !important; padding: 8px 10px !important; font-size: 14px !important; color: #000000 !important; border-bottom: 1px solid #cbd5e1 !important; }}
+        .print-manifest-card {{ 
+            position: absolute !important; 
+            left: 0 !important; 
+            top: 0 !important; 
+            width: 100% !important; 
+            max-height: 270mm !important;
+            margin: 0 !important; 
+            padding: 20px !important; 
+            border: 2px solid #000000 !important; 
+            background: #ffffff !important; 
+            background-color: #ffffff !important; 
+            box-sizing: border-box !important; 
+            page-break-inside: avoid !important; 
+            page-break-after: avoid !important; 
+            page-break-before: avoid !important; 
+            z-index: 99999999 !important; 
+            display: block !important; 
+            overflow: hidden !important;
+        }}
         
-        * {{ -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }}
+        .print-manifest-card table {{ 
+            width: 100% !important; 
+            display: table !important; 
+            border-collapse: collapse !important; 
+            margin-top: 15px !important; 
+        }}
+        
+        .print-manifest-card tr {{ 
+            display: table-row !important; 
+            page-break-inside: avoid !important; 
+        }}
+        
+        .print-manifest-card td, .print-manifest-card th {{ 
+            display: table-cell !important; 
+            padding: 8px 10px !important; 
+            font-size: 14px !important; 
+            color: #000000 !important; 
+            border-bottom: 1px solid #cbd5e1 !important; 
+        }}
+        
+        .screen-only-timestamp {{ 
+            display: none !important; 
+        }}
+        
+        * {{ 
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important; 
+        }}
     }}
     </style>
 """, unsafe_allow_html=True)
@@ -336,6 +564,7 @@ def change_password_dialog():
 
 @st.dialog("📊 Date-wise Verification Stats", width="large")
 def user_stats_dialog():
+    st.markdown("<div style='color: #475569; font-size: 14px; margin-bottom: 15px;'>Select date range to view verifications count details.</div>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1: start_date = st.date_input("From Date", datetime.date.today() - datetime.timedelta(days=7))
     with c2: end_date = st.date_input("To Date", datetime.date.today())
@@ -346,8 +575,10 @@ def user_stats_dialog():
                 if st.session_state.role == "admin":
                     users_res = supabase.table("app_users").select("full_name").eq("role", "staff").execute().data
                     staff_names = [u['full_name'] for u in users_res] if users_res else []
+                    
                     all_records = supabase.table("patient_deliveries").select("operator_stamp, created_at").execute().data
                     counts = {name: 0 for name in staff_names}
+                    
                     for r in all_records:
                         if 'created_at' in r and r['created_at']:
                             try:
@@ -357,8 +588,13 @@ def user_stats_dialog():
                                     if op in counts: counts[op] += 1
                                     elif op: counts[op] = 1 
                             except: pass
+                            
                     df_stats = pd.DataFrame(list(counts.items()), columns=["Operator Name", "Total Verifications"])
                     st.dataframe(df_stats, use_container_width=True)
+                    
+                    csv_buffer = io.StringIO()
+                    df_stats.to_csv(csv_buffer, index=False)
+                    st.download_button("📥 Export Staff Stats (.CSV)", data=csv_buffer.getvalue().encode('utf-8'), file_name=f"Staff_Stats_{start_date}_to_{end_date}.csv", mime="text/csv", use_container_width=True)
                 else:
                     res = supabase.table("patient_deliveries").select("created_at").eq("operator_stamp", st.session_state.full_name).execute().data
                     count = 0
@@ -366,7 +602,8 @@ def user_stats_dialog():
                         if 'created_at' in r and r['created_at']:
                             try:
                                 dt = datetime.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00')).date()
-                                if start_date <= dt <= end_date: count += 1
+                                if start_date <= dt <= end_date:
+                                    count += 1
                             except: pass
                     st.success(f"Total verifications between selected dates: **{count}**")
             except Exception as e:
@@ -453,26 +690,28 @@ def login_view():
                         try:
                             ud = supabase.table("app_users").select("*").eq("username", input_user.strip()).eq("password", input_pass.strip()).execute().data
                             if ud:
-                                # Fixed: Assured login logs payload to avoid missing detail bugs
-                                log_payload = {
-                                    "username": ud[0].get("username", ""),
-                                    "full_name": ud[0].get("full_name", ""),
-                                    "role": ud[0].get("role", "")
-                                }
+                                # Insert login log securely into the database
                                 try:
-                                    # Insert with time first
-                                    payload_with_time = log_payload.copy()
-                                    payload_with_time["login_time"] = datetime.datetime.now(PKT_TZ).isoformat()
-                                    supabase.table("login_logs").insert(payload_with_time).execute()
+                                    supabase.table("login_logs").insert({
+                                        "username": ud[0]["username"],
+                                        "full_name": ud[0]["full_name"],
+                                        "role": ud[0]["role"],
+                                        "login_time": datetime.datetime.now(PKT_TZ).isoformat()
+                                    }).execute()
                                 except Exception:
+                                    # Fail-safe database insert in case of alternate schema structure
                                     try:
-                                        # Fail-safe insert without time if column doesn't exist
-                                        supabase.table("login_logs").insert(log_payload).execute()
+                                        supabase.table("login_logs").insert({
+                                            "username": ud[0]["username"],
+                                            "full_name": ud[0]["full_name"],
+                                            "role": ud[0]["role"]
+                                        }).execute()
                                     except Exception:
                                         pass
                                     
                                 recovery_data = fetch_operator_state(ud[0]["username"])
                                 
+                                # Set query params for refresh lock instantly
                                 st.query_params["usr"] = ud[0]["username"]
                                 st.query_params["nm"] = ud[0]["full_name"]
                                 st.query_params["rl"] = ud[0]["role"]
@@ -560,6 +799,7 @@ def ingestion_view():
             
             status_progress_text = st.empty()
             progress_bar_control = st.progress(0)
+            
             status_progress_text.text("Connecting with cloud storage nodes... (15% Complete)")
             progress_bar_control.progress(15)
             
@@ -575,6 +815,7 @@ def ingestion_view():
             status_progress_text.text("Analyzing spreadsheet matrix structures... (45% Complete)")
             progress_bar_control.progress(45)
             
+            # High-speed vectorized string mapping to support 50MB files without cloud timeout
             uploaded_records_df = pd.DataFrame({
                 "article_id": df[c_article].astype(str).str.strip(),
                 "patient_name": df[c_name].astype(str).str.strip(),
@@ -599,6 +840,7 @@ def ingestion_view():
                 clean_unique_records = clean_unique_records.drop_duplicates(subset=["transaction_no"])
             
             total_duplicates_cleared = total_input_count - len(clean_unique_records)
+            
             final_consolidated_df = pd.concat([master_ledger_df, clean_unique_records], ignore_index=True)
             
             status_progress_text.text("Synchronizing clean ledger stream into cloud core... (95% Complete)")
@@ -623,11 +865,14 @@ def ingestion_view():
 
     st.markdown("<br><hr style='border-top: 2px solid #cbd5e1;'><br>", unsafe_allow_html=True)
     st.markdown("### 🔍 Cloud Database Matching Engine (Admin Only)")
+    st.info("Upload a file here to cross-match with the existing cloud database. This will generate a CSV report with matching status.")
     
     match_file = st.file_uploader("Upload File for Matching", type=["xlsx", "csv"], key="match_uploader_engine")
+    
     if match_file is not None:
         try:
             df_match = pd.read_excel(match_file, dtype=str) if match_file.name.endswith('.xlsx') else pd.read_csv(match_file, low_memory=False, dtype=str)
+            
             with st.spinner("Fetching cloud database for matching..."):
                 try:
                     master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
@@ -640,8 +885,10 @@ def ingestion_view():
             else:
                 st.markdown("#### 🔗 Define Match Parameters")
                 mc_col1, mc_col2 = st.columns(2)
-                with mc_col1: upload_col1 = st.selectbox("Uploaded File Field:", df_match.columns, key="uc1")
-                with mc_col2: cloud_col1 = st.selectbox("Cloud Database Field:", df_cloud.columns, key="cc1")
+                with mc_col1:
+                    upload_col1 = st.selectbox("Uploaded File Field:", df_match.columns, key="uc1")
+                with mc_col2:
+                    cloud_col1 = st.selectbox("Cloud Database Field:", df_cloud.columns, key="cc1")
                 
                 if st.button("⚙️ Start Secure Matching Process", use_container_width=True):
                     ui_blocker_match = st.empty()
@@ -677,9 +924,12 @@ def ingestion_view():
                     if matched_rows or unmatched_rows:
                         df_matched_export = pd.DataFrame(matched_rows)
                         df_unmatched_export = pd.DataFrame(unmatched_rows)
+                        
                         if 'Match_Status' not in df_matched_export.columns and not df_matched_export.empty:
                             df_matched_export['Match_Status'] = 'Matched'
+                            
                         final_export_df = pd.concat([df_matched_export, df_unmatched_export], ignore_index=True)
+                        
                         csv_buffer = io.StringIO()
                         final_export_df.to_csv(csv_buffer, index=False)
                         st.download_button(
@@ -721,8 +971,11 @@ def operator_matrix_view():
             users_res = supabase.table("app_users").select("*").execute().data
             if users_res:
                 df_users = pd.DataFrame(users_res)
+                # Display available key profile columns safely
                 display_cols = [c for c in ["username", "full_name", "role"] if c in df_users.columns]
                 st.dataframe(df_users[display_cols], use_container_width=True)
+            else:
+                st.info("No registered users found in the database.")
         except Exception as e:
             st.error(f"Error loading registered users: {e}")
             
@@ -747,7 +1000,7 @@ def communications_view():
     st.session_state.current_navigation_tab = "📞 Outbound Communications Desk"
     st.markdown("### 📞 Outbound Communications Desk")
     
-    query_date = st.date_input("Filter Manifest Records by Booking Date:", datetime.date.today())
+    query_date = st.date_input("Filter Manifest Records by Booking Date (Overridden by Search):", datetime.date.today())
     
     with st.spinner("Processing cloud storage lookup and database audit..."):
         try:
@@ -776,7 +1029,7 @@ def communications_view():
         filter_col1, filter_col2, filter_col3 = st.columns([1.5, 1.5, 1.5])
         with filter_col1: selected_office = st.selectbox("🏥 Filter by Booking Office:", unique_offices)
         with filter_col2: search_category = st.selectbox("🔎 Search By Heading:", ["All Fields"] + dynamic_headings)
-        with filter_col3: search_term = st.text_input("Enter detail to search:").strip().lower()
+        with filter_col3: search_term = st.text_input("Enter detail to search (Searches Entire Backend):").strip().lower()
         
         if search_term: base_recs = all_master_recs
         else: base_recs = [r for r in all_master_recs if r.get("booking_date") == str(query_date)]
@@ -794,6 +1047,7 @@ def communications_view():
         else:
             if search_term and len(final_recs) > 1:
                 st.markdown("##### 📑 Multiple Matches Detected")
+                st.info("Please review the matching entries below and select the correct one from the dropdown to proceed.")
                 display_df = pd.DataFrame(final_recs)[['patient_name', 'mrn_no', 'article_id', 'phone_number', 'booking_office', 'booking_date']]
                 st.dataframe(display_df, use_container_width=True)
 
@@ -811,10 +1065,14 @@ def communications_view():
                     profile["id"] = None
                     profile["status"] = "Pending"
 
+            # 🛠️ Point 1 Fix: Visual alignment to match user's screenshot identically
             options_list = []
             for r in final_recs:
                 status_val = r.get('status', 'Pending')
-                status_display = "Verified" if status_val == "Delivered" else status_val
+                if status_val == "Delivered":
+                    status_display = "Verified"
+                else:
+                    status_display = status_val
                 options_list.append(f"{str(r['patient_name']).upper()} (MRN: {r.get('mrn_no', 'N/A')}) - [{status_display}]")
                 
             if st.session_state.selected_profile_index >= len(options_list): st.session_state.selected_profile_index = 0
@@ -832,7 +1090,7 @@ def communications_view():
                 st.markdown(f"""
                     <div class='data-card'>
                         <div class='data-row'>🔢 <b>MRN Number:</b><br><span class='data-value'>{target_profile.get('mrn_no', 'N/A')}</span></div>
-                        <div class='data-row'>📦 <b>Consignment ID:</b><br><span class='data-value-alt'>{target_profile['article_id']}</span></div>
+                        <div class='data-row'>📦 <b>Consignment ID (Article):</b><br><span class='data-value-alt'>{target_profile['article_id']}</span></div>
                         <div class='data-row'>🏥 <b>Booking GPO Station:</b><br><span style='font-size:18px; font-weight:600; color:#1e293b;'>{target_profile.get('booking_office', 'Unknown GPO')}</span></div>
                         <div class='data-row'>🏠 <b>Address:</b><br><span style='font-size:17px; font-weight:600; color:#1e293b; background:#f8fafc; padding:6px; display:block; border-radius:4px; border:1px solid #e2e8f0; margin-top:4px;'>{target_profile['address']}</span></div>
                     </div>
@@ -874,11 +1132,16 @@ def communications_view():
                         st.dataframe(pd.DataFrame(processed_rows), use_container_width=True)
                     else:
                         final_status_str = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
-                        st.markdown(f"<div style='background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px; margin-bottom: 15px;'><div style='font-size: 20px; font-weight: 700; color: #1e293b;'>{final_status_str}</div></div>", unsafe_allow_html=True)
+                        st.markdown(f"""
+                            <div style='background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px; margin-bottom: 15px;'>
+                                <div style='font-size: 13px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;'>Latest Status</div>
+                                <div style='font-size: 20px; font-weight: 700; color: #1e293b; line-height: 1.3; word-wrap: break-word;'>{final_status_str}</div>
+                            </div>
+                        """, unsafe_allow_html=True)
 
-                st.markdown("<div style='font-size: 22px; font-weight: 800; color: #334155; margin-bottom: 6px;'>🎴 DIAL THIS PHONE NUMBER:</div>", unsafe_allow_html=True)
+                st.markdown("<div style='font-size: 22px; font-weight: 800; color: #334155; margin-bottom: 6px;'>🎴 DIAL THIS PHONE NUMBER FROM LANDLINE:</div>", unsafe_allow_html=True)
                 raw_phone = str(target_profile.get('phone_number', '')).strip()
-                if not raw_phone or len(raw_phone) < 5:
+                if not raw_phone or raw_phone.lower() in ['none', 'nan', 'null', ''] or len(raw_phone) < 5:
                     st.markdown("<div class='no-phone-display'>⚠️ No Contact Number Available</div>", unsafe_allow_html=True)
                     raw_phone = ""
                 else:
@@ -894,10 +1157,22 @@ def communications_view():
                         delivery_date = target_profile.get('delivery_date', 'N/A')
                         received_mode = target_profile.get('received_mode', 'N/A')
                         extra_money = target_profile.get('extra_money_charged', 'N/A')
-                        print_status_detail = f"""<b style="color: green;">Delivered</b><br><span style="font-size: 13px; font-weight: 600; color: #334155;">• Date: {delivery_date}<br>• Mode: {received_mode}<br>• Extra Money Requested: <b style="color: {'#dc2626' if extra_money != 'No' else '#1e293b'}">{extra_money}</b></span>"""
+                        print_status_detail = f"""
+                        <b style="color: green;">Delivered</b><br>
+                        <span style="font-size: 13px; font-weight: 600; color: #334155; line-height: 1.4;">
+                            • Date: {delivery_date}<br>
+                            • Mode: {received_mode}<br>
+                            • Extra Money Requested: <b style="color: {'#dc2626' if extra_money != 'No' else '#1e293b'}">{extra_money}</b>
+                        </span>
+                        """
                     elif print_status == "Issue / Complaint":
                         issue_reason = target_profile.get('issue_reason', 'N/A')
-                        print_status_detail = f"""<b style="color: #dc2626;">Issue / Complaint</b><br><span style="font-size: 13px; font-weight: 600; color: #334155;">• Reason: {issue_reason}</span>"""
+                        print_status_detail = f"""
+                        <b style="color: #dc2626;">Issue / Complaint</b><br>
+                        <span style="font-size: 13px; font-weight: 600; color: #334155; line-height: 1.4;">
+                            • Reason: {issue_reason}
+                        </span>
+                        """
                     else:
                         print_status_detail = f"<b style='color: #475569;'>{print_status}</b>"
 
@@ -905,6 +1180,8 @@ def communications_view():
                     if not cached_emtts:
                         st.info("ℹ️ Live tracking status has not been fetched from the main engine above.")
                         st.markdown("##### 📥 Fetch EMTTS Live Status Directly in Print Desk")
+                        print_data_mode = st.radio("Print Display Transformation:", ["Fetch Live (Raw Mode)", "Fetch Snipped Data (Mapped Mode)"], key="print_data_mode_sel")
+                        
                         if st.button("🔍 Fetch Status inside Print Card", use_container_width=True, key="print_direct_fetch_btn"):
                             with st.spinner("Connecting to EMTTS Website..."):
                                 data, err = fetch_live_emtts_status(current_article_id)
@@ -918,16 +1195,38 @@ def communications_view():
 
                     if cached_emtts and "history" in cached_emtts:
                         history_list = cached_emtts["history"]
+                        active_data_mode = st.session_state.get("print_data_mode_sel", data_mode)
+                        use_mapped = (active_data_mode == "Fetch Snipped Data (Mapped Mode)")
+                        
                         last_entry = history_list[-1]
+                        status_val = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
+                        
+                        print_historical_anomaly = any("delivered" in h["status"].lower() or "return" in h["status"].lower() or "rts" in h["status"].lower() for h in history_list[:-1])
+                        last_status_lower_print = last_entry["status"].lower()
+                        print_last_delivered = "delivered" in last_status_lower_print
+                        print_last_rts = "return" in last_status_lower_print or "rts" in last_status_lower_print
+                        
+                        print_anomaly_box_html = ""
+                        if print_historical_anomaly and not (print_last_delivered or print_last_rts):
+                            print_anomaly_box_html = f"""
+                            <div style="background-color: #dc2626 !important; color: #ffffff !important; padding: 12px; border-radius: 6px; font-weight: bold; font-size: 13px; margin-bottom: 15px; border: 1px solid #b91c1c; word-wrap: break-word; white-space: normal; line-height: 1.4; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
+                                ⚠️ ANOMALY DETECTED: Marked Delivered/RTS in history but NOT currently!
+                            </div>
+                            """
+                        
                         emtts_status_html = f"""
-                        <div style="font-weight: bold; color: #1e293b; font-size: 15px;">{last_entry['status']}</div>
-                        <div style="font-size: 12px; color: #475569; margin-top: 4px;">📍 Office: {last_entry['office']} <br> 🕒 Date-Time: {last_entry['datetime']}</div>
+                        {print_anomaly_box_html}
+                        <div style="font-weight: bold; color: #1e293b; font-size: 15px; word-wrap: break-word; white-space: normal; line-height: 1.4;">{status_val}</div>
+                        <div style="font-size: 12px; color: #475569; margin-top: 4px; line-height: 1.3;">
+                            📍 Office: {last_entry['office']} <br> 🕒 Date-Time: {last_entry['datetime']}
+                        </div>
                         """
                     else:
-                        emtts_status_html = "<span style='color: #94a3b8; font-style: italic; font-size: 13px;'>Live status not fetched yet</span>"
+                        emtts_status_html = "<span style='color: #94a3b8; font-style: italic; font-size: 13px;'>Live status not fetched yet (Use options above to fetch)</span>"
 
                     current_pkt_time = datetime.datetime.now(PKT_TZ).strftime('%Y-%m-%d %I:%M:%S %p')
 
+                    # --- Step 2: Individual Profile Print fitting to one page ---
                     st.markdown(f"""
                         <div class="print-manifest-card" style="background: #ffffff; border: 2px dashed #cbd5e1; padding: 15px; border-radius: 8px; font-family: 'Segoe UI', sans-serif; color: #000000;">
                             <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 5px; margin-bottom: 10px;">
@@ -945,16 +1244,23 @@ def communications_view():
                                 <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Verification Status:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{print_status_detail}</td></tr>
                             </table>
                             <div style="margin-top: 20px; display: flex; justify-content: space-between; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 10px; color: #475569;">
-                                <div><b>Verified By (Operator ID):</b> {print_operator}<br><span style="font-size: 11px; color: #64748b;">Timestamp: {current_pkt_time} (PKT)</span></div>
+                                <div>
+                                    <b>Verified By (Operator ID):</b> {print_operator}<br>
+                                    <span style="font-size: 11px; color: #64748b;">Timestamp: {current_pkt_time} (PKT)</span>
+                                </div>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
 
+                    # --- Step 3: Fixing "Black Box" & A4 Overflow Issues ---
                     if cached_emtts and "history" in cached_emtts:
                         components.html(f"""
                         <style>
-                        .custom-print-btn {{ background: linear-gradient(180deg, #cc2424 0%, #a61c1c 100%) !important; color: #ffffff !important; border: 1px solid #801414 !important; border-bottom: 4px solid #590d0d !important; border-radius: 6px !important; padding: 12px 24px !important; font-weight: 700; font-size: 14px; font-family: 'Segoe UI', sans-serif; box-shadow: 0px 4px 8px rgba(0,0,0,0.12); cursor: pointer; width: 100%; display: block; text-align: center; }}
+                        .custom-print-btn {{ background: linear-gradient(180deg, #cc2424 0%, #a61c1c 100%) !important; color: #ffffff !important; border: 1px solid #801414 !important; border-bottom: 4px solid #590d0d !important; border-radius: 6px !important; padding: 12px 24px !important; font-weight: 700; font-size: 14px; font-family: 'Segoe UI', sans-serif; box-shadow: 0px 4px 8px rgba(0,0,0,0.12); cursor: pointer; width: 100%; transition: all 0.1s ease; display: block; text-align: center; }}
+                        .custom-print-btn:hover {{ background: linear-gradient(180deg, #e53e3e 0%, #cc2424 100%) !important; }}
                         body {{ margin: 0; padding: 0; overflow: hidden; background: transparent; }}
+                        
+                        /* Fix: Permanently hide print buttons from inside frames when triggered */
                         @media print {{
                             body {{ display: none !important; visibility: hidden !important; }}
                             .custom-print-btn {{ display: none !important; visibility: hidden !important; }}
@@ -967,10 +1273,12 @@ def communications_view():
             
             with r_panel:
                 st.markdown("#### 📝 Live Patient Verification & Feedback Questionnaire")
+                
                 allow_questionnaire = True
                 if target_profile["status"] not in ["Pending", "Pending Retry"]:
                     st.warning(f"⚠️ Note: The questionnaire for this patient has already been processed! Current Status: [{target_profile['status']}]")
-                    if st.radio("Do you want to process this verified profile again?", ["No", "Yes"], index=0) == "No": 
+                    unlock_re = st.radio("Do you want to process this verified profile again?", ["No", "Yes"], index=0)
+                    if unlock_re == "No": 
                         allow_questionnaire = False
                 
                 if allow_questionnaire:
@@ -989,7 +1297,9 @@ def communications_view():
                     if contact_status == "No":
                         payload_buffer["contact_status"] = "No"
                         no_contact_reason = st.selectbox("Reason for failure to contact:", ["Select Reason", "Phone number not valid", "Phone number wrong", "Phone switched off", "Did not pick up"])
+                        
                         if no_contact_reason == "Did not pick up":
+                            st.warning("⏱️ **Patient did not pick up the call.** Please attempt a follow-up call after 2 hours.")
                             retry_action = st.radio("Action Strategy:", ["Mark for Retry (Pending)", "Close as Unreachable (Max Attempts Reached)"])
                             if retry_action == "Mark for Retry (Pending)": 
                                 payload_buffer["status"] = "Pending Retry"
@@ -1011,28 +1321,56 @@ def communications_view():
                         if is_delivered == "Yes":
                             payload_buffer["status"] = "Delivered"
                             st.markdown("##### 📅 Delivery Date & Verification")
+                            
                             col_d1, col_d2 = st.columns(2)
                             with col_d1: delivery_date = st.date_input("Select the date patient received the parcel:", datetime.date.today())
                             with col_d2: st.info(f"**EMTTS Fetched Date:**\n{live_date if live_date else 'Not Fetched Yet'}")
-                            
+                                
+                            if live_date:
+                                d_str1 = delivery_date.strftime("%Y-%m-%d")
+                                d_str2 = delivery_date.strftime("%d-%m-%Y")
+                                d_str3 = delivery_date.strftime("%B %d, %Y")
+                                d_str4 = delivery_date.strftime("%b %d, %Y")
+                                
+                                ld_lower = live_date.lower()
+                                matched_dates = any(d.lower() in ld_lower for d in [d_str1, d_str2, d_str3, d_str4, str(delivery_date)])
+                                
+                                if not matched_dates:
+                                    st.error("⚠️ **Date Conflict Alert:** The date provided by the patient differs from the official EMTTS log date.")
+                                    payload_buffer["emtts_conflict"] = "Date Mismatch Detected"
+                            else:
+                                st.info("💡 Tip: Fetch Live Status from the left panel to automatically verify the EMTTS dates.")
+
+                            if live_status and "delivered" not in live_status:
+                                st.error("🚨 **EMTTS STATUS CONFLICT:** The EMTTS tracking shows this parcel is NOT delivered, but the patient confirmed they received it.")
+                                payload_buffer["emtts_conflict"] = "Status Mismatch (Not Delivered on EMTTS)"
+                                
                             payload_buffer["delivery_date"] = str(delivery_date)
+                            
                             received_mode = st.radio("📍 Delivery Execution Mode:", ["Select Mode", "Delivered by postman to home address", "Collected directly from local post office branch"])
                             payload_buffer["received_mode"] = received_mode
                             
                             if received_mode == "Delivered by postman to home address":
+                                st.markdown("##### 🕵️ Postman Conduct & Ethics Assessment")
                                 extra_money = st.radio("Did the postman ask for any unauthorized extra money or tips?", ["Select", "No", "Yes"])
+                                
                                 if extra_money == "Yes":
+                                    st.error("🚨 **CRITICAL CORRUPTION ALERT:** Extra charges were demanded. This case will be highlighted for Admin Resolution.")
                                     payload_buffer["extra_money_charged"] = "Yes"
                                     payload_buffer["postman_issue_type"] = "Extra Charges Demanded"
                                     payload_buffer["extra_money_amount"] = st.text_input("Amount Demanded (Rs.):")
+                                    
                                     col_p1, col_p2 = st.columns(2)
                                     with col_p1: payload_buffer["postman_name"] = st.text_input("Postman Name (if known):")
                                     with col_p2: payload_buffer["postman_phone"] = st.text_input("Postman Phone No. (if known):")
                                     payload_buffer["post_office_name"] = st.text_input("Concerned Post Office Name:")
+                                    
                                     if payload_buffer["extra_money_amount"] and payload_buffer["post_office_name"]: can_submit = True
+                                        
                                 elif extra_money == "No":
                                     payload_buffer["extra_money_charged"] = "No"
                                     other_issue = st.radio("Any other issue or complaint regarding the postman?", ["No", "Yes"])
+                                    
                                     if other_issue == "Yes":
                                         payload_buffer["postman_issue_type"] = "Other Issue"
                                         payload_buffer["issue_reason"] = st.text_area("Describe the issue:")
@@ -1046,38 +1384,54 @@ def communications_view():
                                         can_submit = True
 
                             elif received_mode == "Collected directly from local post office branch":
+                                st.markdown("##### 🏢 Post Office Collection Details")
                                 col_po1, col_po2 = st.columns(2)
                                 with col_po1: payload_buffer["postman_name"] = st.text_input("Postman Name (if known):", key="po_p_name")
                                 with col_po2: payload_buffer["postman_phone"] = st.text_input("Postman Phone No. (if known):", key="po_p_phone")
                                 payload_buffer["post_office_name"] = st.text_input("Concerned Post Office Name:", key="po_name")
                                 po_issue = st.radio("Any issue faced during collection?", ["No", "Yes"])
-                                if po_issue == "Yes": payload_buffer["issue_reason"] = st.text_area("Describe the issue faced at post office:")
-                                if payload_buffer["post_office_name"]: can_submit = True
+                                if po_issue == "Yes":
+                                    payload_buffer["issue_reason"] = st.text_area("Describe the issue faced at post office:")
+                                
+                                if payload_buffer["post_office_name"]:
+                                    can_submit = True
 
                         elif is_delivered == "No":
                             payload_buffer["status"] = "Issue / Complaint"
+                            st.markdown(f"<div style='background:#f1f5f9; padding:12px; border-radius:6px; border-left:4px solid #0ea5e9; margin-bottom:15px; color:#0f172a;'><b>🏠 Verify Address with Patient:</b><br>{target_profile['address']}</div>", unsafe_allow_html=True)
                             addr_match = st.radio("Did the patient confirm this address is correct?", ["Select Option", "Yes - Address is correct", "No - Address is wrong/mismatched"])
+                            
                             address_verified_ready = False
                             if addr_match == "No - Address is wrong/mismatched":
                                 new_addr = st.text_input("📝 Enter the updated/correct address provided by patient:")
                                 if new_addr:
                                     payload_buffer["updated_address"] = new_addr
                                     address_verified_ready = True
+                                else:
+                                    st.warning("Please enter the updated address to continue.")
                             elif addr_match == "Yes - Address is correct":
                                 payload_buffer["updated_address"] = target_profile['address']
                                 address_verified_ready = True
 
                             if address_verified_ready:
+                                if live_status and "delivered" in live_status:
+                                    st.error("🚨 **EMTTS FAKE DELIVERY CONFLICT:** The EMTTS tracking shows this parcel IS marked as delivered, but the patient states they DID NOT receive it! Immediate investigation required.")
+                                    payload_buffer["emtts_conflict"] = "Fake Delivery Marked on EMTTS"
+                                     
                                 postman_contact = st.radio("Did the postman contact the patient?", ["Select", "Yes", "No"])
+                                
                                 if postman_contact == "Yes":
                                      payload_buffer["postman_contacted"] = "Yes"
                                      reason = st.selectbox("Why did the patient not receive the medicine?", ["Select Reason", "Patient does not want to receive it", "Patient has passed away (Died)", "Medicine course is completed", "Other"])
+                                     
                                      if reason != "Select Reason":
                                          payload_buffer["not_received_reason"] = reason
                                          payload_buffer["status"] = f"RTS Requested"
                                          can_submit = True
+                                         
                                 elif postman_contact == "No":
                                      payload_buffer["postman_contacted"] = "No"
+                                     st.warning("⚠️ **NEGLIGENCE ALERT:** The postman did not deliver the parcel and did not contact the patient. Follow-up is required.")
                                      payload_buffer["issue_reason"] = "Postman did not contact or deliver to the patient"
                                      can_submit = True
                                  
@@ -1102,20 +1456,26 @@ def communications_view():
                                     time.sleep(0.5)
                                     st.rerun()
                                 except Exception as e: st.error(f"Sync error: {e}")
+                else:
+                    st.info("ℹ️ Select 'Yes' above to unlock the patient questionnaire for re-verification.")
 
 def export_center_view():
     st.session_state.current_navigation_tab = "📥 Secure Reports Export Center"
     st.markdown("### 📥 Secure Data Export & Cloud Records Center")
+    st.info("💡 Note: All real-time backups are already fully updated and securely stored on the cloud storage data nodes.")
     
+    st.markdown("#### 📅 Filter Data by Verification Date")
     ec1, ec2 = st.columns(2)
     with ec1: exp_start_date = st.date_input("From Date", datetime.date.today() - datetime.timedelta(days=30), key="export_from_date")
     with ec2: exp_end_date = st.date_input("To Date", datetime.date.today(), key="export_to_date")
+    st.markdown("<hr style='border-top: 1px solid #cbd5e1; margin-top: 10px; margin-bottom: 20px;'>", unsafe_allow_html=True)
     
     try:
         with st.spinner("Fetching data logs matrix..."):
             all_records = supabase.table("patient_deliveries").select("*").execute().data
         if all_records:
             df_export = pd.DataFrame(all_records)
+            
             if 'created_at' in df_export.columns:
                 df_export['parsed_date'] = pd.to_datetime(df_export['created_at']).dt.date
                 mask = (df_export['parsed_date'] >= exp_start_date) & (df_export['parsed_date'] <= exp_end_date)
@@ -1124,14 +1484,18 @@ def export_center_view():
             if "operator_stamp" not in df_export.columns: df_export["operator_stamp"] = "Unassigned Logs"
             
             if st.session_state.role == "admin":
+                st.markdown("#### 🛠️ Admin Export Panel (Full Ledger Control)")
                 distinct_operators = list(df_export["operator_stamp"].dropna().unique())
                 distinct_operators.insert(0, "Download Everything (All Operators combined)")
+                
                 target_selection = st.selectbox("Select Data Slice / Operator Filter Target:", distinct_operators)
                 if target_selection != "Download Everything (All Operators combined)":
                     df_final_download = df_export[df_export["operator_stamp"] == target_selection]
                 else: df_final_download = df_export
             else:
+                st.markdown("#### 🔒 Operator Export Panel (Your Individual Action Log)")
                 df_final_download = df_export[df_export["operator_stamp"] == st.session_state.full_name]
+                st.write(f"Total verified entries stamped under your account for selected dates: `{len(df_final_download)}`")
             
             if not df_final_download.empty:
                 csv_buffer = io.StringIO()
@@ -1142,6 +1506,7 @@ def export_center_view():
         else: st.warning("Cloud database nodes are currently empty.")
     except Exception as err: st.error(f"Failed to compile export ledger sheets: {err}")
 
+# Routing Engine setup
 def is_default_page(title_keyword):
     curr = st.session_state.get("current_navigation_tab")
     return curr is not None and title_keyword in curr
@@ -1177,6 +1542,7 @@ if st.session_state.logged_in and st.session_state.role == "admin":
         if active_alerts:
             with st.expander("🚨 Critical Corruption & Extra Charges Alerts", expanded=False):
                 st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+                
                 for alert in active_alerts:
                     is_enquiry = (alert.get("extra_money_charged") == "Under Enquiry")
                     enquiry_flag = "🚩 Under Enquiry" if is_enquiry else "🔴 Alert Active"
@@ -1187,8 +1553,11 @@ if st.session_state.logged_in and st.session_state.role == "admin":
                             <div>
                                 <div class="alert-3d-title">{alert['patient_name']}</div>
                                 <div class="alert-3d-subtitle">MRN: <span style="color:#a61c1c; font-weight:600;">{alert.get('mrn_no', 'N/A')}</span> &nbsp;|&nbsp; Article ID: <span style="font-family:monospace; font-weight:700; font-size:15px; color:#1e293b;">{alert['article_id']}</span></div>
+                                <div class="alert-3d-subtitle" style="margin-top:4px;">🛠️ Operator: <b>{alert.get('operator_stamp', 'Staff')}</b></div>
                             </div>
-                            <div style="text-align: right;"><span class="alert-3d-badge">{enquiry_flag}</span></div>
+                            <div style="text-align: right;">
+                                <span class="alert-3d-badge">{enquiry_flag}</span>
+                            </div>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -1200,15 +1569,52 @@ if st.session_state.logged_in and st.session_state.role == "admin":
                     with ac2:
                         if not is_enquiry:
                             if st.button("🚩 Mark Enquiry", key=f"enquiry_charge_{alert['id']}", help="Mark Under Enquiry", use_container_width=True):
-                                supabase.table("patient_deliveries").update({"extra_money_charged": "Under Enquiry"}).eq("id", alert["id"]).execute()
-                                time.sleep(0.5)
-                                st.rerun()
+                                with st.spinner("..."):
+                                    supabase.table("patient_deliveries").update({"extra_money_charged": "Under Enquiry"}).eq("id", alert["id"]).execute()
+                                    time.sleep(0.5)
+                                    st.rerun()
+                        else:
+                            st.markdown("<div style='text-align:center; padding-top:10px; color:#94a3b8; font-weight:bold;'>⏳ In Progress</div>", unsafe_allow_html=True)
                     with ac3:
                         if st.button("✅ Resolve Issue", key=f"resolve_charge_{alert['id']}", help="Resolve Alert", use_container_width=True):
-                            supabase.table("patient_deliveries").update({"extra_money_charged": "Yes (Resolved)"}).eq("id", alert["id"]).execute()
-                            time.sleep(0.5)
-                            st.rerun()
+                            with st.spinner("..."):
+                                supabase.table("patient_deliveries").update({"extra_money_charged": "Yes (Resolved)"}).eq("id", alert["id"]).execute()
+                                time.sleep(0.5)
+                                st.rerun()
+                    
                     st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
+            
+        resolved_or_history_alerts = [a for a in alert_records_query if a.get("extra_money_charged") in ["Yes (Resolved)", "Under Enquiry"]]
+        if resolved_or_history_alerts:
+            with st.expander("📁 View & Download Alert History Logs (Backup)"):
+                st.markdown("""
+                <div class="alert-3d-card" style="border-left-color: #d4af37; background: linear-gradient(145deg, #ffffff, #fdfdfa);">
+                    <h4 style="margin-top:0; color:#1e293b;">📥 Download Historical Alert Records</h4>
+                    <p style="color:#64748b; font-size:14px; margin-bottom: 0;">Download logs for all previous alerts (Resolved and Under Enquiry cases).</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                hc1, hc2 = st.columns(2)
+                with hc1: d_from = st.date_input("From Date", datetime.date.today() - datetime.timedelta(days=7), key="dfrom_alert")
+                with hc2: d_to = st.date_input("To Date", datetime.date.today(), key="dto_alert")
+                
+                if st.button("📥 Download Alert Logs", use_container_width=True):
+                    history_logs = []
+                    for a in resolved_or_history_alerts:
+                        if 'created_at' in a and a['created_at']:
+                            try:
+                                dt = datetime.datetime.fromisoformat(a['created_at'].replace('Z', '+00:00')).date()
+                                if d_from <= dt <= d_to:
+                                    history_logs.append(a)
+                            except: pass
+                    
+                    if history_logs:
+                        df_hist = pd.DataFrame(history_logs)
+                        csv_buf = io.StringIO()
+                        df_hist.to_csv(csv_buf, index=False)
+                        st.download_button("Download CSV Backup", data=csv_buf.getvalue().encode('utf-8'), file_name=f"Alert_Logs_{d_from}_to_{d_to}.csv", mime="text/csv", use_container_width=True)
+                    else:
+                        st.warning("No alert logs found in this date range.")
     except Exception as e: pass
 
 if st.session_state.logged_in:
@@ -1229,16 +1635,22 @@ if st.session_state.logged_in:
                 if 'created_at' in r and r['created_at']:
                     try:
                         dt = datetime.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00')).date()
-                        if dt == today: today_count += 1
+                        if dt == today:
+                            today_count += 1
                     except: pass
             
+            # Label changed identically to process Point #1
+            count_label = "Total Verifications Today"
             st.markdown(f"""
                 <div style='background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid rgba(212, 175, 55, 0.3); margin-top: 15px; margin-bottom: 15px;'>
-                    <div style='color: #cbd5e1; font-size: 13px; font-weight: 600; margin-bottom: 5px;'>Total Verifications Today</div>
+                    <div style='color: #cbd5e1; font-size: 13px; font-weight: 600; margin-bottom: 5px;'>{count_label}</div>
                     <div style='color: #d4af37; font-size: 24px; font-weight: 800;'>{today_count}</div>
                 </div>
             """, unsafe_allow_html=True)
-            if st.button("📅 View Date-wise Stats", use_container_width=True): user_stats_dialog()
+            
+            if st.button("📅 View Date-wise Stats", use_container_width=True):
+                user_stats_dialog()
+                
         except Exception: pass
         
         st.markdown("<div class='password-btn-anchor'></div>", unsafe_allow_html=True)
@@ -1247,6 +1659,7 @@ if st.session_state.logged_in:
         if not st.session_state.show_recovery_prompt:
             st.markdown("<br><hr style='border-top: 2px solid rgba(212,175,55,0.4); margin: 10px 0;'><br>", unsafe_allow_html=True)
             st.markdown("<div style='font-size: 15px; font-weight: 800; color: #d4af37; margin-bottom: 12px; letter-spacing: 1.5px;'>📂 SYSTEM NAVIGATION</div>", unsafe_allow_html=True)
+            
             for pg in pages_to_display:
                 button_label = f"▶️ **{pg.icon} {pg.title}**" if pg.title == selected_navigation_route.title else f"{pg.icon} {pg.title}"
                 if st.button(button_label, use_container_width=True, key=f"nav_btn_{pg.title}"): 
@@ -1256,6 +1669,7 @@ if st.session_state.logged_in:
                         st.switch_page(pg)
                     
         st.markdown("<br><hr style='border-top: 2px solid rgba(212,175,55,0.4); margin: 10px 0;'><br>", unsafe_allow_html=True)
+        
         st.markdown("<div class='terminate-btn-anchor'></div>", unsafe_allow_html=True)
         if st.button("Terminate Session 🚪", use_container_width=True):
             with st.spinner("Processing session termination..."):
