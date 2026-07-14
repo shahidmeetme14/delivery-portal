@@ -345,49 +345,33 @@ st.markdown(f"""
     section[data-testid="stSidebar"] .sb-privilege-label span {{ color: #39ff14 !important; font-weight: bold !important; text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14 !important; }}
     
     /* 🖨️ Absolute Print Media Optimization (Black Box & Backdrop Overlay Fix) */
-    /* 🎯 Premium Patient Selection Box Styling */
-    div[data-testid="stSelectbox"] > div:first-child {
-        background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%) !important;
-        border: 2px solid #cbd5e1 !important;
-        border-left: 5px solid #a61c1c !important;
-        border-radius: 8px !important;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1) !important;
-    }
-    div[data-testid="stSelectbox"] label {
-        font-size: 16px !important;
-        font-weight: 800 !important;
-        color: #a61c1c !important;
-    }
-
-    /* 🖨️ Absolute Print Media Optimization (Forced One Page) */
-    @media print {
-        @page { size: A4 portrait !important; margin: 0 !important; }
+    @media print {{
+        @page {{ size: A4 portrait !important; margin: 5mm !important; }}
         
         /* Stop empty containers from generating blank pages */
-        html, body { width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
-        body * { visibility: hidden !important; }
-        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], header, footer, iframe, .stElementContainer:has(iframe) { display: none !important; }
+        body * {{ visibility: hidden !important; }}
+        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], header, footer, iframe, .stElementContainer:has(iframe) {{ display: none !important; }}
         
-        .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], .block-container {
+        .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], .block-container {{
             position: absolute !important; top: 0 !important; left: 0 !important;
-            height: 100vh !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; border: none !important;
-        }
+            height: 0 !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; border: none !important;
+        }}
 
-        .print-manifest-card, .print-manifest-card * { visibility: visible !important; color: #000000 !important; background-color: transparent !important; box-shadow: none !important; text-shadow: none !important; }
+        .print-manifest-card, .print-manifest-card * {{ visibility: visible !important; color: #000000 !important; background-color: transparent !important; box-shadow: none !important; text-shadow: none !important; }}
         
-        .print-manifest-card { 
-            position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; max-height: 98vh !important;
-            margin: 0 !important; padding: 10px !important; border: 2px solid #000000 !important; 
-            background: #ffffff !important; box-sizing: border-box !important; page-break-inside: avoid !important; page-break-after: avoid !important; z-index: 99999999 !important; display: block !important;
-            transform: scale(0.92); /* Yeh scale print ko ek page par fit karega */
-            transform-origin: top left;
-        }
-        .print-manifest-card table { width: 100% !important; display: table !important; border-collapse: collapse !important; margin-top: 5px !important; }
-        .print-manifest-card tr { display: table-row !important; page-break-inside: avoid !important; }
-        .print-manifest-card td, .print-manifest-card th { display: table-cell !important; padding: 4px 6px !important; font-size: 13px !important; color: #000000 !important; border-bottom: 1px solid #cbd5e1 !important; line-height: 1.2 !important;}
-        .screen-only-timestamp { display: none !important; }
-        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    }
+        .print-manifest-card {{ 
+            position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; height: auto !important;
+            margin: 0 !important; padding: 20px !important; border: 2px solid #000000 !important; 
+            background: #ffffff !important; background-color: #ffffff !important; box-sizing: border-box !important; page-break-inside: avoid !important; z-index: 99999999 !important; display: block !important;
+        }}
+        .print-manifest-card table {{ width: 100% !important; display: table !important; border-collapse: collapse !important; margin-top: 15px !important; }}
+        .print-manifest-card tr {{ display: table-row !important; page-break-inside: avoid !important; }}
+        .print-manifest-card td, .print-manifest-card th {{ display: table-cell !important; padding: 8px 10px !important; font-size: 14px !important; color: #000000 !important; border-bottom: 1px solid #cbd5e1 !important; }}
+        .screen-only-timestamp {{ display: none !important; }}
+        * {{ -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }}
+    }}
+    </style>
+""", unsafe_allow_html=True)
 
 @st.cache_resource
 def init_connection():
