@@ -1644,9 +1644,9 @@ if st.session_state.logged_in:
             
             count_label = "Total Verifications Today"
             st.markdown(f"""
-                <div style='background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid rgba(212, 175, 55, 0.3); margin-top: 15px; margin-bottom: 15px;'>
+                <div style='background: rgba(255, 255, 255, 0.05); padding: 8px; border-radius: 8px; text-align: center; border: 2px solid #cc2424; margin-top: 10px; margin-bottom: 10px;'>
                     <div style='color: #cbd5e1; font-size: 13px; font-weight: 600; margin-bottom: 5px;'>{count_label}</div>
-                    <div style='color: #d4af37; font-size: 24px; font-weight: 800;'>{today_count}</div>
+                    <div style='color: #ffffff; font-size: 24px; font-weight: 800;'>{today_count}</div>
                 </div>
             """, unsafe_allow_html=True)
             
