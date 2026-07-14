@@ -1,4 +1,4 @@
-import streamlit as st
+Import streamlit as st
 from supabase import create_client, Client
 import pandas as pd
 import datetime
@@ -288,19 +288,22 @@ st.markdown(f"""
     section[data-testid="stSidebar"] .sb-privilege-label {{ margin-top: 10px; color: #cbd5e1 !important; font-size: 14px; }}
     section[data-testid="stSidebar"] .sb-privilege-label span {{ color: #39ff14 !important; font-weight: bold !important; text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14 !important; }}
     
-    /* 🖨️ Absolute Print Media Optimization */
+    /* 🖨️ Absolute Print Media Optimization (Black Box Fix) */
     @media print {{
         @page {{ size: A4 portrait !important; margin: 5mm !important; }}
         html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], .block-container, .stApp {{
             height: auto !important; width: 100% !important; max-height: none !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; 
             background: #ffffff !important; background-color: #ffffff !important; color: #000000 !important;
         }}
+        
+        div, span, header, footer {{ background-color: transparent !important; }}
+        
         body *, .stApp *, [data-testid="stAppViewContainer"] *, [data-testid="stMain"] * {{ visibility: hidden !important; }}
         [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], footer, button {{ display: none !important; }}
 
         .print-manifest-card, .print-manifest-card * {{ visibility: visible !important; display: block !important; color: #000000 !important; background-color: transparent !important; }}
         .print-manifest-card {{ 
-            position: fixed !important; left: 0 !important; top: 0 !important; width: 100% !important; height: auto !important;
+            position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; height: auto !important;
             margin: 0 !important; padding: 20px !important; border: 2px solid #000000 !important; 
             background: #ffffff !important; background-color: #ffffff !important; box-sizing: border-box !important; page-break-inside: avoid !important; z-index: 999999 !important;
         }}
@@ -1294,31 +1297,47 @@ if st.session_state.logged_in and st.session_state.role == "admin":
         
         if active_alerts:
             st.markdown("### 🚨 Critical Corruption & Extra Charges Alerts")
+            
+            # 📋 List View Header
+            hc1, hc2, hc3, hc4, hc5 = st.columns([2.5, 2, 1.5, 1.5, 2])
+            hc1.markdown("**👤 Patient & MRN**")
+            hc2.markdown("**📦 Article ID**")
+            hc3.markdown("**🛠️ Operator**")
+            hc4.markdown("**📌 Status**")
+            hc5.markdown("**⚙️ Actions**")
+            st.markdown("<hr style='margin-top: 5px; margin-bottom: 10px; border-top: 2px solid #cc2424;'>", unsafe_allow_html=True)
+            
             for alert in active_alerts:
                 is_enquiry = (alert.get("extra_money_charged") == "Under Enquiry")
-                enquiry_flag = "🚩 **[UNDER ENQUIRY]**" if is_enquiry else ""
+                enquiry_flag = "🚩 Under Enquiry" if is_enquiry else "🔴 Alert Active"
                 
-                ac1, ac2, ac3, ac4 = st.columns([3, 1, 1, 1])
-                with ac1: 
-                    st.error(f"⚠️ **Postman Alert:** Extra money charged for **{alert['patient_name']}** (MRN: {alert.get('mrn_no', 'N/A')}, Consignment ID: {alert['article_id']}). Operator: **{alert.get('operator_stamp', 'Staff')}** {enquiry_flag}")
-                with ac2: 
-                    if st.button("🖨️ Auto Manifest", key=f"print_alert_{alert['id']}", use_container_width=True): open_alert_manifest(alert)
-                with ac3:
+                ac1, ac2, ac3, ac4, ac5, ac6, ac7 = st.columns([2.5, 2, 1.5, 1.5, 0.6, 0.7, 0.7])
+                
+                ac1.markdown(f"**{alert['patient_name']}**<br><span style='font-size:12px; color:#64748b;'>MRN: {alert.get('mrn_no', 'N/A')}</span>", unsafe_allow_html=True)
+                ac2.write(f"`{alert['article_id']}`")
+                ac3.write(f"{alert.get('operator_stamp', 'Staff')}")
+                ac4.write(f"**{enquiry_flag}**")
+                
+                with ac5:
+                    if st.button("🖨️", key=f"print_alert_{alert['id']}", help="Print Auto Manifest", use_container_width=True): 
+                        open_alert_manifest(alert)
+                with ac6:
                     if not is_enquiry:
-                        if st.button("Under Enquiry 🚩", key=f"enquiry_charge_{alert['id']}", use_container_width=True):
-                            with st.spinner("Processing..."):
+                        if st.button("🚩", key=f"enquiry_charge_{alert['id']}", help="Mark Under Enquiry", use_container_width=True):
+                            with st.spinner("..."):
                                 supabase.table("patient_deliveries").update({"extra_money_charged": "Under Enquiry"}).eq("id", alert["id"]).execute()
                                 time.sleep(0.5)
                                 st.rerun()
                     else:
-                        st.info("Under Enquiry")
-                with ac4:
-                    if st.button("Resolve ✅", key=f"resolve_charge_{alert['id']}", use_container_width=True):
-                        with st.spinner("Resolving..."):
+                        st.markdown("<div style='text-align:center; padding-top:5px; color:#94a3b8;'>⏳</div>", unsafe_allow_html=True)
+                with ac7:
+                    if st.button("✅", key=f"resolve_charge_{alert['id']}", help="Resolve Alert", use_container_width=True):
+                        with st.spinner("..."):
                             supabase.table("patient_deliveries").update({"extra_money_charged": "Yes (Resolved)"}).eq("id", alert["id"]).execute()
                             time.sleep(0.5)
                             st.rerun()
-            st.markdown("<hr style='border-top: 1px solid #cc2424;'>", unsafe_allow_html=True)
+                
+                st.markdown("<hr style='margin-top: 5px; margin-bottom: 10px; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
             
         resolved_or_history_alerts = [a for a in alert_records_query if a.get("extra_money_charged") in ["Yes (Resolved)", "Under Enquiry"]]
         if resolved_or_history_alerts:
