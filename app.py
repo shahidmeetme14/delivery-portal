@@ -8,7 +8,7 @@ import requests
 import urllib.request
 from bs4 import BeautifulSoup
 import streamlit.components.v1 as components
-import xlsxwriter
+# Removed xlsxwriter to fix ModuleNotFoundError
 
 # 🇵🇰 Pakistan Standard Time (PKT) Setup - No external libraries needed
 PKT_TZ = datetime.timezone(datetime.timedelta(hours=5))
@@ -201,16 +201,15 @@ st.markdown(f"""
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
     }}
     
-    /* 3D Dropdowns & Inputs Fixes (Broadened for ALL Dropdowns) */
+    /* Flat Dropdowns & Inputs Fixes (Removed 3D Effects as Requested) */
     div[data-baseweb="select"] > div, 
     div[data-testid="stSelectbox"] div[data-baseweb="select"],
     div[data-testid="stDateInput"] > div,
     div[data-testid="stTextInput"] > div {{
         background: #ffffff !important;
         border: 1px solid #cbd5e1 !important;
-        border-bottom: 3px solid #b1bccd !important;
         border-radius: 6px !important;
-        box-shadow: 0px 2px 4px rgba(0,0,0,0.08) !important;
+        box-shadow: none !important;
         transition: all 0.15s ease-in-out;
         overflow: hidden !important;
     }}
@@ -226,7 +225,6 @@ st.markdown(f"""
     div[data-testid="stTextInput"] > div:hover {{
         background: #ffffff !important;
         border-color: #a61c1c !important;
-        box-shadow: 0px 2px 5px rgba(166,28,28,0.15) !important;
     }}
 
     div[data-baseweb="select"] *, 
@@ -299,20 +297,21 @@ st.markdown(f"""
     section[data-testid="stSidebar"] .sb-privilege-label {{ margin-top: 10px; color: #cbd5e1 !important; font-size: 14px; }}
     section[data-testid="stSidebar"] .sb-privilege-label span {{ color: #39ff14 !important; font-weight: bold !important; text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14 !important; }}
     
-    /* 🖨️ Absolute Print Media Optimization */
+    /* 🖨️ Absolute Print Media Optimization (Fixed Black Background Issue) */
     @media print {{
         @page {{ size: A4 portrait !important; margin: 5mm !important; }}
         html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], .block-container, .stApp {{
-            height: auto !important; width: 100% !important; max-height: none !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; background: #ffffff !important;
+            height: auto !important; width: 100% !important; max-height: none !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; 
+            background: #ffffff !important; background-color: #ffffff !important; color: #000000 !important;
         }}
         body *, .stApp *, [data-testid="stAppViewContainer"] *, [data-testid="stMain"] * {{ visibility: hidden !important; }}
         [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], footer, button {{ display: none !important; }}
 
-        .print-manifest-card, .print-manifest-card * {{ visibility: visible !important; display: block !important; }}
+        .print-manifest-card, .print-manifest-card * {{ visibility: visible !important; display: block !important; color: #000000 !important; background-color: transparent !important; }}
         .print-manifest-card {{ 
             position: fixed !important; left: 0 !important; top: 0 !important; width: 100% !important; height: auto !important;
             margin: 0 !important; padding: 20px !important; border: 2px solid #000000 !important; 
-            background: #ffffff !important; box-sizing: border-box !important; page-break-inside: avoid !important; z-index: 999999 !important;
+            background: #ffffff !important; background-color: #ffffff !important; box-sizing: border-box !important; page-break-inside: avoid !important; z-index: 999999 !important;
         }}
         .print-manifest-card table {{ width: 100% !important; display: table !important; border-collapse: collapse !important; margin-top: 15px !important; }}
         .print-manifest-card tr {{ display: table-row !important; page-break-inside: avoid !important; }}
@@ -438,6 +437,29 @@ def change_password_dialog():
                         st.error("❌ Incorrect current password!")
                 except Exception as ex:
                     st.error(f"Database error: {ex}")
+
+@st.dialog("📊 Date-wise Verification Stats")
+def user_stats_dialog():
+    st.markdown("<div style='color: #475569; font-size: 14px; margin-bottom: 15px;'>Select date range to view your total verifications count.</div>", unsafe_allow_html=True)
+    c1, c2 = st.columns(2)
+    with c1: start_date = st.date_input("From Date", datetime.date.today() - datetime.timedelta(days=7))
+    with c2: end_date = st.date_input("To Date", datetime.date.today())
+    
+    if st.button("Calculate Stats 🧮", use_container_width=True):
+        with st.spinner("Fetching your records..."):
+            try:
+                res = supabase.table("patient_deliveries").select("created_at").eq("operator_stamp", st.session_state.full_name).execute().data
+                count = 0
+                for r in res:
+                    if 'created_at' in r and r['created_at']:
+                        try:
+                            dt = datetime.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00')).date()
+                            if start_date <= dt <= end_date:
+                                count += 1
+                        except: pass
+                st.success(f"Total verifications between selected dates: **{count}**")
+            except Exception as e:
+                st.error(f"Error fetching stats: {e}")
 
 @st.dialog("🖨️ Auto-Fetched Alert Manifest", width="large")
 def open_alert_manifest(alert_data):
@@ -655,7 +677,7 @@ def ingestion_view():
 
     st.markdown("<br><hr style='border-top: 2px solid #cbd5e1;'><br>", unsafe_allow_html=True)
     st.markdown("### 🔍 Cloud Database Matching Engine (Admin Only)")
-    st.info("Upload a file here to cross-match with the existing cloud database. This file will not be permanently saved.")
+    st.info("Upload a file here to cross-match with the existing cloud database. This will generate a CSV report with matching status.")
     
     match_file = st.file_uploader("Upload File for Matching", type=["xlsx", "csv"], key="match_uploader_engine")
     
@@ -676,11 +698,9 @@ def ingestion_view():
                 st.markdown("#### 🔗 Define Match Parameters")
                 mc_col1, mc_col2 = st.columns(2)
                 with mc_col1:
-                    upload_col1 = st.selectbox("1. Uploaded File Field (Primary Must):", df_match.columns, key="uc1")
-                    cloud_col1 = st.selectbox("1. Cloud Database Field (Primary Must):", df_cloud.columns, key="cc1")
+                    upload_col1 = st.selectbox("Uploaded File Field:", df_match.columns, key="uc1")
                 with mc_col2:
-                    upload_col2 = st.selectbox("2. Uploaded File Field (Optional):", ["None"] + list(df_match.columns), key="uc2")
-                    cloud_col2 = st.selectbox("2. Cloud Database Field (Optional):", ["None"] + list(df_cloud.columns), key="cc2")
+                    cloud_col1 = st.selectbox("Cloud Database Field:", df_cloud.columns, key="cc1")
                 
                 if st.button("⚙️ Start Secure Matching Process", use_container_width=True):
                     progress_bar = st.progress(0)
@@ -698,17 +718,11 @@ def ingestion_view():
                         val1 = str(row[upload_col1]).strip().lower()
                         cloud_match = df_cloud[df_cloud[cloud_col1].astype(str).str.strip().str.lower() == val1]
                         
-                        if upload_col2 != "None" and cloud_col2 != "None":
-                            val2 = str(row[upload_col2]).strip().lower()
-                            cloud_match = cloud_match[cloud_match[cloud_col2].astype(str).str.strip().str.lower() == val2]
-                        
                         if not cloud_match.empty:
                             matched_rows.append(cloud_match.iloc[0].to_dict())
                         else:
                             unmatched_dict = {col: "" for col in df_cloud.columns}
                             unmatched_dict[cloud_col1] = str(row[upload_col1])
-                            if upload_col2 != "None" and cloud_col2 != "None":
-                                unmatched_dict[cloud_col2] = str(row[upload_col2])
                             unmatched_dict['Match_Status'] = 'Unmatched'
                             unmatched_rows.append(unmatched_dict)
                             
@@ -724,25 +738,14 @@ def ingestion_view():
                             
                         final_export_df = pd.concat([df_matched_export, df_unmatched_export], ignore_index=True)
                         
-                        output = io.BytesIO()
-                        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                            final_export_df.to_excel(writer, index=False, sheet_name='Matching_Results')
-                            workbook = writer.book
-                            worksheet = writer.sheets['Matching_Results']
-                            red_format = workbook.add_format({'bg_color': '#FFC7CE', 'font_color': '#9C0006'})
-                            
-                            if not df_unmatched_export.empty:
-                                start_row = len(df_matched_export) + 1 
-                                end_row = start_row + len(df_unmatched_export) - 1
-                                for r in range(start_row, end_row + 1):
-                                    worksheet.set_row(r, None, red_format)
-                                    
-                        output.seek(0)
+                        # Use CSV Export to avoid xlsxwriter dependency
+                        csv_buffer = io.StringIO()
+                        final_export_df.to_csv(csv_buffer, index=False)
                         st.download_button(
-                            label="📥 Export Result & Download Excel File",
-                            data=output,
-                            file_name=f"Cloud_Match_Results_{datetime.datetime.now().strftime('%d%m%Y_%H%M')}.xlsx",
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            label="📥 Export Result & Download CSV File",
+                            data=csv_buffer.getvalue().encode('utf-8'),
+                            file_name=f"Cloud_Match_Results_{datetime.datetime.now().strftime('%d%m%Y_%H%M')}.csv",
+                            mime="text/csv",
                             use_container_width=True
                         )
                         
@@ -765,6 +768,41 @@ def operator_matrix_view():
                     supabase.table("app_users").insert({"username": nu.strip(), "password": np.strip(), "full_name": nf.strip(), "role": "staff"}).execute()
                     st.success("Operator registered successfully!")
                 except Exception as e: st.error(f"Error: {e}")
+
+
+def admin_stats_view():
+    st.session_state.current_navigation_tab = "📈 Staff Verifications Dashboard"
+    st.markdown("### 📈 Staff Verifications Dashboard")
+    
+    c1, c2 = st.columns(2)
+    with c1: start_date = st.date_input("From Date", datetime.date.today())
+    with c2: end_date = st.date_input("To Date", datetime.date.today())
+    
+    if st.button("Fetch Statistics", use_container_width=True):
+        with st.spinner("Fetching data logs matrix..."):
+            try:
+                all_records = supabase.table("patient_deliveries").select("operator_stamp, created_at").execute().data
+                if all_records:
+                    filtered_recs = []
+                    for r in all_records:
+                        if 'created_at' in r and r['created_at']:
+                            try:
+                                dt = datetime.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00')).date()
+                                if start_date <= dt <= end_date:
+                                    filtered_recs.append(r)
+                            except: pass
+                    
+                    if filtered_recs:
+                        df = pd.DataFrame(filtered_recs)
+                        counts = df['operator_stamp'].value_counts().reset_index()
+                        counts.columns = ['Operator Name', 'Total Verifications']
+                        st.dataframe(counts, use_container_width=True)
+                    else:
+                        st.warning("No verifications found in this date range.")
+                else:
+                    st.warning("Cloud database nodes are currently empty.")
+            except Exception as err:
+                st.error(f"Failed to compile statistics: {err}")
 
 
 def communications_view():
@@ -1253,7 +1291,7 @@ def export_center_view():
 if not st.session_state.logged_in: pages_to_display = [st.Page(login_view, title="Authentication Desk", icon="🔒")]
 elif st.session_state.show_recovery_prompt: pages_to_display = [st.Page(recovery_view, title="Session Recovery", icon="🔄")]
 else:
-    if st.session_state.role == "admin": pages_to_display = [st.Page(ingestion_view, title="Ingestion Engine", icon="📊"), st.Page(operator_matrix_view, title="Operator Matrix", icon="👥"), st.Page(communications_view, title="Communications Desk", icon="📞"), st.Page(export_center_view, title="Export Center & Backup", icon="📥")]
+    if st.session_state.role == "admin": pages_to_display = [st.Page(ingestion_view, title="Ingestion Engine", icon="📊"), st.Page(operator_matrix_view, title="Operator Matrix", icon="👥"), st.Page(communications_view, title="Communications Desk", icon="📞"), st.Page(admin_stats_view, title="Staff Stats", icon="📈"), st.Page(export_center_view, title="Export Center & Backup", icon="📥")]
     else: pages_to_display = [st.Page(communications_view, title="Communications Desk", icon="📞"), st.Page(export_center_view, title="My Exports & Backup", icon="📥")]
 
 selected_navigation_route = st.navigation(pages_to_display, position="hidden")
@@ -1296,6 +1334,31 @@ if st.session_state.logged_in:
         st.markdown("<div class='sb-headline-custom'>🖥️ Enterprise Console</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='sb-login-label'>Logged in as:</div><div class='sb-username-display'>{st.session_state.full_name}</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='sb-privilege-label'>Privilege Cluster: <span>{st.session_state.role.upper()}</span></div>", unsafe_allow_html=True)
+        
+        # User Stats calculations
+        try:
+            res_stats = supabase.table("patient_deliveries").select("created_at").eq("operator_stamp", st.session_state.full_name).execute().data
+            today = datetime.date.today()
+            today_count = 0
+            for r in res_stats:
+                if 'created_at' in r and r['created_at']:
+                    try:
+                        dt = datetime.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00')).date()
+                        if dt == today:
+                            today_count += 1
+                    except: pass
+            
+            st.markdown(f"""
+                <div style='background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid rgba(212, 175, 55, 0.3); margin-top: 15px; margin-bottom: 15px;'>
+                    <div style='color: #cbd5e1; font-size: 13px; font-weight: 600; margin-bottom: 5px;'>Today's Verifications</div>
+                    <div style='color: #d4af37; font-size: 24px; font-weight: 800;'>{today_count}</div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("📅 View Date-wise Stats", use_container_width=True):
+                user_stats_dialog()
+                
+        except Exception: pass
         
         st.markdown("<div class='password-btn-anchor'></div>", unsafe_allow_html=True)
         if st.button("🔐 Change User Password", use_container_width=True): change_password_dialog()
