@@ -8,6 +8,7 @@ import requests
 import urllib.request
 from bs4 import BeautifulSoup
 import streamlit.components.v1 as components
+import xlsxwriter
 
 # 🇵🇰 Pakistan Standard Time (PKT) Setup - No external libraries needed
 PKT_TZ = datetime.timezone(datetime.timedelta(hours=5))
@@ -563,7 +564,7 @@ def recovery_view():
 def ingestion_view():
     st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine"
     st.markdown("### 📥 Bulk Articles Ingestion Engine")
-    source_file = st.file_uploader("Upload Medicne Article Sheet", type=["xlsx", "csv"])
+    source_file = st.file_uploader("Upload Medicne Article Sheet", type=["xlsx", "csv"], key="bulk_uploader_main")
     if source_file is not None:
         file_key = f"cached_df_{source_file.name}_{source_file.size}"
         if file_key not in st.session_state:
@@ -652,6 +653,104 @@ def ingestion_view():
             except Exception as store_ex:
                 st.error(f"Failed to synchronize master stream archive: {store_ex}")
 
+    st.markdown("<br><hr style='border-top: 2px solid #cbd5e1;'><br>", unsafe_allow_html=True)
+    st.markdown("### 🔍 Cloud Database Matching Engine (Admin Only)")
+    st.info("Upload a file here to cross-match with the existing cloud database. This file will not be permanently saved.")
+    
+    match_file = st.file_uploader("Upload File for Matching", type=["xlsx", "csv"], key="match_uploader_engine")
+    
+    if match_file is not None:
+        try:
+            df_match = pd.read_excel(match_file) if match_file.name.endswith('.xlsx') else pd.read_csv(match_file)
+            
+            with st.spinner("Fetching cloud database for matching..."):
+                try:
+                    master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
+                    df_cloud = pd.read_csv(io.BytesIO(master_bytes), dtype=str)
+                except Exception:
+                    df_cloud = pd.DataFrame()
+            
+            if df_cloud.empty:
+                st.error("Cloud database is currently empty. Nothing to match against.")
+            else:
+                st.markdown("#### 🔗 Define Match Parameters")
+                mc_col1, mc_col2 = st.columns(2)
+                with mc_col1:
+                    upload_col1 = st.selectbox("1. Uploaded File Field (Primary Must):", df_match.columns, key="uc1")
+                    cloud_col1 = st.selectbox("1. Cloud Database Field (Primary Must):", df_cloud.columns, key="cc1")
+                with mc_col2:
+                    upload_col2 = st.selectbox("2. Uploaded File Field (Optional):", ["None"] + list(df_match.columns), key="uc2")
+                    cloud_col2 = st.selectbox("2. Cloud Database Field (Optional):", ["None"] + list(df_cloud.columns), key="cc2")
+                
+                if st.button("⚙️ Start Secure Matching Process", use_container_width=True):
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
+                    
+                    matched_rows = []
+                    unmatched_rows = []
+                    
+                    total_rows = len(df_match)
+                    for i, row in df_match.iterrows():
+                        perc = int(((i + 1) / total_rows) * 100)
+                        progress_bar.progress(perc)
+                        status_text.text(f"Processing and matching records... {perc}% Completed")
+                        
+                        val1 = str(row[upload_col1]).strip().lower()
+                        cloud_match = df_cloud[df_cloud[cloud_col1].astype(str).str.strip().str.lower() == val1]
+                        
+                        if upload_col2 != "None" and cloud_col2 != "None":
+                            val2 = str(row[upload_col2]).strip().lower()
+                            cloud_match = cloud_match[cloud_match[cloud_col2].astype(str).str.strip().str.lower() == val2]
+                        
+                        if not cloud_match.empty:
+                            matched_rows.append(cloud_match.iloc[0].to_dict())
+                        else:
+                            unmatched_dict = {col: "" for col in df_cloud.columns}
+                            unmatched_dict[cloud_col1] = str(row[upload_col1])
+                            if upload_col2 != "None" and cloud_col2 != "None":
+                                unmatched_dict[cloud_col2] = str(row[upload_col2])
+                            unmatched_dict['Match_Status'] = 'Unmatched'
+                            unmatched_rows.append(unmatched_dict)
+                            
+                    status_text.text("✅ Backend Matching Engine Completed!")
+                    st.success(f"📊 Summary Dashboard:\n- **Total Articles Scanned:** {total_rows}\n- **Successfully Matched:** {len(matched_rows)}\n- **Not Found (Unmatched):** {len(unmatched_rows)}")
+                    
+                    if matched_rows or unmatched_rows:
+                        df_matched_export = pd.DataFrame(matched_rows)
+                        df_unmatched_export = pd.DataFrame(unmatched_rows)
+                        
+                        if 'Match_Status' not in df_matched_export.columns and not df_matched_export.empty:
+                            df_matched_export['Match_Status'] = 'Matched'
+                            
+                        final_export_df = pd.concat([df_matched_export, df_unmatched_export], ignore_index=True)
+                        
+                        output = io.BytesIO()
+                        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                            final_export_df.to_excel(writer, index=False, sheet_name='Matching_Results')
+                            workbook = writer.book
+                            worksheet = writer.sheets['Matching_Results']
+                            red_format = workbook.add_format({'bg_color': '#FFC7CE', 'font_color': '#9C0006'})
+                            
+                            if not df_unmatched_export.empty:
+                                start_row = len(df_matched_export) + 1 
+                                end_row = start_row + len(df_unmatched_export) - 1
+                                for r in range(start_row, end_row + 1):
+                                    worksheet.set_row(r, None, red_format)
+                                    
+                        output.seek(0)
+                        st.download_button(
+                            label="📥 Export Result & Download Excel File",
+                            data=output,
+                            file_name=f"Cloud_Match_Results_{datetime.datetime.now().strftime('%d%m%Y_%H%M')}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            use_container_width=True
+                        )
+                        
+            if st.button("🗑️ Clear Matching File & Memory", use_container_width=True):
+                st.rerun()
+        except Exception as e:
+            st.error(f"Error reading or processing file: {e}")
+
 
 def operator_matrix_view():
     st.session_state.current_navigation_tab = "👥 Operator Matrix & Security Audit Logs"
@@ -717,6 +816,12 @@ def communications_view():
 
         if not final_recs: st.warning("No records matched your filters or search.")
         else:
+            if search_term and len(final_recs) > 1:
+                st.markdown("##### 📑 Multiple Matches Detected")
+                st.info("Please review the matching entries below and select the correct one from the dropdown to proceed.")
+                display_df = pd.DataFrame(final_recs)[['patient_name', 'mrn_no', 'article_id', 'phone_number', 'booking_office', 'booking_date']]
+                st.dataframe(display_df, use_container_width=True)
+
             for profile in final_recs:
                 article_key = str(profile["article_id"]).strip()
                 if article_key in db_logs_dictionary:
