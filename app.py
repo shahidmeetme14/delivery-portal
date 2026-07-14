@@ -1644,33 +1644,9 @@ if st.session_state.logged_in:
             
             count_label = "Total Verifications Today"
             st.markdown(f"""
-                <style>
-                    .custom-stat-box {{
-                        background: rgba(255, 255, 255, 0.05) !important;
-                        padding: 8px !important;
-                        border-radius: 8px !important;
-                        text-align: center !important;
-                        border: 2px solid #cc2424 !important;
-                        margin-top: 10px !important;
-                        margin-bottom: 10px !important;
-                    }}
-                    .custom-stat-label {{
-                        color: #cbd5e1 !important;
-                        font-size: 13px !important;
-                        font-weight: 600 !important;
-                        margin-bottom: 5px !important;
-                    }}
-                    .custom-stat-count {{
-                        color: #ff3333 !important;
-                        font-size: 28px !important;
-                        font-weight: 900 !important;
-                        text-shadow: 0 0 10px rgba(255, 51, 51, 0.6) !important;
-                    }}
-                </style>
-                
-                <div class='custom-stat-box'>
-                    <div class='custom-stat-label'>{count_label}</div>
-                    <div class='custom-stat-count'>{today_count}</div>
+                <div style='background: rgba(255, 255, 255, 0.05); padding: 6px; border-radius: 6px; text-align: center; border: 2px solid #cc2424; margin-top: 10px; margin-bottom: 10px;'>
+                    <div style='color: #cbd5e1 !important; font-size: 13px; font-weight: 600; margin-bottom: 5px;'>{count_label}</div>
+                    <div style='color: #ff3333 !important; font-size: 24px; font-weight: 800 !important; text-shadow: 0 0 10px rgba(255, 51, 51, 0.6) !important;'>{today_count}</div>
                 </div>
             """, unsafe_allow_html=True)
             
