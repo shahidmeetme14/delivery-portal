@@ -1646,7 +1646,7 @@ if st.session_state.logged_in:
             st.markdown(f"""
                 <div style='background: rgba(255, 255, 255, 0.05); padding: 8px; border-radius: 8px; text-align: center; border: 2px solid #cc2424; margin-top: 10px; margin-bottom: 10px;'>
                     <div style='color: #cbd5e1; font-size: 13px; font-weight: 600; margin-bottom: 5px;'>{count_label}</div>
-                    <div style='color: #ffffff; font-size: 24px; font-weight: 800;'>{today_count}</div>
+                    <div style='color: #ff3333; font-size: 28px; font-weight: 900; text-shadow: 0 0 10px rgba(255, 51, 51, 0.6);'>{today_count}</div>
                 </div>
             """, unsafe_allow_html=True)
             
