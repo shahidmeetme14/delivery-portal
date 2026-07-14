@@ -1650,8 +1650,8 @@ if st.session_state.logged_in:
                         background: linear-gradient(145deg, #151518, #1f1f24) !important;
                         border: 2px solid #ff3333 !important;
                         border-bottom: 5px solid #990000 !important; /* 3D Base Depth */
-                        border-radius: 8px !important;
-                        padding: 8px !important;
+                        border-radius: 12px !important;
+                        padding: 6px !important;
                         text-align: center !important;
                         /* 3D Outer Shadow + Inside Glow */
                         box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6), 
@@ -1672,7 +1672,7 @@ if st.session_state.logged_in:
                     /* Bulletproof Shiny Red Digital Count */
                     .machine-count, .machine-count * {{
                         color: #ffb703 !important; /* Universal Override */
-                        font-size: 34px !important; 
+                        font-size: 24px !important; 
                         font-weight: 900 !important;
                         font-family: 'Courier New', Courier, monospace !important; /* Digital Display Look */
                         text-shadow: 0 0 10px #ff3333, 0 0 20px rgba(255, 51, 51, 0.6) !important;
