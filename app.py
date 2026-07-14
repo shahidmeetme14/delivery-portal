@@ -344,29 +344,32 @@ st.markdown(f"""
     section[data-testid="stSidebar"] .sb-privilege-label {{ margin-top: 10px; color: #cbd5e1 !important; font-size: 14px; }}
     section[data-testid="stSidebar"] .sb-privilege-label span {{ color: #39ff14 !important; font-weight: bold !important; text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14 !important; }}
     
-    /* 🖨️ Absolute Print Media Optimization (Black Box & Backdrop Overlay Fix) */
+    /* 🖨️ Absolute Print Media Optimization (Black Box & Backdrop Overlay Fix) - Fully Forced on A4 */
     @media print {{
-        @page {{ size: A4 portrait !important; margin: 5mm !important; }}
+        @page {{ size: A4 portrait !important; margin: 0 !important; }}
         
-        /* Stop empty containers from generating blank pages */
+        /* Stop empty containers from generating blank pages & lock height */
+        html, body {{ height: 100vh !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; background: #ffffff !important; }}
         body * {{ visibility: hidden !important; }}
         [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], header, footer, iframe, .stElementContainer:has(iframe) {{ display: none !important; }}
         
         .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], .block-container {{
             position: absolute !important; top: 0 !important; left: 0 !important;
-            height: 0 !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; border: none !important;
+            height: 100vh !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; border: none !important;
         }}
 
         .print-manifest-card, .print-manifest-card * {{ visibility: visible !important; color: #000000 !important; background-color: transparent !important; box-shadow: none !important; text-shadow: none !important; }}
         
         .print-manifest-card {{ 
-            position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; height: auto !important;
-            margin: 0 !important; padding: 20px !important; border: 2px solid #000000 !important; 
-            background: #ffffff !important; background-color: #ffffff !important; box-sizing: border-box !important; page-break-inside: avoid !important; z-index: 99999999 !important; display: block !important;
+            position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; max-height: 98vh !important;
+            margin: 0 !important; padding: 15px !important; border: 2px solid #000000 !important; 
+            background: #ffffff !important; background-color: #ffffff !important; box-sizing: border-box !important; 
+            page-break-inside: avoid !important; page-break-after: avoid !important; page-break-before: avoid !important; 
+            z-index: 99999999 !important; display: block !important; overflow: hidden !important;
         }}
         .print-manifest-card table {{ width: 100% !important; display: table !important; border-collapse: collapse !important; margin-top: 15px !important; }}
         .print-manifest-card tr {{ display: table-row !important; page-break-inside: avoid !important; }}
-        .print-manifest-card td, .print-manifest-card th {{ display: table-cell !important; padding: 8px 10px !important; font-size: 14px !important; color: #000000 !important; border-bottom: 1px solid #cbd5e1 !important; }}
+        .print-manifest-card td, .print-manifest-card th {{ display: table-cell !important; padding: 6px 8px !important; font-size: 13px !important; color: #000000 !important; border-bottom: 1px solid #cbd5e1 !important; }}
         .screen-only-timestamp {{ display: none !important; }}
         * {{ -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }}
     }}
@@ -623,6 +626,17 @@ def login_view():
                         try:
                             ud = supabase.table("app_users").select("*").eq("username", input_user.strip()).eq("password", input_pass.strip()).execute().data
                             if ud:
+                                # Insert login log securely into the database
+                                try:
+                                    supabase.table("login_logs").insert({
+                                        "username": ud[0]["username"],
+                                        "full_name": ud[0]["full_name"],
+                                        "role": ud[0]["role"],
+                                        "login_time": datetime.datetime.now(PKT_TZ).isoformat()
+                                    }).execute()
+                                except Exception:
+                                    pass
+                                    
                                 recovery_data = fetch_operator_state(ud[0]["username"])
                                 
                                 # Set query params for refresh lock instantly
@@ -942,7 +956,8 @@ def communications_view():
                     profile["id"] = None
                     profile["status"] = "Pending"
 
-            options_list = [r['patient_name'] for r in final_recs]
+            # Added enriched Select Box visual parameters as requested in Point 3
+            options_list = [f"👤 {r['patient_name']}  |  📦 {r['article_id']}" for r in final_recs]
             if st.session_state.selected_profile_index >= len(options_list): st.session_state.selected_profile_index = 0
                 
             selected_prof_str = st.selectbox("Select Patient Profile to Process:", options_list, index=st.session_state.selected_profile_index, key="outbound_profile_select")
@@ -1508,7 +1523,8 @@ if st.session_state.logged_in:
                             today_count += 1
                     except: pass
             
-            count_label = "Total Admin App Verifications (Today)" if st.session_state.role == "admin" else "Today's Verifications"
+            # Label changed identically to process Point #1
+            count_label = "Total Verifications Today"
             st.markdown(f"""
                 <div style='background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid rgba(212, 175, 55, 0.3); margin-top: 15px; margin-bottom: 15px;'>
                     <div style='color: #cbd5e1; font-size: 13px; font-weight: 600; margin-bottom: 5px;'>{count_label}</div>
