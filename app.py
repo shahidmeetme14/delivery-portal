@@ -118,6 +118,27 @@ st.markdown(f"""
     .brand-title {{ color: #a61c1c; font-weight: 800; font-size: 2.1rem; margin-bottom: 2px; }}
     .brand-subtitle {{ color: #5c1414; font-size: 1.05rem; margin-bottom: 25px; font-weight: 600; border-left: 4px solid #d4af37; padding-left: 12px; }}
     
+    /* 📦 3D Premium Cards for Admin Alerts */
+    .alert-3d-card {{
+        background: linear-gradient(145deg, #ffffff, #fdfbf7);
+        border-radius: 12px;
+        box-shadow: 6px 6px 15px rgba(0,0,0,0.08), -6px -6px 15px rgba(255,255,255,0.8);
+        border-left: 6px solid #cc2424;
+        padding: 18px 22px;
+        margin-bottom: 12px;
+        border-top: 1px solid #f1f5f9;
+        border-right: 1px solid #f1f5f9;
+        border-bottom: 1px solid #f1f5f9;
+        transition: all 0.3s ease;
+    }}
+    .alert-3d-card:hover {{
+        transform: translateY(-3px);
+        box-shadow: 8px 8px 20px rgba(0,0,0,0.12), -8px -8px 20px rgba(255,255,255,0.9);
+    }}
+    .alert-3d-title {{ font-size: 19px; font-weight: 800; color: #1e293b; margin-bottom: 5px; }}
+    .alert-3d-subtitle {{ font-size: 14px; color: #64748b; font-weight: 500; }}
+    .alert-3d-badge {{ background: #fee2e2; color: #dc2626; padding: 5px 12px; border-radius: 20px; font-weight: 700; font-size: 13px; border: 1px solid #fecaca; box-shadow: 0px 2px 4px rgba(220, 38, 38, 0.1); }}
+
     div[data-testid="stForm"], .pyqt-panel {{
         background: #ffffff !important;
         border-radius: 8px !important;
@@ -293,12 +314,17 @@ st.markdown(f"""
     /* 🖨️ Absolute Print Media Optimization (Black Box & Backdrop Overlay Fix) */
     @media print {{
         @page {{ size: A4 portrait !important; margin: 5mm !important; }}
-        html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], .block-container, .stApp, div[data-baseweb="modal"], div[data-baseweb="backdrop"], div[role="dialog"] {{
+        html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], .block-container, .stApp, 
+        div[data-baseweb="modal"], div[data-baseweb="backdrop"], div[role="dialog"] {{
             height: auto !important; width: 100% !important; max-height: none !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; 
-            background: #ffffff !important; background-color: #ffffff !important; color: #000000 !important; box-shadow: none !important; border: none !important;
+            background: #ffffff !important; background-color: #ffffff !important; background-image: none !important; color: #000000 !important; box-shadow: none !important; border: none !important;
         }}
         
-        div, span, header, footer, section, main, article {{ background-color: transparent !important; box-shadow: none !important; }}
+        #root > div, #root > div > div, .st-emotion-cache-1rqwtsj, .st-emotion-cache-16tysp {{
+            background: transparent !important; background-color: transparent !important;
+        }}
+        
+        div, span, header, footer, section, main, article {{ box-shadow: none !important; }}
         
         body *, .stApp *, [data-testid="stAppViewContainer"] *, [data-testid="stMain"] * {{ visibility: hidden !important; }}
         [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], footer, button, iframe, .stElementContainer:has(iframe) {{ display: none !important; }}
@@ -1270,11 +1296,23 @@ def export_center_view():
     st.markdown("### 📥 Secure Data Export & Cloud Records Center")
     st.info("💡 Note: All real-time backups are already fully updated and securely stored on the cloud storage data nodes.")
     
+    st.markdown("#### 📅 Filter Data by Verification Date")
+    ec1, ec2 = st.columns(2)
+    with ec1: exp_start_date = st.date_input("From Date", datetime.date.today() - datetime.timedelta(days=30), key="export_from_date")
+    with ec2: exp_end_date = st.date_input("To Date", datetime.date.today(), key="export_to_date")
+    st.markdown("<hr style='border-top: 1px solid #cbd5e1; margin-top: 10px; margin-bottom: 20px;'>", unsafe_allow_html=True)
+    
     try:
         with st.spinner("Fetching data logs matrix..."):
             all_records = supabase.table("patient_deliveries").select("*").execute().data
         if all_records:
             df_export = pd.DataFrame(all_records)
+            
+            if 'created_at' in df_export.columns:
+                df_export['parsed_date'] = pd.to_datetime(df_export['created_at']).dt.date
+                mask = (df_export['parsed_date'] >= exp_start_date) & (df_export['parsed_date'] <= exp_end_date)
+                df_export = df_export.loc[mask].drop(columns=['parsed_date'])
+                
             if "operator_stamp" not in df_export.columns: df_export["operator_stamp"] = "Unassigned Logs"
             
             if st.session_state.role == "admin":
@@ -1289,13 +1327,13 @@ def export_center_view():
             else:
                 st.markdown("#### 🔒 Operator Export Panel (Your Individual Action Log)")
                 df_final_download = df_export[df_export["operator_stamp"] == st.session_state.full_name]
-                st.write(f"Total verified entries stamped under your account: `{len(df_final_download)}`")
+                st.write(f"Total verified entries stamped under your account for selected dates: `{len(df_final_download)}`")
             
             if not df_final_download.empty:
                 csv_buffer = io.StringIO()
                 df_final_download.to_csv(csv_buffer, index=False)
                 csv_data = csv_buffer.getvalue().encode('utf-8')
-                st.download_button(label="📥 Download Authenticated Security Sheet (.CSV File)", data=csv_data, file_name=f"Verified_Deliveries_Log_{datetime.date.today()}.csv", mime="text/csv", use_container_width=True)
+                st.download_button(label="📥 Download Authenticated Security Sheet (.CSV File)", data=csv_data, file_name=f"Verified_Deliveries_Log_{exp_start_date}_to_{exp_end_date}.csv", mime="text/csv", use_container_width=True)
             else: st.warning("No recorded data matching your credentials or filters found inside the backup matrix.")
         else: st.warning("Cloud database nodes are currently empty.")
     except Exception as err: st.error(f"Failed to compile export ledger sheets: {err}")
@@ -1335,51 +1373,61 @@ if st.session_state.logged_in and st.session_state.role == "admin":
         
         if active_alerts:
             with st.expander("🚨 Critical Corruption & Extra Charges Alerts", expanded=False):
-                # 📋 List View Header
-                hc1, hc2, hc3, hc4, hc5 = st.columns([2.5, 2, 1.5, 1.5, 2])
-                hc1.markdown("**👤 Patient & MRN**")
-                hc2.markdown("**📦 Article ID**")
-                hc3.markdown("**🛠️ Operator**")
-                hc4.markdown("**📌 Status**")
-                hc5.markdown("**⚙️ Actions**")
-                st.markdown("<hr style='margin-top: 5px; margin-bottom: 10px; border-top: 2px solid #cc2424;'>", unsafe_allow_html=True)
+                st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
                 
                 for alert in active_alerts:
                     is_enquiry = (alert.get("extra_money_charged") == "Under Enquiry")
                     enquiry_flag = "🚩 Under Enquiry" if is_enquiry else "🔴 Alert Active"
                     
-                    ac1, ac2, ac3, ac4, ac5, ac6, ac7 = st.columns([2.5, 2, 1.5, 1.5, 0.6, 0.7, 0.7])
+                    # 3D HTML Card Injection
+                    st.markdown(f"""
+                    <div class="alert-3d-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div class="alert-3d-title">{alert['patient_name']}</div>
+                                <div class="alert-3d-subtitle">MRN: <span style="color:#a61c1c; font-weight:600;">{alert.get('mrn_no', 'N/A')}</span> &nbsp;|&nbsp; Article ID: <span style="font-family:monospace; font-weight:700; font-size:15px; color:#1e293b;">{alert['article_id']}</span></div>
+                                <div class="alert-3d-subtitle" style="margin-top:4px;">🛠️ Operator: <b>{alert.get('operator_stamp', 'Staff')}</b></div>
+                            </div>
+                            <div style="text-align: right;">
+                                <span class="alert-3d-badge">{enquiry_flag}</span>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
                     
-                    ac1.markdown(f"**{alert['patient_name']}**<br><span style='font-size:12px; color:#64748b;'>MRN: {alert.get('mrn_no', 'N/A')}</span>", unsafe_allow_html=True)
-                    ac2.write(f"`{alert['article_id']}`")
-                    ac3.write(f"{alert.get('operator_stamp', 'Staff')}")
-                    ac4.write(f"**{enquiry_flag}**")
-                    
-                    with ac5:
-                        if st.button("🖨️", key=f"print_alert_{alert['id']}", help="Print Auto Manifest", use_container_width=True): 
+                    # Action Buttons below the 3D card
+                    ac1, ac2, ac3, ac4 = st.columns([1.5, 1.5, 1.5, 5])
+                    with ac1:
+                        if st.button("🖨️ Print Manifest", key=f"print_alert_{alert['id']}", help="Print Auto Manifest", use_container_width=True): 
                             open_alert_manifest(alert)
-                    with ac6:
+                    with ac2:
                         if not is_enquiry:
-                            if st.button("🚩", key=f"enquiry_charge_{alert['id']}", help="Mark Under Enquiry", use_container_width=True):
+                            if st.button("🚩 Mark Enquiry", key=f"enquiry_charge_{alert['id']}", help="Mark Under Enquiry", use_container_width=True):
                                 with st.spinner("..."):
                                     supabase.table("patient_deliveries").update({"extra_money_charged": "Under Enquiry"}).eq("id", alert["id"]).execute()
                                     time.sleep(0.5)
                                     st.rerun()
                         else:
-                            st.markdown("<div style='text-align:center; padding-top:5px; color:#94a3b8;'>⏳</div>", unsafe_allow_html=True)
-                    with ac7:
-                        if st.button("✅", key=f"resolve_charge_{alert['id']}", help="Resolve Alert", use_container_width=True):
+                            st.markdown("<div style='text-align:center; padding-top:10px; color:#94a3b8; font-weight:bold;'>⏳ In Progress</div>", unsafe_allow_html=True)
+                    with ac3:
+                        if st.button("✅ Resolve Issue", key=f"resolve_charge_{alert['id']}", help="Resolve Alert", use_container_width=True):
                             with st.spinner("..."):
                                 supabase.table("patient_deliveries").update({"extra_money_charged": "Yes (Resolved)"}).eq("id", alert["id"]).execute()
                                 time.sleep(0.5)
                                 st.rerun()
                     
-                    st.markdown("<hr style='margin-top: 5px; margin-bottom: 10px; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
+                    st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
             
         resolved_or_history_alerts = [a for a in alert_records_query if a.get("extra_money_charged") in ["Yes (Resolved)", "Under Enquiry"]]
         if resolved_or_history_alerts:
             with st.expander("📁 View & Download Alert History Logs (Backup)"):
-                st.markdown("Download logs for all alerts (Resolved and Under Enquiry cases).")
+                st.markdown("""
+                <div class="alert-3d-card" style="border-left-color: #d4af37; background: linear-gradient(145deg, #ffffff, #fdfdfa);">
+                    <h4 style="margin-top:0; color:#1e293b;">📥 Download Historical Alert Records</h4>
+                    <p style="color:#64748b; font-size:14px; margin-bottom: 0;">Download logs for all previous alerts (Resolved and Under Enquiry cases).</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
                 hc1, hc2 = st.columns(2)
                 with hc1: d_from = st.date_input("From Date", datetime.date.today() - datetime.timedelta(days=7), key="dfrom_alert")
                 with hc2: d_to = st.date_input("To Date", datetime.date.today(), key="dto_alert")
