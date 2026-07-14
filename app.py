@@ -1,4 +1,4 @@
-Import streamlit as st
+import streamlit as st
 from supabase import create_client, Client
 import pandas as pd
 import datetime
@@ -20,7 +20,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🔄 URL HYDRATION ENGINE
+# 🔄 URL HYDRATION ENGINE (Fixed for Refresh Lock)
 SESSION_TIMEOUT = 30 * 60  
 
 if "logged_in" not in st.session_state: 
@@ -31,10 +31,12 @@ if not st.session_state.logged_in and "usr" in st.query_params:
         param_time = float(st.query_params.get("t", 0))
         if time.time() - param_time < SESSION_TIMEOUT:
             st.session_state.logged_in = True
-            st.session_state.username = st.query_params["usr"]
-            st.session_state.full_name = st.query_params["nm"]
-            st.session_state.role = st.query_params["rl"]
+            st.session_state.username = st.query_params.get("usr")
+            st.session_state.full_name = st.query_params.get("nm")
+            st.session_state.role = st.query_params.get("rl")
             st.session_state.last_activity = param_time
+            if "tab" in st.query_params:
+                st.session_state.current_navigation_tab = st.query_params.get("tab")
         else:
             st.query_params.clear()
     except:
@@ -353,6 +355,7 @@ def calculate_mapped_index(df_cols, session_key, alternative_match_string):
             return idx
     return 0
 
+# URL Syncing for Refresh Page Lock Engine
 if st.session_state.logged_in:
     if time.time() - st.session_state.last_activity > SESSION_TIMEOUT:
         st.session_state.logged_in = False
@@ -363,6 +366,11 @@ if st.session_state.logged_in:
     else:
         st.session_state.last_activity = time.time()
         st.query_params["t"] = str(st.session_state.last_activity)
+        st.query_params["usr"] = st.session_state.username
+        st.query_params["nm"] = st.session_state.full_name
+        st.query_params["rl"] = st.session_state.role
+        if st.session_state.get("current_navigation_tab"):
+            st.query_params["tab"] = st.session_state.current_navigation_tab
 
 def map_status(raw_status):
     s = raw_status.lower().strip()
@@ -561,6 +569,13 @@ def login_view():
                             ud = supabase.table("app_users").select("*").eq("username", input_user.strip()).eq("password", input_pass.strip()).execute().data
                             if ud:
                                 recovery_data = fetch_operator_state(ud[0]["username"])
+                                
+                                # Set query params for refresh lock instantly
+                                st.query_params["usr"] = ud[0]["username"]
+                                st.query_params["nm"] = ud[0]["full_name"]
+                                st.query_params["rl"] = ud[0]["role"]
+                                st.query_params["t"] = str(time.time())
+                                
                                 if recovery_data:
                                     st.session_state.cached_recovery_data = recovery_data
                                     st.session_state.show_recovery_prompt = True
@@ -590,15 +605,20 @@ def recovery_view():
                     st.session_state.current_navigation_tab = st.session_state.cached_recovery_data.get('last_tab')
                     st.session_state.selected_profile_index = int(st.session_state.cached_recovery_data.get('last_index', 0))
                     st.session_state.show_recovery_prompt = False
+                    if st.session_state.current_navigation_tab:
+                        st.query_params["tab"] = st.session_state.current_navigation_tab
                     st.rerun()
         with col_new:
             if st.button("🆕 START FRESH BLANK SESSION", use_container_width=True):
                 with st.spinner("Processing fresh terminal clear..."):
                     st.session_state.logged_in = True
                     st.session_state.show_recovery_prompt = False
+                    st.session_state.current_navigation_tab = None
+                    st.session_state.selected_profile_index = 0
+                    if "tab" in st.query_params:
+                        del st.query_params["tab"]
                     save_operator_state()
                     st.rerun()
-
 
 def ingestion_view():
     st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine"
@@ -779,7 +799,6 @@ def ingestion_view():
         except Exception as e:
             st.error(f"Error reading or processing file: {e}")
 
-
 def operator_matrix_view():
     st.session_state.current_navigation_tab = "👥 Operator Matrix & Security Audit Logs"
     st.markdown("### 👥 Operational Account Provisioning")
@@ -793,7 +812,6 @@ def operator_matrix_view():
                     supabase.table("app_users").insert({"username": nu.strip(), "password": np.strip(), "full_name": nf.strip(), "role": "staff"}).execute()
                     st.success("Operator registered successfully!")
                 except Exception as e: st.error(f"Error: {e}")
-
 
 def communications_view():
     st.session_state.current_navigation_tab = "📞 Outbound Communications Desk"
@@ -1099,7 +1117,7 @@ def communications_view():
                             
                     elif contact_status == "Yes":
                         payload_buffer["contact_status"] = "Yes"
-                        is_delivered = st.radio("📦 According to the patient, have they physically received the medicine?", ["Select Option", "Yes", "No"])
+                        is_delivered = st.radio("📦 According to the patient, have they received the medicine?", ["Select Option", "Yes", "No"])
                         
                         if is_delivered == "Yes":
                             payload_buffer["status"] = "Delivered"
@@ -1242,7 +1260,6 @@ def communications_view():
                 else:
                     st.info("ℹ️ Select 'Yes' above to unlock the patient questionnaire for re-verification.")
 
-
 def export_center_view():
     st.session_state.current_navigation_tab = "📥 Secure Reports Export Center"
     st.markdown("### 📥 Secure Data Export & Cloud Records Center")
@@ -1278,12 +1295,28 @@ def export_center_view():
         else: st.warning("Cloud database nodes are currently empty.")
     except Exception as err: st.error(f"Failed to compile export ledger sheets: {err}")
 
-# Routing Engine
-if not st.session_state.logged_in: pages_to_display = [st.Page(login_view, title="Authentication Desk", icon="🔒")]
-elif st.session_state.show_recovery_prompt: pages_to_display = [st.Page(recovery_view, title="Session Recovery", icon="🔄")]
+# Routing Engine setup (Optimized to fix the crash and enforce refresh-lock defaults)
+def is_default_page(title_keyword):
+    curr = st.session_state.get("current_navigation_tab")
+    return curr is not None and title_keyword in curr
+
+if not st.session_state.logged_in: 
+    pages_to_display = [st.Page(login_view, title="Authentication Desk", icon="🔒")]
+elif st.session_state.show_recovery_prompt: 
+    pages_to_display = [st.Page(recovery_view, title="Session Recovery", icon="🔄")]
 else:
-    if st.session_state.role == "admin": pages_to_display = [st.Page(ingestion_view, title="Ingestion Engine", icon="📊"), st.Page(operator_matrix_view, title="Operator Matrix", icon="👥"), st.Page(communications_view, title="Communications Desk", icon="📞"), st.Page(export_center_view, title="Export Center & Backup", icon="📥")]
-    else: pages_to_display = [st.Page(communications_view, title="Communications Desk", icon="📞"), st.Page(export_center_view, title="My Exports & Backup", icon="📥")]
+    if st.session_state.role == "admin": 
+        pages_to_display = [
+            st.Page(ingestion_view, title="Ingestion Engine", icon="📊", default=is_default_page("Ingestion")),
+            st.Page(operator_matrix_view, title="Operator Matrix", icon="👥", default=is_default_page("Operator Matrix")),
+            st.Page(communications_view, title="Communications Desk", icon="📞", default=is_default_page("Communications Desk")),
+            st.Page(export_center_view, title="Export Center & Backup", icon="📥", default=is_default_page("Export Center"))
+        ]
+    else: 
+        pages_to_display = [
+            st.Page(communications_view, title="Communications Desk", icon="📞", default=is_default_page("Communications Desk")),
+            st.Page(export_center_view, title="My Exports & Backup", icon="📥", default=is_default_page("Export Center"))
+        ]
 
 selected_navigation_route = st.navigation(pages_to_display, position="hidden")
 
@@ -1409,8 +1442,13 @@ if st.session_state.logged_in:
             st.markdown("<div style='font-size: 15px; font-weight: 800; color: #d4af37; margin-bottom: 12px; letter-spacing: 1.5px;'>📂 SYSTEM NAVIGATION</div>", unsafe_allow_html=True)
             
             for pg in pages_to_display:
-                button_label = f"▶️ **{pg.icon} {pg.title}**" if pg == selected_navigation_route else f"{pg.icon} {pg.title}"
-                if st.button(button_label, use_container_width=True, key=f"nav_btn_{pg.title}"): st.switch_page(pg)
+                button_label = f"▶️ **{pg.icon} {pg.title}**" if pg.title == selected_navigation_route.title else f"{pg.icon} {pg.title}"
+                if st.button(button_label, use_container_width=True, key=f"nav_btn_{pg.title}"): 
+                    # Fix for Image error crash (Streamlit throws error if you switch to the active page)
+                    if pg.title != selected_navigation_route.title:
+                        st.session_state.current_navigation_tab = pg.title
+                        st.query_params["tab"] = pg.title
+                        st.switch_page(pg)
                     
         st.markdown("<br><hr style='border-top: 2px solid rgba(212,175,55,0.4); margin: 10px 0;'><br>", unsafe_allow_html=True)
         
