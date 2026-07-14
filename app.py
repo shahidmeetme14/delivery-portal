@@ -344,34 +344,98 @@ st.markdown(f"""
     section[data-testid="stSidebar"] .sb-privilege-label {{ margin-top: 10px; color: #cbd5e1 !important; font-size: 14px; }}
     section[data-testid="stSidebar"] .sb-privilege-label span {{ color: #39ff14 !important; font-weight: bold !important; text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14 !important; }}
     
-    /* 🖨️ Absolute Print Media Optimization (Black Box & Backdrop Overlay Fix) - Fully Forced on A4 */
+    /* 🖨️ Absolute Print Media Optimization (Fully Forced on Single Page A4 Portrait) */
     @media print {{
-        @page {{ size: A4 portrait !important; margin: 0 !important; }}
+        @page {{ 
+            size: A4 portrait !important; 
+            margin: 10mm 15mm 10mm 15mm !important; 
+        }}
         
-        /* Stop empty containers from generating blank pages & lock height */
-        html, body {{ height: 100vh !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; background: #ffffff !important; }}
-        body * {{ visibility: hidden !important; }}
-        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], header, footer, iframe, .stElementContainer:has(iframe) {{ display: none !important; }}
+        html, body {{ 
+            height: auto !important; 
+            margin: 0 !important; 
+            padding: 0 !important; 
+            overflow: visible !important; 
+            background: #ffffff !important; 
+        }}
+        
+        body * {{ 
+            visibility: hidden !important; 
+        }}
+        
+        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], header, footer, iframe, .stElementContainer:has(iframe), button, .custom-print-btn {{ 
+            display: none !important; 
+            visibility: hidden !important; 
+            opacity: 0 !important;
+        }}
         
         .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], .block-container {{
-            position: absolute !important; top: 0 !important; left: 0 !important;
-            height: 100vh !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; border: none !important;
+            position: relative !important; 
+            top: 0 !important; 
+            left: 0 !important;
+            height: auto !important; 
+            overflow: visible !important; 
+            padding: 0 !important; 
+            margin: 0 !important; 
+            border: none !important;
         }}
 
-        .print-manifest-card, .print-manifest-card * {{ visibility: visible !important; color: #000000 !important; background-color: transparent !important; box-shadow: none !important; text-shadow: none !important; }}
+        .print-manifest-card, .print-manifest-card * {{ 
+            visibility: visible !important; 
+            color: #000000 !important; 
+            background-color: #ffffff !important; 
+            box-shadow: none !important; 
+            text-shadow: none !important; 
+        }}
         
         .print-manifest-card {{ 
-            position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; max-height: 98vh !important;
-            margin: 0 !important; padding: 15px !important; border: 2px solid #000000 !important; 
-            background: #ffffff !important; background-color: #ffffff !important; box-sizing: border-box !important; 
-            page-break-inside: avoid !important; page-break-after: avoid !important; page-break-before: avoid !important; 
-            z-index: 99999999 !important; display: block !important; overflow: hidden !important;
+            position: absolute !important; 
+            left: 0 !important; 
+            top: 0 !important; 
+            width: 100% !important; 
+            max-height: 270mm !important;
+            margin: 0 !important; 
+            padding: 20px !important; 
+            border: 2px solid #000000 !important; 
+            background: #ffffff !important; 
+            background-color: #ffffff !important; 
+            box-sizing: border-box !important; 
+            page-break-inside: avoid !important; 
+            page-break-after: avoid !important; 
+            page-break-before: avoid !important; 
+            z-index: 99999999 !important; 
+            display: block !important; 
+            overflow: hidden !important;
         }}
-        .print-manifest-card table {{ width: 100% !important; display: table !important; border-collapse: collapse !important; margin-top: 15px !important; }}
-        .print-manifest-card tr {{ display: table-row !important; page-break-inside: avoid !important; }}
-        .print-manifest-card td, .print-manifest-card th {{ display: table-cell !important; padding: 6px 8px !important; font-size: 13px !important; color: #000000 !important; border-bottom: 1px solid #cbd5e1 !important; }}
-        .screen-only-timestamp {{ display: none !important; }}
-        * {{ -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }}
+        
+        .print-manifest-card table {{ 
+            width: 100% !important; 
+            display: table !important; 
+            border-collapse: collapse !important; 
+            margin-top: 15px !important; 
+        }}
+        
+        .print-manifest-card tr {{ 
+            display: table-row !important; 
+            page-break-inside: avoid !important; 
+        }}
+        
+        .print-manifest-card td, .print-manifest-card th {{ 
+            display: table-cell !important; 
+            padding: 8px 10px !important; 
+            font-size: 14px !important; 
+            color: #000000 !important; 
+            border-bottom: 1px solid #cbd5e1 !important; 
+        }}
+        
+        .screen-only-timestamp {{ 
+            display: none !important; 
+        }}
+        
+        * {{ 
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important; 
+        }}
     }}
     </style>
 """, unsafe_allow_html=True)
@@ -635,7 +699,15 @@ def login_view():
                                         "login_time": datetime.datetime.now(PKT_TZ).isoformat()
                                     }).execute()
                                 except Exception:
-                                    pass
+                                    # Fail-safe database insert in case of alternate schema structure
+                                    try:
+                                        supabase.table("login_logs").insert({
+                                            "username": ud[0]["username"],
+                                            "full_name": ud[0]["full_name"],
+                                            "role": ud[0]["role"]
+                                        }).execute()
+                                    except Exception:
+                                        pass
                                     
                                 recovery_data = fetch_operator_state(ud[0]["username"])
                                 
@@ -885,7 +957,44 @@ def operator_matrix_view():
                 try:
                     supabase.table("app_users").insert({"username": nu.strip(), "password": np.strip(), "full_name": nf.strip(), "role": "staff"}).execute()
                     st.success("Operator registered successfully!")
+                    time.sleep(0.5)
+                    st.rerun()
                 except Exception as e: st.error(f"Error: {e}")
+                
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.markdown("### 👥 Active Operators & Security Access Logs")
+    col_u, col_l = st.columns(2)
+    
+    with col_u:
+        st.markdown("#### 👤 Registered User Profiles")
+        try:
+            users_res = supabase.table("app_users").select("*").execute().data
+            if users_res:
+                df_users = pd.DataFrame(users_res)
+                # Display available key profile columns safely
+                display_cols = [c for c in ["username", "full_name", "role"] if c in df_users.columns]
+                st.dataframe(df_users[display_cols], use_container_width=True)
+            else:
+                st.info("No registered users found in the database.")
+        except Exception as e:
+            st.error(f"Error loading registered users: {e}")
+            
+    with col_l:
+        st.markdown("#### 🕒 Real-time Session Login Logs")
+        try:
+            try:
+                logs_res = supabase.table("login_logs").select("*").order("id", desc=True).limit(50).execute().data
+            except Exception:
+                logs_res = supabase.table("login_logs").select("*").limit(50).execute().data
+                
+            if logs_res:
+                df_logs = pd.DataFrame(logs_res)
+                display_cols_logs = [c for c in ["username", "full_name", "role", "login_time", "created_at"] if c in df_logs.columns]
+                st.dataframe(df_logs[display_cols_logs], use_container_width=True)
+            else:
+                st.info("No active operator session logs recorded yet.")
+        except Exception as e:
+            st.error(f"Error loading login logs: {e}")
 
 def communications_view():
     st.session_state.current_navigation_tab = "📞 Outbound Communications Desk"
@@ -956,8 +1065,16 @@ def communications_view():
                     profile["id"] = None
                     profile["status"] = "Pending"
 
-            # Added enriched Select Box visual parameters as requested in Point 3
-            options_list = [f"👤 {r['patient_name']}  |  📦 {r['article_id']}" for r in final_recs]
+            # 🛠️ Point 1 Fix: Visual alignment to match user's screenshot identically
+            options_list = []
+            for r in final_recs:
+                status_val = r.get('status', 'Pending')
+                if status_val == "Delivered":
+                    status_display = "Verified"
+                else:
+                    status_display = status_val
+                options_list.append(f"{str(r['patient_name']).upper()} (MRN: {r.get('mrn_no', 'N/A')}) - [{status_display}]")
+                
             if st.session_state.selected_profile_index >= len(options_list): st.session_state.selected_profile_index = 0
                 
             selected_prof_str = st.selectbox("Select Patient Profile to Process:", options_list, index=st.session_state.selected_profile_index, key="outbound_profile_select")
@@ -1135,7 +1252,7 @@ def communications_view():
                         </div>
                     """, unsafe_allow_html=True)
 
-                    # --- Step 3: Fixing "Black Box" Issue ---
+                    # --- Step 3: Fixing "Black Box" & A4 Overflow Issues ---
                     if cached_emtts and "history" in cached_emtts:
                         components.html(f"""
                         <style>
@@ -1143,8 +1260,7 @@ def communications_view():
                         .custom-print-btn:hover {{ background: linear-gradient(180deg, #e53e3e 0%, #cc2424 100%) !important; }}
                         body {{ margin: 0; padding: 0; overflow: hidden; background: transparent; }}
                         
-                        /* Fix: Permanently hide this print button from the internal iFrame when printing.
-                           This makes this embedded components frame and its button not visible. */
+                        /* Fix: Permanently hide print buttons from inside frames when triggered */
                         @media print {{
                             body {{ display: none !important; visibility: hidden !important; }}
                             .custom-print-btn {{ display: none !important; visibility: hidden !important; }}
