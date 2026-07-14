@@ -1252,9 +1252,6 @@ def communications_view():
                                     <b>Verified By (Operator ID):</b> {print_operator}<br>
                                     <span style="font-size: 11px; color: #475569;">Timestamp: {current_pkt_time} (PKT)</span>
                                 </div>
-                                <div style="text-align: right; font-weight: bold; padding-bottom: 5px;">
-                                    Sign / Stamp: ______________________
-                                </div>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
