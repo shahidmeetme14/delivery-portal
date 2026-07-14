@@ -348,22 +348,24 @@ st.markdown(f"""
     @media print {{
         @page {{ 
             size: A4 portrait !important; 
-            margin: 10mm 15mm 10mm 15mm !important; 
+            margin: 0mm !important; /* Strips browser headers and footers completely */
         }}
         
         html, body {{ 
-            height: auto !important; 
+            height: 100% !important; 
             margin: 0 !important; 
             padding: 0 !important; 
-            overflow: visible !important; 
+            overflow: hidden !important; 
             background: #ffffff !important; 
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important;
         }}
         
         body * {{ 
             visibility: hidden !important; 
         }}
         
-        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], header, footer, iframe, .stElementContainer:has(iframe), button, .custom-print-btn {{ 
+        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], header, footer, iframe, .stElementContainer:has(iframe), button, .custom-print-btn, [data-testid="stBottom"], div[data-testid="stBottomBlockContainer"] {{ 
             display: none !important; 
             visibility: hidden !important; 
             opacity: 0 !important;
@@ -373,39 +375,45 @@ st.markdown(f"""
             position: relative !important; 
             top: 0 !important; 
             left: 0 !important;
-            height: auto !important; 
-            overflow: visible !important; 
+            height: 100% !important; 
+            overflow: hidden !important; 
             padding: 0 !important; 
             margin: 0 !important; 
             border: none !important;
         }}
 
-        .print-manifest-card, .print-manifest-card * {{ 
+        .print-manifest-card {{ 
+            visibility: visible !important; 
+            position: fixed !important; 
+            top: 15mm !important; 
+            left: 15mm !important; 
+            right: 15mm !important; 
+            bottom: 15mm !important; 
+            width: calc(100% - 30mm) !important; 
+            height: calc(100% - 30mm) !important; 
+            box-sizing: border-box !important; 
+            margin: 0 !important; 
+            padding: 25px !important; 
+            border: 3px double #a61c1c !important; /* Elegant double border */
+            border-radius: 0px !important; /* Formal Square Border */
+            background: #ffffff !important; 
+            background-color: #ffffff !important; 
+            page-break-inside: avoid !important; 
+            page-break-after: avoid !important; 
+            page-break-before: avoid !important; 
+            z-index: 99999999 !important; 
+            display: flex !important; 
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            overflow: hidden !important;
+        }}
+
+        .print-manifest-card * {{ 
             visibility: visible !important; 
             color: #000000 !important; 
             background-color: #ffffff !important; 
             box-shadow: none !important; 
             text-shadow: none !important; 
-        }}
-        
-        .print-manifest-card {{ 
-            position: absolute !important; 
-            left: 0 !important; 
-            top: 0 !important; 
-            width: 100% !important; 
-            max-height: 270mm !important;
-            margin: 0 !important; 
-            padding: 20px !important; 
-            border: 2px solid #000000 !important; 
-            background: #ffffff !important; 
-            background-color: #ffffff !important; 
-            box-sizing: border-box !important; 
-            page-break-inside: avoid !important; 
-            page-break-after: avoid !important; 
-            page-break-before: avoid !important; 
-            z-index: 99999999 !important; 
-            display: block !important; 
-            overflow: hidden !important;
         }}
         
         .print-manifest-card table {{ 
@@ -430,11 +438,6 @@ st.markdown(f"""
         
         .screen-only-timestamp {{ 
             display: none !important; 
-        }}
-        
-        * {{ 
-            -webkit-print-color-adjust: exact !important; 
-            print-color-adjust: exact !important; 
         }}
     }}
     </style>
@@ -643,7 +646,7 @@ def open_alert_manifest(alert_data):
     current_pkt_time = datetime.datetime.now(PKT_TZ).strftime('%Y-%m-%d %I:%M:%S %p')
         
     st.markdown(f"""
-        <div class="print-manifest-card" style="background: #ffffff; border: 2px dashed #cbd5e1; padding: 25px; border-radius: 8px; font-family: 'Segoe UI', sans-serif; color: #000000;">
+        <div class="print-manifest-card" style="background: #ffffff; border: 3px double #a61c1c; padding: 25px; font-family: 'Segoe UI', sans-serif; color: #000000;">
             <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 10px; margin-bottom: 20px;">
                 <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
                 <p style="margin: 5px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Quality Verification & Consignee Audit Certificate</p>
@@ -658,10 +661,13 @@ def open_alert_manifest(alert_data):
                 <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">EMTTS Tracking Status:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top;">{emtts_status_html}</td></tr>
                 <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Verification Status:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{print_status_detail}</td></tr>
             </table>
-            <div style="margin-top: 35px; display: flex; justify-content: space-between; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 15px; color: #475569;">
+            <div style="margin-top: 35px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 15px; color: #000000;">
                 <div>
                     <b>Verified By (Operator ID):</b> {print_operator}<br>
-                    <span style="font-size: 11px; color: #64748b;">Timestamp: {current_pkt_time} (PKT)</span>
+                    <span style="font-size: 11px; color: #475569;">Timestamp: {current_pkt_time} (PKT)</span>
+                </div>
+                <div style="text-align: right; font-weight: bold; padding-bottom: 5px;">
+                    Sign / Stamp: ______________________
                 </div>
             </div>
         </div>
@@ -690,9 +696,9 @@ def login_view():
                         try:
                             ud = supabase.table("app_users").select("*").eq("username", input_user.strip()).eq("password", input_pass.strip()).execute().data
                             if ud:
-                                # Insert login log securely into the database
+                                # Insert login log securely into user_logins table (Fixed Point 1)
                                 try:
-                                    supabase.table("login_logs").insert({
+                                    supabase.table("user_logins").insert({
                                         "username": ud[0]["username"],
                                         "full_name": ud[0]["full_name"],
                                         "role": ud[0]["role"],
@@ -701,7 +707,7 @@ def login_view():
                                 except Exception:
                                     # Fail-safe database insert in case of alternate schema structure
                                     try:
-                                        supabase.table("login_logs").insert({
+                                        supabase.table("user_logins").insert({
                                             "username": ud[0]["username"],
                                             "full_name": ud[0]["full_name"],
                                             "role": ud[0]["role"]
@@ -982,10 +988,11 @@ def operator_matrix_view():
     with col_l:
         st.markdown("#### 🕒 Real-time Session Login Logs")
         try:
+            # Fixed Point 1 (Changed login_logs to user_logins)
             try:
-                logs_res = supabase.table("login_logs").select("*").order("id", desc=True).limit(50).execute().data
+                logs_res = supabase.table("user_logins").select("*").order("id", desc=True).limit(50).execute().data
             except Exception:
-                logs_res = supabase.table("login_logs").select("*").limit(50).execute().data
+                logs_res = supabase.table("user_logins").select("*").limit(50).execute().data
                 
             if logs_res:
                 df_logs = pd.DataFrame(logs_res)
@@ -1065,7 +1072,7 @@ def communications_view():
                     profile["id"] = None
                     profile["status"] = "Pending"
 
-            # 🛠️ Point 1 Fix: Visual alignment to match user's screenshot identically
+            # Visual alignment to match user's UI layout
             options_list = []
             for r in final_recs:
                 status_val = r.get('status', 'Pending')
@@ -1226,12 +1233,12 @@ def communications_view():
 
                     current_pkt_time = datetime.datetime.now(PKT_TZ).strftime('%Y-%m-%d %I:%M:%S %p')
 
-                    # --- Step 2: Individual Profile Print fitting to one page ---
+                    # Print Layout Box fitted exactly to one A4 portrait page (Fixed Point 2 & 3)
                     st.markdown(f"""
-                        <div class="print-manifest-card" style="background: #ffffff; border: 2px dashed #cbd5e1; padding: 15px; border-radius: 8px; font-family: 'Segoe UI', sans-serif; color: #000000;">
-                            <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 5px; margin-bottom: 10px;">
-                                <h2 style="margin: 0; color: #a61c1c; font-size: 21px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
-                                <p style="margin: 3px 0 0 0; color: #475569; font-size: 12px; font-weight: 600;">Quality Verification & Consignee Audit Certificate</p>
+                        <div class="print-manifest-card" style="background: #ffffff; border: 3px double #a61c1c; padding: 25px; font-family: 'Segoe UI', sans-serif; color: #000000;">
+                            <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 10px; margin-bottom: 20px;">
+                                <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
+                                <p style="margin: 5px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Quality Verification & Consignee Audit Certificate</p>
                             </div>
                             <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #000000;">
                                 <tr><td style="padding: 8px 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['patient_name']}</td></tr>
@@ -1243,16 +1250,18 @@ def communications_view():
                                 <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">EMTTS Tracking Status:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top;">{emtts_status_html}</td></tr>
                                 <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Verification Status:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{print_status_detail}</td></tr>
                             </table>
-                            <div style="margin-top: 20px; display: flex; justify-content: space-between; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 10px; color: #475569;">
+                            <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 15px; color: #000000;">
                                 <div>
                                     <b>Verified By (Operator ID):</b> {print_operator}<br>
-                                    <span style="font-size: 11px; color: #64748b;">Timestamp: {current_pkt_time} (PKT)</span>
+                                    <span style="font-size: 11px; color: #475569;">Timestamp: {current_pkt_time} (PKT)</span>
+                                </div>
+                                <div style="text-align: right; font-weight: bold; padding-bottom: 5px;">
+                                    Sign / Stamp: ______________________
                                 </div>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
 
-                    # --- Step 3: Fixing "Black Box" & A4 Overflow Issues ---
                     if cached_emtts and "history" in cached_emtts:
                         components.html(f"""
                         <style>
@@ -1639,7 +1648,6 @@ if st.session_state.logged_in:
                             today_count += 1
                     except: pass
             
-            # Label changed identically to process Point #1
             count_label = "Total Verifications Today"
             st.markdown(f"""
                 <div style='background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid rgba(212, 175, 55, 0.3); margin-top: 15px; margin-bottom: 15px;'>
