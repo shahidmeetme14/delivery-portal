@@ -8,7 +8,6 @@ import requests
 import urllib.request
 from bs4 import BeautifulSoup
 import streamlit.components.v1 as components
-# Removed xlsxwriter to fix ModuleNotFoundError
 
 # 🇵🇰 Pakistan Standard Time (PKT) Setup - No external libraries needed
 PKT_TZ = datetime.timezone(datetime.timedelta(hours=5))
@@ -59,7 +58,7 @@ for key in mapping_keys:
     if key not in st.session_state:
         st.session_state[key] = None
 
-# 🎨 Premium UI Engine Styling - Customized to ep.gov.pk Red & Gold Theme with Crystal Black Sidebar
+# 🎨 Premium UI Engine Styling
 sidebar_css_rule = ""
 if not st.session_state.logged_in:
     sidebar_css_rule = """
@@ -146,7 +145,7 @@ st.markdown(f"""
         box-shadow: inset 0px 2px 5px rgba(0,0,0,0.3) !important;
     }}
     
-    /* 💎 Crystal Style Navigation Buttons with 3D Gold Border */
+    /* 💎 Crystal Style Navigation Buttons */
     section[data-testid="stSidebar"] div.stButton > button {{
         background: rgba(255, 255, 255, 0.05) !important;
         color: #ffffff !important;
@@ -167,12 +166,6 @@ st.markdown(f"""
         border-color: rgba(212, 175, 55, 0.9) !important;
         box-shadow: 0 0 15px rgba(212, 175, 55, 0.4), inset 0 1px 3px rgba(255, 255, 255, 0.2) !important;
         transform: translateY(-1px) !important;
-    }}
-    
-    section[data-testid="stSidebar"] div.stButton > button:active {{
-        transform: translateY(3px) !important;
-        border-bottom: 2px solid rgba(179, 146, 46, 0.9) !important;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(0,0,0,0.3) !important;
     }}
 
     /* 🟡 Glossy Gold Crystal Password Button */
@@ -201,40 +194,44 @@ st.markdown(f"""
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
     }}
     
-    /* Flat Dropdowns & Inputs Fixes (Removed 3D Effects as Requested) */
+    /* ✨ 3D Dropdowns, Inputs & Textareas (As Requested) */
     div[data-baseweb="select"] > div, 
     div[data-testid="stSelectbox"] div[data-baseweb="select"],
     div[data-testid="stDateInput"] > div,
-    div[data-testid="stTextInput"] > div {{
-        background: #ffffff !important;
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 6px !important;
-        box-shadow: none !important;
-        transition: all 0.15s ease-in-out;
+    div[data-testid="stTextInput"] > div,
+    div[data-testid="stNumberInput"] > div,
+    div[data-testid="stTextArea"] > div {{
+        background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%) !important;
+        border: 1px solid #94a3b8 !important;
+        border-bottom: 4px solid #64748b !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.7) !important;
+        transition: all 0.15s ease-in-out !important;
         overflow: hidden !important;
     }}
     
-    /* Selectbox baseui invisible overlay fix */
     div[data-baseweb="select"] > div > div {{
         background-color: transparent !important;
-        border: none !important;
     }}
     
     div[data-baseweb="select"] > div:hover, 
     div[data-testid="stDateInput"] > div:hover,
-    div[data-testid="stTextInput"] > div:hover {{
-        background: #ffffff !important;
+    div[data-testid="stTextInput"] > div:hover,
+    div[data-testid="stTextArea"] > div:hover {{
         border-color: #a61c1c !important;
+        border-bottom: 4px solid #a61c1c !important;
+        transform: translateY(-1px);
     }}
 
     div[data-baseweb="select"] *, 
     div[data-testid="stDateInput"] input,
-    div[data-testid="stTextInput"] input {{
+    div[data-testid="stTextInput"] input,
+    div[data-testid="stTextArea"] textarea {{
         color: #1e293b !important;
         font-weight: 600 !important;
     }}
     
-    /* 🎨 Right Column Questionnaire Unique Decent Background */
+    /* 🎨 Right Column Questionnaire Background */
     [data-testid="column"]:nth-of-type(2) {{
         background: linear-gradient(135deg, #ffffff 0%, #fdfbf7 100%);
         border: 1px solid #e2e8f0;
@@ -279,13 +276,7 @@ st.markdown(f"""
         box-sizing: border-box;
     }}
     
-    .data-card {{
-        background: #ffffff;
-        padding: 18px;
-        border-radius: 8px;
-        border: 1px solid #cbd5e1;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-    }}
+    .data-card {{ background: #ffffff; padding: 18px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }}
     .data-card .data-row {{ margin-bottom: 12px; font-size: 15px; color: #334155; }}
     .data-card .data-value {{ font-size: 19px !important; font-weight: 700 !important; color: #a61c1c; background: #fff5f5; padding: 2px 8px; border-radius: 4px; border: 1px solid #fecaca; display: inline-block; }}
     .data-card .data-value-alt {{ font-size: 19px !important; font-weight: 700 !important; color: #b45309; font-family: monospace; background: #fffbeb; padding: 2px 8px; border-radius: 4px; border: 1px solid #fef3c7; display: inline-block; }}
@@ -297,7 +288,7 @@ st.markdown(f"""
     section[data-testid="stSidebar"] .sb-privilege-label {{ margin-top: 10px; color: #cbd5e1 !important; font-size: 14px; }}
     section[data-testid="stSidebar"] .sb-privilege-label span {{ color: #39ff14 !important; font-weight: bold !important; text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14 !important; }}
     
-    /* 🖨️ Absolute Print Media Optimization (Fixed Black Background Issue) */
+    /* 🖨️ Absolute Print Media Optimization */
     @media print {{
         @page {{ size: A4 portrait !important; margin: 5mm !important; }}
         html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], .block-container, .stApp {{
@@ -438,26 +429,50 @@ def change_password_dialog():
                 except Exception as ex:
                     st.error(f"Database error: {ex}")
 
-@st.dialog("📊 Date-wise Verification Stats")
+@st.dialog("📊 Date-wise Verification Stats", width="large")
 def user_stats_dialog():
-    st.markdown("<div style='color: #475569; font-size: 14px; margin-bottom: 15px;'>Select date range to view your total verifications count.</div>", unsafe_allow_html=True)
+    st.markdown("<div style='color: #475569; font-size: 14px; margin-bottom: 15px;'>Select date range to view verifications count details.</div>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1: start_date = st.date_input("From Date", datetime.date.today() - datetime.timedelta(days=7))
     with c2: end_date = st.date_input("To Date", datetime.date.today())
     
     if st.button("Calculate Stats 🧮", use_container_width=True):
-        with st.spinner("Fetching your records..."):
+        with st.spinner("Fetching logs matrix..."):
             try:
-                res = supabase.table("patient_deliveries").select("created_at").eq("operator_stamp", st.session_state.full_name).execute().data
-                count = 0
-                for r in res:
-                    if 'created_at' in r and r['created_at']:
-                        try:
-                            dt = datetime.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00')).date()
-                            if start_date <= dt <= end_date:
-                                count += 1
-                        except: pass
-                st.success(f"Total verifications between selected dates: **{count}**")
+                if st.session_state.role == "admin":
+                    users_res = supabase.table("app_users").select("full_name").eq("role", "staff").execute().data
+                    staff_names = [u['full_name'] for u in users_res] if users_res else []
+                    
+                    all_records = supabase.table("patient_deliveries").select("operator_stamp, created_at").execute().data
+                    counts = {name: 0 for name in staff_names}
+                    
+                    for r in all_records:
+                        if 'created_at' in r and r['created_at']:
+                            try:
+                                dt = datetime.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00')).date()
+                                if start_date <= dt <= end_date:
+                                    op = r.get('operator_stamp')
+                                    if op in counts: counts[op] += 1
+                                    elif op: counts[op] = 1 
+                            except: pass
+                            
+                    df_stats = pd.DataFrame(list(counts.items()), columns=["Operator Name", "Total Verifications"])
+                    st.dataframe(df_stats, use_container_width=True)
+                    
+                    csv_buffer = io.StringIO()
+                    df_stats.to_csv(csv_buffer, index=False)
+                    st.download_button("📥 Export Staff Stats (.CSV)", data=csv_buffer.getvalue().encode('utf-8'), file_name=f"Staff_Stats_{start_date}_to_{end_date}.csv", mime="text/csv", use_container_width=True)
+                else:
+                    res = supabase.table("patient_deliveries").select("created_at").eq("operator_stamp", st.session_state.full_name).execute().data
+                    count = 0
+                    for r in res:
+                        if 'created_at' in r and r['created_at']:
+                            try:
+                                dt = datetime.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00')).date()
+                                if start_date <= dt <= end_date:
+                                    count += 1
+                            except: pass
+                    st.success(f"Total verifications between selected dates: **{count}**")
             except Exception as e:
                 st.error(f"Error fetching stats: {e}")
 
@@ -478,12 +493,13 @@ def open_alert_manifest(alert_data):
         """
         
     print_operator = alert_data.get('operator_stamp', 'System Alert Console')
+    extra_charge = alert_data.get('extra_money_charged', 'Yes')
     print_status_detail = f"""
     <b style="color: green;">Delivered</b><br>
     <span style="font-size: 13px; font-weight: 600; color: #334155; line-height: 1.4;">
         • Date: {alert_data.get('delivery_date', 'N/A')}<br>
         • Mode: {alert_data.get('received_mode', 'N/A')}<br>
-        • Extra Money Requested: <b style="color: #dc2626">{alert_data.get('extra_money_charged', 'Yes')}</b>
+        • Extra Money Requested: <b style="color: #dc2626">{extra_charge}</b>
     </span>
     """
 
@@ -527,7 +543,6 @@ def open_alert_manifest(alert_data):
     <button onclick="window.parent.print()" class="custom-print-btn">🖨️ PRINT FEEDBACK MANIFEST</button>
     """, height=55)
 
-
 def login_view():
     _, center_col, _ = st.columns([1, 1.4, 1])
     with center_col:
@@ -559,7 +574,6 @@ def login_view():
                                     st.rerun()
                             else: st.error("ACCESS DENIED: Invalid credentials.")
                         except Exception as ex: st.error(f"Database Sync Failure: {ex}")
-
 
 def recovery_view():
     _, alert_box, _ = st.columns([1, 2, 1])
@@ -609,6 +623,9 @@ def ingestion_view():
             c_dup = st.selectbox("Duplication Log Column:", df.columns, index=calculate_mapped_index(df.columns, "map_dup", "Duplicate"))
 
         if st.button("🚀 Push Verified Records to Cloud Database & Storage Bucket", use_container_width=True):
+            ui_blocker = st.empty()
+            ui_blocker.markdown("<style> [data-testid='stSidebar'], [data-testid='stHeader'] { pointer-events: none !important; opacity: 0.6 !important; filter: blur(0.5px) !important; } </style>", unsafe_allow_html=True)
+            
             status_progress_text = st.empty()
             progress_bar_control = st.progress(0)
             
@@ -671,8 +688,10 @@ def ingestion_view():
                 supabase.storage.from_("manifests").upload(path="master_manifest_store.csv", file=master_csv_bytes, file_options={"content-type": "text/csv"})
                 status_progress_text.empty()
                 progress_bar_control.empty()
+                ui_blocker.empty()
                 st.success(f"🟢 Success: File processed successfully! Out of {total_input_count} total records, {total_duplicates_cleared} duplicate entries were detected and removed based on the selected deduplication parameters. The remaining unique records have been securely saved.")
             except Exception as store_ex:
+                ui_blocker.empty()
                 st.error(f"Failed to synchronize master stream archive: {store_ex}")
 
     st.markdown("<br><hr style='border-top: 2px solid #cbd5e1;'><br>", unsafe_allow_html=True)
@@ -703,6 +722,9 @@ def ingestion_view():
                     cloud_col1 = st.selectbox("Cloud Database Field:", df_cloud.columns, key="cc1")
                 
                 if st.button("⚙️ Start Secure Matching Process", use_container_width=True):
+                    ui_blocker_match = st.empty()
+                    ui_blocker_match.markdown("<style> [data-testid='stSidebar'], [data-testid='stHeader'] { pointer-events: none !important; opacity: 0.6 !important; filter: blur(0.5px) !important; } </style>", unsafe_allow_html=True)
+                    
                     progress_bar = st.progress(0)
                     status_text = st.empty()
                     
@@ -727,6 +749,7 @@ def ingestion_view():
                             unmatched_rows.append(unmatched_dict)
                             
                     status_text.text("✅ Backend Matching Engine Completed!")
+                    ui_blocker_match.empty()
                     st.success(f"📊 Summary Dashboard:\n- **Total Articles Scanned:** {total_rows}\n- **Successfully Matched:** {len(matched_rows)}\n- **Not Found (Unmatched):** {len(unmatched_rows)}")
                     
                     if matched_rows or unmatched_rows:
@@ -738,7 +761,6 @@ def ingestion_view():
                             
                         final_export_df = pd.concat([df_matched_export, df_unmatched_export], ignore_index=True)
                         
-                        # Use CSV Export to avoid xlsxwriter dependency
                         csv_buffer = io.StringIO()
                         final_export_df.to_csv(csv_buffer, index=False)
                         st.download_button(
@@ -768,41 +790,6 @@ def operator_matrix_view():
                     supabase.table("app_users").insert({"username": nu.strip(), "password": np.strip(), "full_name": nf.strip(), "role": "staff"}).execute()
                     st.success("Operator registered successfully!")
                 except Exception as e: st.error(f"Error: {e}")
-
-
-def admin_stats_view():
-    st.session_state.current_navigation_tab = "📈 Staff Verifications Dashboard"
-    st.markdown("### 📈 Staff Verifications Dashboard")
-    
-    c1, c2 = st.columns(2)
-    with c1: start_date = st.date_input("From Date", datetime.date.today())
-    with c2: end_date = st.date_input("To Date", datetime.date.today())
-    
-    if st.button("Fetch Statistics", use_container_width=True):
-        with st.spinner("Fetching data logs matrix..."):
-            try:
-                all_records = supabase.table("patient_deliveries").select("operator_stamp, created_at").execute().data
-                if all_records:
-                    filtered_recs = []
-                    for r in all_records:
-                        if 'created_at' in r and r['created_at']:
-                            try:
-                                dt = datetime.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00')).date()
-                                if start_date <= dt <= end_date:
-                                    filtered_recs.append(r)
-                            except: pass
-                    
-                    if filtered_recs:
-                        df = pd.DataFrame(filtered_recs)
-                        counts = df['operator_stamp'].value_counts().reset_index()
-                        counts.columns = ['Operator Name', 'Total Verifications']
-                        st.dataframe(counts, use_container_width=True)
-                    else:
-                        st.warning("No verifications found in this date range.")
-                else:
-                    st.warning("Cloud database nodes are currently empty.")
-            except Exception as err:
-                st.error(f"Failed to compile statistics: {err}")
 
 
 def communications_view():
@@ -881,9 +868,6 @@ def communications_view():
             actual_index = options_list.index(selected_prof_str) if selected_prof_str in options_list else 0
             target_profile = final_recs[actual_index]
             current_article_id = target_profile['article_id']
-            
-            if target_profile["status"] not in ["Pending", "Pending Retry"]:
-                st.warning(f"⚠️ Note: The questionnaire for this patient has already been processed! Current Status: [{target_profile['status']}]")
 
             st.markdown("<hr>", unsafe_allow_html=True)
             l_panel, r_panel = st.columns(2)
@@ -904,7 +888,6 @@ def communications_view():
                 with opt_col1: data_mode = st.radio("Display Transformation:", ["Fetch Live (Raw Mode)", "Fetch Snipped Data (Mapped Mode)"])
                 with opt_col2: report_scope = st.radio("Reporting Scope Evaluation:", ["Only Last Status", "All Statuses (Full History)"])
                 
-                # Fetch Logic Separated from Rendering
                 if st.button("🔍 Fetch Live Status from PakPost Server", use_container_width=True):
                     with st.spinner("Connecting to EMTTS Website..."):
                         data, err = fetch_live_emtts_status(current_article_id)
@@ -913,7 +896,6 @@ def communications_view():
                         elif data and data["history"]:
                             st.session_state.fetched_emtts_data[current_article_id] = data
                             
-                # Persistent Rendering - Independent of Button Click
                 cached_emtts_lpanel = st.session_state.fetched_emtts_data.get(current_article_id)
                 if cached_emtts_lpanel and "history" in cached_emtts_lpanel:
                     history_list = cached_emtts_lpanel["history"]
@@ -968,7 +950,7 @@ def communications_view():
                         <span style="font-size: 13px; font-weight: 600; color: #334155; line-height: 1.4;">
                             • Date: {delivery_date}<br>
                             • Mode: {received_mode}<br>
-                            • Extra Money Requested: <b style="color: {'#dc2626' if extra_money == 'Yes' else '#1e293b'}">{extra_money}</b>
+                            • Extra Money Requested: <b style="color: {'#dc2626' if extra_money != 'No' else '#1e293b'}">{extra_money}</b>
                         </span>
                         """
                     elif print_status == "Issue / Complaint":
@@ -1072,184 +1054,190 @@ def communications_view():
             with r_panel:
                 st.markdown("#### 📝 Live Patient Verification & Feedback Questionnaire")
                 
-                payload_buffer = {}
-                can_submit = False
+                allow_questionnaire = True
+                if target_profile["status"] not in ["Pending", "Pending Retry"]:
+                    st.warning(f"⚠️ Note: The questionnaire for this patient has already been processed! Current Status: [{target_profile['status']}]")
+                    unlock_re = st.radio("Do you want to process this verified profile again?", ["No", "Yes"], index=0)
+                    if unlock_re == "No": 
+                        allow_questionnaire = False
                 
-                cached_emtts = st.session_state.fetched_emtts_data.get(current_article_id)
-                live_status = ""
-                live_date = ""
-                if cached_emtts and "history" in cached_emtts and len(cached_emtts["history"]) > 0:
-                    live_status = cached_emtts["history"][-1]["status"].lower()
-                    live_date = cached_emtts["history"][-1]["datetime"]
-
-                contact_status = st.radio("📞 Was the patient successfully contacted on call?", ["Select Option", "Yes", "No"])
-                
-                if contact_status == "No":
-                    payload_buffer["contact_status"] = "No"
-                    no_contact_reason = st.selectbox("Reason for failure to contact:", ["Select Reason", "Phone number not valid", "Phone number wrong", "Phone switched off", "Did not pick up"])
+                if allow_questionnaire:
+                    payload_buffer = {}
+                    can_submit = False
                     
-                    if no_contact_reason == "Did not pick up":
-                        st.warning("⏱️ **Patient did not pick up the call.** Please attempt a follow-up call after 2 hours.")
-                        retry_action = st.radio("Action Strategy:", ["Mark for Retry (Pending)", "Close as Unreachable (Max Attempts Reached)"])
-                        if retry_action == "Mark for Retry (Pending)": 
-                            payload_buffer["status"] = "Pending Retry"
-                            payload_buffer["no_contact_reason"] = "Did not pick up - Pending Retry"
-                            can_submit = True
-                        elif retry_action == "Close as Unreachable (Max Attempts Reached)":
-                            payload_buffer["status"] = "Unreachable"
-                            payload_buffer["no_contact_reason"] = "Did not pick up - Final"
-                            can_submit = True
-                    elif no_contact_reason != "Select Reason":
-                        payload_buffer["status"] = f"Unreachable"
-                        payload_buffer["no_contact_reason"] = no_contact_reason
-                        can_submit = True
-                        
-                elif contact_status == "Yes":
-                    payload_buffer["contact_status"] = "Yes"
-                    is_delivered = st.radio("📦 According to the patient, have they physically received the medicine?", ["Select Option", "Yes", "No"])
-                    
-                    if is_delivered == "Yes":
-                        payload_buffer["status"] = "Delivered"
-                        st.markdown("##### 📅 Delivery Date & Verification")
-                        
-                        col_d1, col_d2 = st.columns(2)
-                        with col_d1: delivery_date = st.date_input("Select the date patient received the parcel:", datetime.date.today())
-                        with col_d2: st.info(f"**EMTTS Fetched Date:**\n{live_date if live_date else 'Not Fetched Yet'}")
-                            
-                        # Advanced Date Mismatch Logic Fix
-                        if live_date:
-                            d_str1 = delivery_date.strftime("%Y-%m-%d")
-                            d_str2 = delivery_date.strftime("%d-%m-%Y")
-                            d_str3 = delivery_date.strftime("%B %d, %Y")
-                            d_str4 = delivery_date.strftime("%b %d, %Y")
-                            
-                            ld_lower = live_date.lower()
-                            matched_dates = any(d.lower() in ld_lower for d in [d_str1, d_str2, d_str3, d_str4, str(delivery_date)])
-                            
-                            if not matched_dates:
-                                st.error("⚠️ **Date Conflict Alert:** The date provided by the patient differs from the official EMTTS log date.")
-                                payload_buffer["emtts_conflict"] = "Date Mismatch Detected"
-                        else:
-                            st.info("💡 Tip: Fetch Live Status from the left panel to automatically verify the EMTTS dates.")
+                    cached_emtts = st.session_state.fetched_emtts_data.get(current_article_id)
+                    live_status = ""
+                    live_date = ""
+                    if cached_emtts and "history" in cached_emtts and len(cached_emtts["history"]) > 0:
+                        live_status = cached_emtts["history"][-1]["status"].lower()
+                        live_date = cached_emtts["history"][-1]["datetime"]
 
-                        if live_status and "delivered" not in live_status:
-                            st.error("🚨 **EMTTS STATUS CONFLICT:** The EMTTS tracking shows this parcel is NOT delivered, but the patient confirmed they received it.")
-                            payload_buffer["emtts_conflict"] = "Status Mismatch (Not Delivered on EMTTS)"
-                            
-                        payload_buffer["delivery_date"] = str(delivery_date)
+                    contact_status = st.radio("📞 Was the patient successfully contacted on call?", ["Select Option", "Yes", "No"])
+                    
+                    if contact_status == "No":
+                        payload_buffer["contact_status"] = "No"
+                        no_contact_reason = st.selectbox("Reason for failure to contact:", ["Select Reason", "Phone number not valid", "Phone number wrong", "Phone switched off", "Did not pick up"])
                         
-                        received_mode = st.radio("📍 Delivery Execution Mode:", ["Select Mode", "Delivered by postman to home address", "Collected directly from local post office branch"])
-                        payload_buffer["received_mode"] = received_mode
-                        
-                        if received_mode == "Delivered by postman to home address":
-                            st.markdown("##### 🕵️ Postman Conduct & Ethics Assessment")
-                            extra_money = st.radio("Did the postman ask for any unauthorized extra money or tips?", ["Select", "No", "Yes"])
+                        if no_contact_reason == "Did not pick up":
+                            st.warning("⏱️ **Patient did not pick up the call.** Please attempt a follow-up call after 2 hours.")
+                            retry_action = st.radio("Action Strategy:", ["Mark for Retry (Pending)", "Close as Unreachable (Max Attempts Reached)"])
+                            if retry_action == "Mark for Retry (Pending)": 
+                                payload_buffer["status"] = "Pending Retry"
+                                payload_buffer["no_contact_reason"] = "Did not pick up - Pending Retry"
+                                can_submit = True
+                            elif retry_action == "Close as Unreachable (Max Attempts Reached)":
+                                payload_buffer["status"] = "Unreachable"
+                                payload_buffer["no_contact_reason"] = "Did not pick up - Final"
+                                can_submit = True
+                        elif no_contact_reason != "Select Reason":
+                            payload_buffer["status"] = f"Unreachable"
+                            payload_buffer["no_contact_reason"] = no_contact_reason
+                            can_submit = True
                             
-                            if extra_money == "Yes":
-                                st.error("🚨 **CRITICAL CORRUPTION ALERT:** Extra charges were demanded. This case will be highlighted for Admin Resolution.")
-                                payload_buffer["extra_money_charged"] = "Yes"
-                                payload_buffer["postman_issue_type"] = "Extra Charges Demanded"
-                                payload_buffer["extra_money_amount"] = st.text_input("Amount Demanded (Rs.):")
+                    elif contact_status == "Yes":
+                        payload_buffer["contact_status"] = "Yes"
+                        is_delivered = st.radio("📦 According to the patient, have they physically received the medicine?", ["Select Option", "Yes", "No"])
+                        
+                        if is_delivered == "Yes":
+                            payload_buffer["status"] = "Delivered"
+                            st.markdown("##### 📅 Delivery Date & Verification")
+                            
+                            col_d1, col_d2 = st.columns(2)
+                            with col_d1: delivery_date = st.date_input("Select the date patient received the parcel:", datetime.date.today())
+                            with col_d2: st.info(f"**EMTTS Fetched Date:**\n{live_date if live_date else 'Not Fetched Yet'}")
                                 
-                                col_p1, col_p2 = st.columns(2)
-                                with col_p1: payload_buffer["postman_name"] = st.text_input("Postman Name (if known):")
-                                with col_p2: payload_buffer["postman_phone"] = st.text_input("Postman Phone No. (if known):")
-                                payload_buffer["post_office_name"] = st.text_input("Concerned Post Office Name:")
+                            if live_date:
+                                d_str1 = delivery_date.strftime("%Y-%m-%d")
+                                d_str2 = delivery_date.strftime("%d-%m-%Y")
+                                d_str3 = delivery_date.strftime("%B %d, %Y")
+                                d_str4 = delivery_date.strftime("%b %d, %Y")
                                 
-                                if payload_buffer["extra_money_amount"] and payload_buffer["post_office_name"]: can_submit = True
+                                ld_lower = live_date.lower()
+                                matched_dates = any(d.lower() in ld_lower for d in [d_str1, d_str2, d_str3, d_str4, str(delivery_date)])
+                                
+                                if not matched_dates:
+                                    st.error("⚠️ **Date Conflict Alert:** The date provided by the patient differs from the official EMTTS log date.")
+                                    payload_buffer["emtts_conflict"] = "Date Mismatch Detected"
+                            else:
+                                st.info("💡 Tip: Fetch Live Status from the left panel to automatically verify the EMTTS dates.")
+
+                            if live_status and "delivered" not in live_status:
+                                st.error("🚨 **EMTTS STATUS CONFLICT:** The EMTTS tracking shows this parcel is NOT delivered, but the patient confirmed they received it.")
+                                payload_buffer["emtts_conflict"] = "Status Mismatch (Not Delivered on EMTTS)"
+                                
+                            payload_buffer["delivery_date"] = str(delivery_date)
+                            
+                            received_mode = st.radio("📍 Delivery Execution Mode:", ["Select Mode", "Delivered by postman to home address", "Collected directly from local post office branch"])
+                            payload_buffer["received_mode"] = received_mode
+                            
+                            if received_mode == "Delivered by postman to home address":
+                                st.markdown("##### 🕵️ Postman Conduct & Ethics Assessment")
+                                extra_money = st.radio("Did the postman ask for any unauthorized extra money or tips?", ["Select", "No", "Yes"])
+                                
+                                if extra_money == "Yes":
+                                    st.error("🚨 **CRITICAL CORRUPTION ALERT:** Extra charges were demanded. This case will be highlighted for Admin Resolution.")
+                                    payload_buffer["extra_money_charged"] = "Yes"
+                                    payload_buffer["postman_issue_type"] = "Extra Charges Demanded"
+                                    payload_buffer["extra_money_amount"] = st.text_input("Amount Demanded (Rs.):")
                                     
-                            elif extra_money == "No":
-                                payload_buffer["extra_money_charged"] = "No"
-                                other_issue = st.radio("Any other issue or complaint regarding the postman?", ["No", "Yes"])
-                                
-                                if other_issue == "Yes":
-                                    payload_buffer["postman_issue_type"] = "Other Issue"
-                                    payload_buffer["issue_reason"] = st.text_area("Describe the issue:")
                                     col_p1, col_p2 = st.columns(2)
-                                    with col_p1: payload_buffer["postman_name"] = st.text_input("Postman Name:")
-                                    with col_p2: payload_buffer["postman_phone"] = st.text_input("Postman Phone No.:")
+                                    with col_p1: payload_buffer["postman_name"] = st.text_input("Postman Name (if known):")
+                                    with col_p2: payload_buffer["postman_phone"] = st.text_input("Postman Phone No. (if known):")
                                     payload_buffer["post_office_name"] = st.text_input("Concerned Post Office Name:")
-                                    if payload_buffer["issue_reason"] and payload_buffer["post_office_name"]: can_submit = True
-                                else:
-                                    payload_buffer["postman_issue_type"] = "None"
+                                    
+                                    if payload_buffer["extra_money_amount"] and payload_buffer["post_office_name"]: can_submit = True
+                                        
+                                elif extra_money == "No":
+                                    payload_buffer["extra_money_charged"] = "No"
+                                    other_issue = st.radio("Any other issue or complaint regarding the postman?", ["No", "Yes"])
+                                    
+                                    if other_issue == "Yes":
+                                        payload_buffer["postman_issue_type"] = "Other Issue"
+                                        payload_buffer["issue_reason"] = st.text_area("Describe the issue:")
+                                        col_p1, col_p2 = st.columns(2)
+                                        with col_p1: payload_buffer["postman_name"] = st.text_input("Postman Name:")
+                                        with col_p2: payload_buffer["postman_phone"] = st.text_input("Postman Phone No.:")
+                                        payload_buffer["post_office_name"] = st.text_input("Concerned Post Office Name:")
+                                        if payload_buffer["issue_reason"] and payload_buffer["post_office_name"]: can_submit = True
+                                    else:
+                                        payload_buffer["postman_issue_type"] = "None"
+                                        can_submit = True
+
+                            elif received_mode == "Collected directly from local post office branch":
+                                st.markdown("##### 🏢 Post Office Collection Details")
+                                col_po1, col_po2 = st.columns(2)
+                                with col_po1: payload_buffer["postman_name"] = st.text_input("Postman Name (if known):", key="po_p_name")
+                                with col_po2: payload_buffer["postman_phone"] = st.text_input("Postman Phone No. (if known):", key="po_p_phone")
+                                payload_buffer["post_office_name"] = st.text_input("Concerned Post Office Name:", key="po_name")
+                                po_issue = st.radio("Any issue faced during collection?", ["No", "Yes"])
+                                if po_issue == "Yes":
+                                    payload_buffer["issue_reason"] = st.text_area("Describe the issue faced at post office:")
+                                
+                                if payload_buffer["post_office_name"]:
                                     can_submit = True
 
-                        elif received_mode == "Collected directly from local post office branch":
-                            st.markdown("##### 🏢 Post Office Collection Details")
-                            col_po1, col_po2 = st.columns(2)
-                            with col_po1: payload_buffer["postman_name"] = st.text_input("Postman Name (if known):", key="po_p_name")
-                            with col_po2: payload_buffer["postman_phone"] = st.text_input("Postman Phone No. (if known):", key="po_p_phone")
-                            payload_buffer["post_office_name"] = st.text_input("Concerned Post Office Name:", key="po_name")
-                            po_issue = st.radio("Any issue faced during collection?", ["No", "Yes"])
-                            if po_issue == "Yes":
-                                payload_buffer["issue_reason"] = st.text_area("Describe the issue faced at post office:")
+                        elif is_delivered == "No":
+                            payload_buffer["status"] = "Issue / Complaint"
+                            st.markdown(f"<div style='background:#f1f5f9; padding:12px; border-radius:6px; border-left:4px solid #0ea5e9; margin-bottom:15px; color:#0f172a;'><b>🏠 Verify Address with Patient:</b><br>{target_profile['address']}</div>", unsafe_allow_html=True)
+                            addr_match = st.radio("Did the patient confirm this address is correct?", ["Select Option", "Yes - Address is correct", "No - Address is wrong/mismatched"])
                             
-                            if payload_buffer["post_office_name"]:
-                                can_submit = True
-
-                    elif is_delivered == "No":
-                        payload_buffer["status"] = "Issue / Complaint"
-
-                        # Patient Address Verification Logic Check
-                        st.markdown(f"<div style='background:#f1f5f9; padding:12px; border-radius:6px; border-left:4px solid #0ea5e9; margin-bottom:15px; color:#0f172a;'><b>🏠 Verify Address with Patient:</b><br>{target_profile['address']}</div>", unsafe_allow_html=True)
-                        addr_match = st.radio("Did the patient confirm this address is correct?", ["Select Option", "Yes - Address is correct", "No - Address is wrong/mismatched"])
-                        
-                        address_verified_ready = False
-                        if addr_match == "No - Address is wrong/mismatched":
-                            new_addr = st.text_input("📝 Enter the updated/correct address provided by patient:")
-                            if new_addr:
-                                payload_buffer["updated_address"] = new_addr
+                            address_verified_ready = False
+                            if addr_match == "No - Address is wrong/mismatched":
+                                new_addr = st.text_input("📝 Enter the updated/correct address provided by patient:")
+                                if new_addr:
+                                    payload_buffer["updated_address"] = new_addr
+                                    address_verified_ready = True
+                                else:
+                                    st.warning("Please enter the updated address to continue.")
+                            elif addr_match == "Yes - Address is correct":
+                                payload_buffer["updated_address"] = target_profile['address']
                                 address_verified_ready = True
-                            else:
-                                st.warning("Please enter the updated address to continue.")
-                        elif addr_match == "Yes - Address is correct":
-                            payload_buffer["updated_address"] = target_profile['address']
-                            address_verified_ready = True
 
-                        # Only proceed if address is confirmed
-                        if address_verified_ready:
-                            if live_status and "delivered" in live_status:
-                                st.error("🚨 **EMTTS FAKE DELIVERY CONFLICT:** The EMTTS tracking shows this parcel IS marked as delivered, but the patient states they DID NOT receive it! Immediate investigation required.")
-                                payload_buffer["emtts_conflict"] = "Fake Delivery Marked on EMTTS"
-                                 
-                            postman_contact = st.radio("Did the postman contact the patient?", ["Select", "Yes", "No"])
-                            
-                            if postman_contact == "Yes":
-                                 payload_buffer["postman_contacted"] = "Yes"
-                                 reason = st.selectbox("Why did the patient not receive the medicine?", ["Select Reason", "Patient does not want to receive it", "Patient has passed away (Died)", "Medicine course is completed", "Other"])
-                                 
-                                 if reason != "Select Reason":
-                                     payload_buffer["not_received_reason"] = reason
-                                     payload_buffer["status"] = f"RTS Requested"
-                                     can_submit = True
+                            if address_verified_ready:
+                                if live_status and "delivered" in live_status:
+                                    st.error("🚨 **EMTTS FAKE DELIVERY CONFLICT:** The EMTTS tracking shows this parcel IS marked as delivered, but the patient states they DID NOT receive it! Immediate investigation required.")
+                                    payload_buffer["emtts_conflict"] = "Fake Delivery Marked on EMTTS"
                                      
-                            elif postman_contact == "No":
-                                 payload_buffer["postman_contacted"] = "No"
-                                 st.warning("⚠️ **NEGLIGENCE ALERT:** The postman did not deliver the parcel and did not contact the patient. Follow-up is required.")
-                                 payload_buffer["issue_reason"] = "Postman did not contact or deliver to the patient"
-                                 can_submit = True
-                             
-                if can_submit:
-                    if st.button("💾 Finalize Session & Commit Logs", use_container_width=True):
-                        with st.spinner("Processing transaction submission rules..."):
-                            payload_buffer["operator_stamp"] = st.session_state.full_name
-                            payload_buffer["article_id"] = target_profile["article_id"]
-                            payload_buffer["patient_name"] = target_profile["patient_name"]
-                            payload_buffer["phone_number"] = target_profile["phone_number"]
-                            payload_buffer["booking_date"] = target_profile["booking_date"]
-                            payload_buffer["address"] = target_profile["address"]
-                            payload_buffer["patient_city"] = target_profile["patient_city"]
-                            payload_buffer["mrn_no"] = target_profile["mrn_no"]
-                            payload_buffer["booking_office"] = target_profile["booking_office"]
-                            
-                            try:
-                                supabase.table("patient_deliveries").upsert(payload_buffer, on_conflict="article_id").execute()
-                                st.success("Updated securely with your operator identity stamp!")
-                                st.session_state.selected_profile_index += 1
-                                save_operator_state()
-                                time.sleep(0.5)
-                                st.rerun()
-                            except Exception as e: st.error(f"Sync error: {e}")
+                                postman_contact = st.radio("Did the postman contact the patient?", ["Select", "Yes", "No"])
+                                
+                                if postman_contact == "Yes":
+                                     payload_buffer["postman_contacted"] = "Yes"
+                                     reason = st.selectbox("Why did the patient not receive the medicine?", ["Select Reason", "Patient does not want to receive it", "Patient has passed away (Died)", "Medicine course is completed", "Other"])
+                                     
+                                     if reason != "Select Reason":
+                                         payload_buffer["not_received_reason"] = reason
+                                         payload_buffer["status"] = f"RTS Requested"
+                                         can_submit = True
+                                         
+                                elif postman_contact == "No":
+                                     payload_buffer["postman_contacted"] = "No"
+                                     st.warning("⚠️ **NEGLIGENCE ALERT:** The postman did not deliver the parcel and did not contact the patient. Follow-up is required.")
+                                     payload_buffer["issue_reason"] = "Postman did not contact or deliver to the patient"
+                                     can_submit = True
+                                 
+                    if can_submit:
+                        if st.button("💾 Finalize Session & Commit Logs", use_container_width=True):
+                            with st.spinner("Processing transaction submission rules..."):
+                                payload_buffer["operator_stamp"] = st.session_state.full_name
+                                payload_buffer["article_id"] = target_profile["article_id"]
+                                payload_buffer["patient_name"] = target_profile["patient_name"]
+                                payload_buffer["phone_number"] = target_profile["phone_number"]
+                                payload_buffer["booking_date"] = target_profile["booking_date"]
+                                payload_buffer["address"] = target_profile["address"]
+                                payload_buffer["patient_city"] = target_profile["patient_city"]
+                                payload_buffer["mrn_no"] = target_profile["mrn_no"]
+                                payload_buffer["booking_office"] = target_profile["booking_office"]
+                                
+                                try:
+                                    supabase.table("patient_deliveries").upsert(payload_buffer, on_conflict="article_id").execute()
+                                    st.success("Updated securely with your operator identity stamp!")
+                                    st.session_state.selected_profile_index += 1
+                                    save_operator_state()
+                                    time.sleep(0.5)
+                                    st.rerun()
+                                except Exception as e: st.error(f"Sync error: {e}")
+                else:
+                    st.info("ℹ️ Select 'Yes' above to unlock the patient questionnaire for re-verification.")
 
 
 def export_center_view():
@@ -1291,7 +1279,7 @@ def export_center_view():
 if not st.session_state.logged_in: pages_to_display = [st.Page(login_view, title="Authentication Desk", icon="🔒")]
 elif st.session_state.show_recovery_prompt: pages_to_display = [st.Page(recovery_view, title="Session Recovery", icon="🔄")]
 else:
-    if st.session_state.role == "admin": pages_to_display = [st.Page(ingestion_view, title="Ingestion Engine", icon="📊"), st.Page(operator_matrix_view, title="Operator Matrix", icon="👥"), st.Page(communications_view, title="Communications Desk", icon="📞"), st.Page(admin_stats_view, title="Staff Stats", icon="📈"), st.Page(export_center_view, title="Export Center & Backup", icon="📥")]
+    if st.session_state.role == "admin": pages_to_display = [st.Page(ingestion_view, title="Ingestion Engine", icon="📊"), st.Page(operator_matrix_view, title="Operator Matrix", icon="👥"), st.Page(communications_view, title="Communications Desk", icon="📞"), st.Page(export_center_view, title="Export Center & Backup", icon="📥")]
     else: pages_to_display = [st.Page(communications_view, title="Communications Desk", icon="📞"), st.Page(export_center_view, title="My Exports & Backup", icon="📥")]
 
 selected_navigation_route = st.navigation(pages_to_display, position="hidden")
@@ -1301,33 +1289,63 @@ st.markdown("<div class='brand-subtitle'>Article Tracking & Patient Feedback Rep
 
 if st.session_state.logged_in and st.session_state.role == "admin":
     try:
-        unauthorized_charges = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes").execute().data
-        if unauthorized_charges:
+        alert_records_query = supabase.table("patient_deliveries").select("*").neq("extra_money_charged", "No").execute().data
+        active_alerts = [a for a in alert_records_query if a.get("extra_money_charged") in ["Yes", "Under Enquiry"]]
+        
+        if active_alerts:
             st.markdown("### 🚨 Critical Corruption & Extra Charges Alerts")
-            for alert in unauthorized_charges:
-                alert_col1, alert_col2, alert_col3 = st.columns([3, 1, 1])
-                with alert_col1: st.error(f"⚠️ **Postman Alert:** Extra money charged for **{alert['patient_name']}** (MRN: {alert.get('mrn_no', 'N/A')}, Consignment ID: {alert['article_id']}). Operator: **{alert.get('operator_stamp', 'Staff')}**")
-                with alert_col2: 
-                    if st.button("🖨️ Open Manifest", key=f"print_alert_{alert['id']}", use_container_width=True): open_alert_manifest(alert)
-                with alert_col3:
-                    if st.button("Dismiss ✅", key=f"resolve_charge_{alert['id']}", use_container_width=True):
-                        with st.spinner("Processing alert resolution..."):
+            for alert in active_alerts:
+                is_enquiry = (alert.get("extra_money_charged") == "Under Enquiry")
+                enquiry_flag = "🚩 **[UNDER ENQUIRY]**" if is_enquiry else ""
+                
+                ac1, ac2, ac3, ac4 = st.columns([3, 1, 1, 1])
+                with ac1: 
+                    st.error(f"⚠️ **Postman Alert:** Extra money charged for **{alert['patient_name']}** (MRN: {alert.get('mrn_no', 'N/A')}, Consignment ID: {alert['article_id']}). Operator: **{alert.get('operator_stamp', 'Staff')}** {enquiry_flag}")
+                with ac2: 
+                    if st.button("🖨️ Auto Manifest", key=f"print_alert_{alert['id']}", use_container_width=True): open_alert_manifest(alert)
+                with ac3:
+                    if not is_enquiry:
+                        if st.button("Under Enquiry 🚩", key=f"enquiry_charge_{alert['id']}", use_container_width=True):
+                            with st.spinner("Processing..."):
+                                supabase.table("patient_deliveries").update({"extra_money_charged": "Under Enquiry"}).eq("id", alert["id"]).execute()
+                                time.sleep(0.5)
+                                st.rerun()
+                    else:
+                        st.info("Under Enquiry")
+                with ac4:
+                    if st.button("Resolve ✅", key=f"resolve_charge_{alert['id']}", use_container_width=True):
+                        with st.spinner("Resolving..."):
                             supabase.table("patient_deliveries").update({"extra_money_charged": "Yes (Resolved)"}).eq("id", alert["id"]).execute()
-                            st.success("Alert successfully cleared from active view!")
                             time.sleep(0.5)
                             st.rerun()
             st.markdown("<hr style='border-top: 1px solid #cc2424;'>", unsafe_allow_html=True)
             
-        resolved_charges = supabase.table("patient_deliveries").select("*").eq("extra_money_charged", "Yes (Resolved)").execute().data
-        if resolved_charges:
-            with st.expander("📁 View Resolved Alert History Logs"):
-                for alert in resolved_charges:
-                    rc1, rc2 = st.columns([4, 1])
-                    with rc1: st.markdown(f"**Patient:** {alert.get('patient_name', 'N/A')} &nbsp; | &nbsp; **MRN:** {alert.get('mrn_no', 'N/A')} &nbsp; | &nbsp; **Article:** `{alert.get('article_id', 'N/A')}`")
-                    with rc2: 
-                        if st.button("🖨️ Auto Manifest", key=f"print_res_alert_{alert['id']}", use_container_width=True): open_alert_manifest(alert)
-                st.markdown("<hr style='margin-top: 5px; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
-    except: pass
+        resolved_or_history_alerts = [a for a in alert_records_query if a.get("extra_money_charged") in ["Yes (Resolved)", "Under Enquiry"]]
+        if resolved_or_history_alerts:
+            with st.expander("📁 View & Download Alert History Logs (Backup)"):
+                st.markdown("Download logs for all alerts (Resolved and Under Enquiry cases).")
+                hc1, hc2 = st.columns(2)
+                with hc1: d_from = st.date_input("From Date", datetime.date.today() - datetime.timedelta(days=7), key="dfrom_alert")
+                with hc2: d_to = st.date_input("To Date", datetime.date.today(), key="dto_alert")
+                
+                if st.button("📥 Download Alert Logs", use_container_width=True):
+                    history_logs = []
+                    for a in resolved_or_history_alerts:
+                        if 'created_at' in a and a['created_at']:
+                            try:
+                                dt = datetime.datetime.fromisoformat(a['created_at'].replace('Z', '+00:00')).date()
+                                if d_from <= dt <= d_to:
+                                    history_logs.append(a)
+                            except: pass
+                    
+                    if history_logs:
+                        df_hist = pd.DataFrame(history_logs)
+                        csv_buf = io.StringIO()
+                        df_hist.to_csv(csv_buf, index=False)
+                        st.download_button("Download CSV Backup", data=csv_buf.getvalue().encode('utf-8'), file_name=f"Alert_Logs_{d_from}_to_{d_to}.csv", mime="text/csv", use_container_width=True)
+                    else:
+                        st.warning("No alert logs found in this date range.")
+    except Exception as e: pass
 
 if st.session_state.logged_in:
     with st.sidebar:
@@ -1335,11 +1353,14 @@ if st.session_state.logged_in:
         st.markdown(f"<div class='sb-login-label'>Logged in as:</div><div class='sb-username-display'>{st.session_state.full_name}</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='sb-privilege-label'>Privilege Cluster: <span>{st.session_state.role.upper()}</span></div>", unsafe_allow_html=True)
         
-        # User Stats calculations
         try:
-            res_stats = supabase.table("patient_deliveries").select("created_at").eq("operator_stamp", st.session_state.full_name).execute().data
             today = datetime.date.today()
             today_count = 0
+            if st.session_state.role == "admin":
+                res_stats = supabase.table("patient_deliveries").select("created_at").execute().data
+            else:
+                res_stats = supabase.table("patient_deliveries").select("created_at").eq("operator_stamp", st.session_state.full_name).execute().data
+                
             for r in res_stats:
                 if 'created_at' in r and r['created_at']:
                     try:
@@ -1348,9 +1369,10 @@ if st.session_state.logged_in:
                             today_count += 1
                     except: pass
             
+            count_label = "Total Admin App Verifications (Today)" if st.session_state.role == "admin" else "Today's Verifications"
             st.markdown(f"""
                 <div style='background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid rgba(212, 175, 55, 0.3); margin-top: 15px; margin-bottom: 15px;'>
-                    <div style='color: #cbd5e1; font-size: 13px; font-weight: 600; margin-bottom: 5px;'>Today's Verifications</div>
+                    <div style='color: #cbd5e1; font-size: 13px; font-weight: 600; margin-bottom: 5px;'>{count_label}</div>
                     <div style='color: #d4af37; font-size: 24px; font-weight: 800;'>{today_count}</div>
                 </div>
             """, unsafe_allow_html=True)
