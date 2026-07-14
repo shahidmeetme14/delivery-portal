@@ -93,7 +93,6 @@ else:
     """
 
 # --- Step 1: Admin Alert Expanders Highlighting in Closed View ---
-# We inject CSS here at the start of the styles block to generically target expanders for highlight.
 generic_expander_highlight_css = """
 /* 📦 Admin Alert Expanders - Generic Styling in closed view for highlighting */
 div[data-testid="stExpander"] {
@@ -105,7 +104,6 @@ div[data-testid="stExpander"] {
     transition: all 0.3s ease !important;
 }
 
-/* Make sure the text is bold and uses deep red from subtitles */
 div[data-testid="stExpander"] button[data-testid="stExpanderHeader"] p {
     font-weight: 800 !important;
     color: #5c1414 !important; /* Deep red matching subtitle */
@@ -115,12 +113,10 @@ div[data-testid="stExpander"] button[data-testid="stExpanderHeader"] p span {
     color: #5c1414 !important;
 }
 
-/* Style the chevron icon */
 div[data-testid="stExpander"] button[data-testid="stExpanderHeader"] [data-testid="stExpanderToggleIcon"] {
     color: #d4af37 !important; /* Gold */
 }
 
-/* Remove default styling when open, applying a subtle body style */
 div[data-testid="stExpander"] > div[data-testid="stExpanderBody"] {
     padding-top: 10px !important;
     background-color: transparent !important;
@@ -148,7 +144,7 @@ st.markdown(f"""
         overflow: hidden !important;
     }}
     
-    {generic_expander_highlight_css} /* Step 1: Add generically highligting css for expanders */
+    {generic_expander_highlight_css} 
     {sidebar_css_rule}
     
     .stApp {{ background-color: #fdfcf9; }}
@@ -254,7 +250,7 @@ st.markdown(f"""
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
     }}
     
-    /* ✨ 3D Dropdowns, Inputs & Textareas (As Requested) */
+    /* ✨ 3D Dropdowns, Inputs & Textareas */
     div[data-baseweb="select"] > div, 
     div[data-testid="stSelectbox"] div[data-baseweb="select"],
     div[data-testid="stDateInput"] > div,
@@ -351,24 +347,18 @@ st.markdown(f"""
     /* 🖨️ Absolute Print Media Optimization (Black Box & Backdrop Overlay Fix) */
     @media print {{
         @page {{ size: A4 portrait !important; margin: 5mm !important; }}
-        html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], .block-container, .stApp, 
-        div[data-baseweb="modal"], div[data-baseweb="backdrop"], div[role="dialog"] {{
-            height: auto !important; width: 100% !important; max-height: none !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; 
-            background: #ffffff !important; background-color: #ffffff !important; background-image: none !important; color: #000000 !important; box-shadow: none !important; border: none !important;
+        
+        /* Stop empty containers from generating blank pages */
+        body * {{ visibility: hidden !important; }}
+        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], header, footer, iframe, .stElementContainer:has(iframe) {{ display: none !important; }}
+        
+        .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], .block-container {{
+            position: absolute !important; top: 0 !important; left: 0 !important;
+            height: 0 !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; border: none !important;
         }}
-        
-        #root > div, #root > div > div, .st-emotion-cache-1rqwtsj, .st-emotion-cache-16tysp {{
-            background: transparent !important; background-color: transparent !important;
-        }}
-        
-        div, span, header, footer, section, main, article {{ box-shadow: none !important; }}
-        
-        body *, .stApp *, [data-testid="stAppViewContainer"] *, [data-testid="stMain"] * {{ visibility: hidden !important; }}
-        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], footer, button, iframe, .stElementContainer:has(iframe) {{ display: none !important; }}
 
         .print-manifest-card, .print-manifest-card * {{ visibility: visible !important; color: #000000 !important; background-color: transparent !important; box-shadow: none !important; text-shadow: none !important; }}
         
-        /* Apply subtle footer spacing for print for list to logic all and correct all struct Desk Desk all */
         .print-manifest-card {{ 
             position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; height: auto !important;
             margin: 0 !important; padding: 20px !important; border: 2px solid #000000 !important; 
@@ -952,7 +942,7 @@ def communications_view():
                     profile["id"] = None
                     profile["status"] = "Pending"
 
-            options_list = [f"{r['patient_name']}<div class='custom-print-btn' onclick='window.print();'>🖨️ PRINT FEEDBACK MANIFEST</div>""" for r in final_recs]
+            options_list = [r['patient_name'] for r in final_recs]
             if st.session_state.selected_profile_index >= len(options_list): st.session_state.selected_profile_index = 0
                 
             selected_prof_str = st.selectbox("Select Patient Profile to Process:", options_list, index=st.session_state.selected_profile_index, key="outbound_profile_select")
@@ -1105,7 +1095,6 @@ def communications_view():
                     current_pkt_time = datetime.datetime.now(PKT_TZ).strftime('%Y-%m-%d %I:%M:%S %p')
 
                     # --- Step 2: Individual Profile Print fitting to one page ---
-                    # Modified styling for `.print-manifest-card` with reduced padding and table spacing for a better fit on a single page.
                     st.markdown(f"""
                         <div class="print-manifest-card" style="background: #ffffff; border: 2px dashed #cbd5e1; padding: 15px; border-radius: 8px; font-family: 'Segoe UI', sans-serif; color: #000000;">
                             <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 5px; margin-bottom: 10px;">
@@ -1132,10 +1121,6 @@ def communications_view():
                     """, unsafe_allow_html=True)
 
                     # --- Step 3: Fixing "Black Box" Issue ---
-                    # We modify the `components.html` to add embedded print-specific CSS rules. These rules ensure that this specific embedded button
-                    # and its container are hidden when printing, effectively removing the black box caused by the button spill.
-                    # As I cannot style the outside components iFrame itself I am applying rule to the iFrame body to make it invisible in print.
-                    
                     if cached_emtts and "history" in cached_emtts:
                         components.html(f"""
                         <style>
@@ -1390,7 +1375,7 @@ def export_center_view():
         else: st.warning("Cloud database nodes are currently empty.")
     except Exception as err: st.error(f"Failed to compile export ledger sheets: {err}")
 
-# Routing Engine setup (Optimized to fix the crash and enforce refresh-lock defaults)
+# Routing Engine setup
 def is_default_page(title_keyword):
     curr = st.session_state.get("current_navigation_tab")
     return curr is not None and title_keyword in curr
@@ -1431,7 +1416,6 @@ if st.session_state.logged_in and st.session_state.role == "admin":
                     is_enquiry = (alert.get("extra_money_charged") == "Under Enquiry")
                     enquiry_flag = "🚩 Under Enquiry" if is_enquiry else "🔴 Alert Active"
                     
-                    # 3D HTML Card Injection
                     st.markdown(f"""
                     <div class="alert-3d-card">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -1447,7 +1431,6 @@ if st.session_state.logged_in and st.session_state.role == "admin":
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    # Action Buttons below the 3D card
                     ac1, ac2, ac3, ac4 = st.columns([1.5, 1.5, 1.5, 5])
                     with ac1:
                         if st.button("🖨️ Print Manifest", key=f"print_alert_{alert['id']}", help="Print Auto Manifest", use_container_width=True): 
@@ -1548,7 +1531,6 @@ if st.session_state.logged_in:
             for pg in pages_to_display:
                 button_label = f"▶️ **{pg.icon} {pg.title}**" if pg.title == selected_navigation_route.title else f"{pg.icon} {pg.title}"
                 if st.button(button_label, use_container_width=True, key=f"nav_btn_{pg.title}"): 
-                    # Fix for Image error crash (Streamlit throws error if you switch to the active page)
                     if pg.title != selected_navigation_route.title:
                         st.session_state.current_navigation_tab = pg.title
                         st.query_params["tab"] = pg.title
