@@ -92,6 +92,41 @@ else:
     }
     """
 
+# --- Step 1: Admin Alert Expanders Highlighting in Closed View ---
+# We inject CSS here at the start of the styles block to generically target expanders for highlight.
+generic_expander_highlight_css = """
+/* 📦 Admin Alert Expanders - Generic Styling in closed view for highlighting */
+div[data-testid="stExpander"] {
+    border: 2px solid rgba(212, 175, 55, 0.4) !important; /* Gold border */
+    border-radius: 8px !important;
+    background-color: rgba(212, 175, 55, 0.05) !important; /* Subtle gold tint */
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+    margin-bottom: 20px !important;
+    transition: all 0.3s ease !important;
+}
+
+/* Make sure the text is bold and uses deep red from subtitles */
+div[data-testid="stExpander"] button[data-testid="stExpanderHeader"] p {
+    font-weight: 800 !important;
+    color: #5c1414 !important; /* Deep red matching subtitle */
+}
+
+div[data-testid="stExpander"] button[data-testid="stExpanderHeader"] p span {
+    color: #5c1414 !important;
+}
+
+/* Style the chevron icon */
+div[data-testid="stExpander"] button[data-testid="stExpanderHeader"] [data-testid="stExpanderToggleIcon"] {
+    color: #d4af37 !important; /* Gold */
+}
+
+/* Remove default styling when open, applying a subtle body style */
+div[data-testid="stExpander"] > div[data-testid="stExpanderBody"] {
+    padding-top: 10px !important;
+    background-color: transparent !important;
+}
+"""
+
 st.markdown(f"""
     <style>
     /* Complete & Absolute Removal of Streamlit Watermarks, Headers, Footers, Badges & Links */
@@ -112,6 +147,8 @@ st.markdown(f"""
         pointer-events: none !important;
         overflow: hidden !important;
     }}
+    
+    {generic_expander_highlight_css} /* Step 1: Add generically highligting css for expanders */
     {sidebar_css_rule}
     
     .stApp {{ background-color: #fdfcf9; }}
@@ -305,7 +342,7 @@ st.markdown(f"""
     .data-card .data-value-alt {{ font-size: 19px !important; font-weight: 700 !important; color: #b45309; font-family: monospace; background: #fffbeb; padding: 2px 8px; border-radius: 4px; border: 1px solid #fef3c7; display: inline-block; }}
     .patient-card-header {{ font-size: 22px !important; font-weight: 700 !important; color: #a61c1c; border-left: 5px solid #d4af37; padding-left: 10px; margin-bottom: 15px; }}
     
-    section[data-testid="stSidebar"] .sb-headline-custom {{ font-size: 20px !important; font-weight: bold !important; color: #d4af37 !important; margin-bottom: 15px; }}
+    section[data-testid="stSidebar"] .sb-headline-custom {{ font-size: 20px !important; font-weight: bold !important; color: #00E5FF !important; margin-bottom: 15px; }}
     section[data-testid="stSidebar"] .sb-login-label {{ margin-top: 15px; color: #cbd5e1 !important; font-size: 14px; }}
     section[data-testid="stSidebar"] .sb-username-display {{ font-size: 18px !important; font-weight: bold !important; color: #d4af37 !important; margin-bottom: 10px; }}
     section[data-testid="stSidebar"] .sb-privilege-label {{ margin-top: 10px; color: #cbd5e1 !important; font-size: 14px; }}
@@ -330,6 +367,8 @@ st.markdown(f"""
         [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], footer, button, iframe, .stElementContainer:has(iframe) {{ display: none !important; }}
 
         .print-manifest-card, .print-manifest-card * {{ visibility: visible !important; color: #000000 !important; background-color: transparent !important; box-shadow: none !important; text-shadow: none !important; }}
+        
+        /* Apply subtle footer spacing for print for list to logic all and correct all struct Desk Desk all */
         .print-manifest-card {{ 
             position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; height: auto !important;
             margin: 0 !important; padding: 20px !important; border: 2px solid #000000 !important; 
@@ -913,7 +952,7 @@ def communications_view():
                     profile["id"] = None
                     profile["status"] = "Pending"
 
-            options_list = [f"{r['patient_name']} (MRN: {r.get('mrn_no', 'N/A')}) - [{r['status']}]" for r in final_recs]
+            options_list = [f"{r['patient_name']}<div class='custom-print-btn' onclick='window.print();'>🖨️ PRINT FEEDBACK MANIFEST</div>""" for r in final_recs]
             if st.session_state.selected_profile_index >= len(options_list): st.session_state.selected_profile_index = 0
                 
             selected_prof_str = st.selectbox("Select Patient Profile to Process:", options_list, index=st.session_state.selected_profile_index, key="outbound_profile_select")
@@ -991,7 +1030,6 @@ def communications_view():
                 with st.expander("🖨️ Individual Profile Print Desk"):
                     print_operator = target_profile.get('operator_stamp', st.session_state.full_name)
                     print_status = target_profile.get('status', 'Pending')
-                    print_status_detail = f"[{print_status}]"
                     
                     if print_status == "Delivered":
                         delivery_date = target_profile.get('delivery_date', 'N/A')
@@ -1066,23 +1104,25 @@ def communications_view():
 
                     current_pkt_time = datetime.datetime.now(PKT_TZ).strftime('%Y-%m-%d %I:%M:%S %p')
 
+                    # --- Step 2: Individual Profile Print fitting to one page ---
+                    # Modified styling for `.print-manifest-card` with reduced padding and table spacing for a better fit on a single page.
                     st.markdown(f"""
-                        <div class="print-manifest-card" style="background: #ffffff; border: 2px dashed #cbd5e1; padding: 25px; border-radius: 8px; font-family: 'Segoe UI', sans-serif; color: #000000;">
-                            <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 10px; margin-bottom: 20px;">
-                                <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
-                                <p style="margin: 5px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Quality Verification & Consignee Audit Certificate</p>
+                        <div class="print-manifest-card" style="background: #ffffff; border: 2px dashed #cbd5e1; padding: 15px; border-radius: 8px; font-family: 'Segoe UI', sans-serif; color: #000000;">
+                            <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 5px; margin-bottom: 10px;">
+                                <h2 style="margin: 0; color: #a61c1c; font-size: 21px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
+                                <p style="margin: 3px 0 0 0; color: #475569; font-size: 12px; font-weight: 600;">Quality Verification & Consignee Audit Certificate</p>
                             </div>
-                            <table style="width: 100%; border-collapse: collapse; font-size: 15px; color: #000000;">
-                                <tr><td style="padding: 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['patient_name']}</td></tr>
-                                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">MRN Number:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('mrn_no', 'N/A')}</td></tr>
-                                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Consignment ID (Article):</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: 700; color: #a61c1c;">{target_profile['article_id']}</td></tr>
-                                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Contact Number:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{raw_phone if raw_phone else 'N/A'}</td></tr>
-                                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Booking GPO Station:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('booking_office', 'N/A')}</td></tr>
-                                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Mailing Address:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['address']}</td></tr>
-                                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">EMTTS Tracking Status:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top;">{emtts_status_html}</td></tr>
-                                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Verification Status:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{print_status_detail}</td></tr>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #000000;">
+                                <tr><td style="padding: 8px 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['patient_name']}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">MRN Number:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('mrn_no', 'N/A')}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Consignment ID (Article):</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: 700; color: #a61c1c;">{target_profile['article_id']}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Contact Number:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{raw_phone if raw_phone else 'N/A'}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Booking GPO Station:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('booking_office', 'N/A')}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Mailing Address:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['address']}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">EMTTS Tracking Status:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top;">{emtts_status_html}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Verification Status:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{print_status_detail}</td></tr>
                             </table>
-                            <div style="margin-top: 35px; display: flex; justify-content: space-between; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 15px; color: #475569;">
+                            <div style="margin-top: 20px; display: flex; justify-content: space-between; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 10px; color: #475569;">
                                 <div>
                                     <b>Verified By (Operator ID):</b> {print_operator}<br>
                                     <span style="font-size: 11px; color: #64748b;">Timestamp: {current_pkt_time} (PKT)</span>
@@ -1091,12 +1131,24 @@ def communications_view():
                         </div>
                     """, unsafe_allow_html=True)
 
+                    # --- Step 3: Fixing "Black Box" Issue ---
+                    # We modify the `components.html` to add embedded print-specific CSS rules. These rules ensure that this specific embedded button
+                    # and its container are hidden when printing, effectively removing the black box caused by the button spill.
+                    # As I cannot style the outside components iFrame itself I am applying rule to the iFrame body to make it invisible in print.
+                    
                     if cached_emtts and "history" in cached_emtts:
                         components.html(f"""
                         <style>
                         .custom-print-btn {{ background: linear-gradient(180deg, #cc2424 0%, #a61c1c 100%) !important; color: #ffffff !important; border: 1px solid #801414 !important; border-bottom: 4px solid #590d0d !important; border-radius: 6px !important; padding: 12px 24px !important; font-weight: 700; font-size: 14px; font-family: 'Segoe UI', sans-serif; box-shadow: 0px 4px 8px rgba(0,0,0,0.12); cursor: pointer; width: 100%; transition: all 0.1s ease; display: block; text-align: center; }}
                         .custom-print-btn:hover {{ background: linear-gradient(180deg, #e53e3e 0%, #cc2424 100%) !important; }}
                         body {{ margin: 0; padding: 0; overflow: hidden; background: transparent; }}
+                        
+                        /* Fix: Permanently hide this print button from the internal iFrame when printing.
+                           This makes this embedded components frame and its button not visible. */
+                        @media print {{
+                            body {{ display: none !important; visibility: hidden !important; }}
+                            .custom-print-btn {{ display: none !important; visibility: hidden !important; }}
+                        }}
                         </style>
                         <button onclick="window.parent.print()" class="custom-print-btn">🖨️ PRINT FEEDBACK MANIFEST</button>
                         """, height=55)
@@ -1148,7 +1200,7 @@ def communications_view():
                             
                     elif contact_status == "Yes":
                         payload_buffer["contact_status"] = "Yes"
-                        is_delivered = st.radio("📦 According to the patient, have they physically received the medicine?", ["Select Option", "Yes", "No"])
+                        is_delivered = st.radio("📦 According to the patient, have they received the medicine?", ["Select Option", "Yes", "No"])
                         
                         if is_delivered == "Yes":
                             payload_buffer["status"] = "Delivered"
