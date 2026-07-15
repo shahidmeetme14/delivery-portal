@@ -782,7 +782,7 @@ def recovery_view():
                     st.rerun()
 
 # Is purane code ko dhoondhein:
-ef ingestion_view(): # ya def ingestion_view():
+def ingestion_view(): # ya def ingestion_view():
     st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine"
     st.markdown("### 📥 Bulk Articles Ingestion Engine")
     source_file = st.file_uploader("Upload Medicine Article Sheet", type=["xlsx", "csv"], key="bulk_uploader_main")
