@@ -811,38 +811,22 @@ def ingestion_view():
             c_bo = st.selectbox("Booking Office Column:", df.columns, index=calculate_mapped_index(df.columns, "map_bo", "Booking Office"))
             c_dup = st.selectbox("Duplication Log Column:", df.columns, index=calculate_mapped_index(df.columns, "map_dup", "Duplicate"))
 
-        if st.button("🚀 Push Verified Records to Cloud Database & Storage Bucket", use_container_width=True):
+        if st.button("🚀 Push Verified Records to Cloud Database Table", use_container_width=True):
             ui_blocker = st.empty()
             ui_blocker.markdown("<style> [data-testid='stSidebar'], [data-testid='stHeader'] { pointer-events: none !important; opacity: 0.6 !important; filter: blur(0.5px) !important; } </style>", unsafe_allow_html=True)
             
             status_progress_text = st.empty()
             progress_bar_control = st.progress(0)
             
-            status_progress_text.text("Connecting with cloud storage nodes... (15% Complete)")
+            status_progress_text.text("Connecting with database nodes... (15% Complete)")
             progress_bar_control.progress(15)
             
-            # Strict Connection Exception Handling to prevent accidental data wipes
+            # Fetch existing Article IDs from patient_deliveries to calculate duplicates accurately
             try:
-                # Use cache first to save memory and egress, then fallback to download
-                if st.session_state.get("master_manifest_cache") is not None:
-                    master_ledger_df = st.session_state["master_manifest_cache"].copy()
-                else:
-                    existing_master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
-                    master_ledger_df = pd.read_csv(io.BytesIO(existing_master_bytes), dtype=str)
-                    st.session_state["master_manifest_cache"] = master_ledger_df
+                db_res = supabase.table("patient_deliveries").select("article_id").execute().data
+                existing_articles = [str(r["article_id"]).strip() for r in db_res if "article_id" in r]
             except Exception as e:
-                err_str = str(e).lower()
-                if "not found" in err_str or "404" in err_str or "does not exist" in err_str or "not exist" in err_str:
-                    master_ledger_df = pd.DataFrame(columns=[
-                        "article_id", "patient_name", "phone_number", "booking_date", 
-                        "address", "patient_city", "mrn_no", "booking_office", "transaction_no"
-                    ])
-                else:
-                    ui_blocker.empty()
-                    status_progress_text.empty()
-                    progress_bar_control.empty()
-                    st.error(f"❌ Storage Safety Halt: Network or API failure detected ({e}). Upload blocked to protect old data.")
-                    st.stop()
+                existing_articles = []
 
             status_progress_text.text("Analyzing spreadsheet matrix structures... (45% Complete)")
             progress_bar_control.progress(45)
@@ -855,72 +839,45 @@ def ingestion_view():
                 "address": df[c_address].astype(str).str.strip(),
                 "patient_city": df[c_city].astype(str).str.strip(),
                 "mrn_no": df[c_mrn].astype(str).str.strip(),
-                "booking_office": df[c_bo].astype(str).str.strip() if c_bo in df.columns else "Lahore GPO",
-                "transaction_no": df[c_dup].astype(str).str.strip() if c_dup in df.columns else ""
+                "booking_office": df[c_bo].astype(str).str.strip() if c_bo in df.columns else "Lahore GPO"
             })
             total_input_count = len(uploaded_records_df)
 
-            status_progress_text.text("Scanning master datastore for cross-duplications... (75% Complete)")
+            status_progress_text.text("Scanning database for cross-duplications... (75% Complete)")
             progress_bar_control.progress(75)
             
-            # Request 1: Enhanced multi-field deduplication engine ensuring absolutely zero master data replacement
-            is_duplicate_by_article = uploaded_records_df["article_id"].isin(master_ledger_df["article_id"]) & (uploaded_records_df["article_id"] != "") & (uploaded_records_df["article_id"] != "nan")
+            # Check duplication directly with database records
+            is_duplicate_by_article = uploaded_records_df["article_id"].isin(existing_articles) & (uploaded_records_df["article_id"] != "") & (uploaded_records_df["article_id"] != "nan")
             
-            if "transaction_no" in master_ledger_df.columns and "transaction_no" in uploaded_records_df.columns:
-                is_duplicate_by_transaction = uploaded_records_df["transaction_no"].isin(master_ledger_df["transaction_no"]) & (uploaded_records_df["transaction_no"] != "") & (uploaded_records_df["transaction_no"] != "nan")
-                global_duplication_mask = is_duplicate_by_article | is_duplicate_by_transaction
-            else:
-                global_duplication_mask = is_duplicate_by_article
-            
-            clean_unique_records = uploaded_records_df[~global_duplication_mask]
+            clean_unique_records = uploaded_records_df[~is_duplicate_by_article]
             
             # Clean internal duplicates from uploaded chunk
             clean_unique_records = clean_unique_records.drop_duplicates(subset=["article_id"])
-            if "transaction_no" in clean_unique_records.columns:
-                valid_tx = clean_unique_records["transaction_no"].notna() & (clean_unique_records["transaction_no"] != "") & (clean_unique_records["transaction_no"] != "nan")
-                tx_dups = clean_unique_records[valid_tx].duplicated(subset=["transaction_no"])
-                clean_unique_records = clean_unique_records[~clean_unique_records.index.isin(clean_unique_records[valid_tx][tx_dups].index)]
             
             total_duplicates_cleared = total_input_count - len(clean_unique_records)
             
-            # Safe append strategy for 1.7M records
-            final_consolidated_df = pd.concat([master_ledger_df, clean_unique_records], ignore_index=True)
-            
-            status_progress_text.text("Synchronizing clean ledger stream into cloud core... (95% Complete)")
+            status_progress_text.text("Synchronizing ledger stream into cloud table... (95% Complete)")
             progress_bar_control.progress(95)
             
-            master_csv_buffer = io.StringIO()
-            final_consolidated_df.to_csv(master_csv_buffer, index=False)
-            master_csv_bytes = master_csv_buffer.getvalue().encode('utf-8')
+            records_to_insert = clean_unique_records.to_dict(orient="records")
+            chunk_size = 3000
             
             try:
-                # CRITICAL FIX: Removed the dangerous .remove() call that caused data deletion on timeouts.
-                # Using update() safely replaces the content. If it doesn't exist, fallback to upload(upsert=True)
-                try:
-                    supabase.storage.from_("manifests").update(
-                        path="master_manifest_store.csv", 
-                        file=master_csv_bytes, 
-                        file_options={"content-type": "text/csv"}
-                    )
-                except Exception:
-                    supabase.storage.from_("manifests").upload(
-                        path="master_manifest_store.csv", 
-                        file=master_csv_bytes, 
-                        file_options={"content-type": "text/csv", "upsert": "true", "x-upsert": "true"}
-                    )
+                # Upsert to database in chunks to prevent payload too large errors
+                for i in range(0, len(records_to_insert), chunk_size):
+                    chunk = records_to_insert[i:i+chunk_size]
+                    supabase.table("patient_deliveries").upsert(chunk, on_conflict="article_id").execute()
                 
-                # Request 2: Store cache to avoid network download egress costs
-                st.session_state["master_manifest_cache"] = final_consolidated_df
-                
-                # Note: Request 1 explicitly disables saving the source file separately in the bucket
+                # Clear cache so fresh data is loaded
+                st.session_state["master_manifest_cache"] = None
                 
                 status_progress_text.empty()
                 progress_bar_control.empty()
                 ui_blocker.empty()
-                st.success(f"🟢 Success: File processed successfully! Out of {total_input_count} total records, {total_duplicates_cleared} duplicate entries were detected and removed based on the selected deduplication parameters. The remaining unique records have been securely saved and merged with the master file.")
+                st.success(f"🟢 Success: File processed successfully! Out of {total_input_count} total records, {total_duplicates_cleared} duplicate entries were detected and removed. The unique records have been securely inserted into the 'patient_deliveries' table.")
             except Exception as store_ex:
                 ui_blocker.empty()
-                st.error(f"Failed to synchronize master stream archive: {store_ex}")
+                st.error(f"Failed to synchronize database stream archive: {store_ex}")
 
     st.markdown("<br><hr style='border-top: 2px solid #cbd5e1;'><br>", unsafe_allow_html=True)
     st.markdown("### 🔍 Cloud Database Matching Engine (Admin Only)")
@@ -933,11 +890,14 @@ def ingestion_view():
             df_match = pd.read_excel(match_file, dtype=str) if match_file.name.endswith('.xlsx') else pd.read_csv(match_file, low_memory=False, dtype=str)
             
             with st.spinner("Fetching cloud database for matching..."):
-                # Request 2: Use cache for Cloud Matching to eliminate redundant egress costs
+                # Use cache for Cloud Matching to eliminate redundant egress costs
                 if "master_manifest_cache" not in st.session_state or st.session_state["master_manifest_cache"] is None:
                     try:
-                        master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
-                        df_cloud = pd.read_csv(io.BytesIO(master_bytes), dtype=str)
+                        db_bytes = supabase.table("patient_deliveries").select("*").execute().data
+                        if db_bytes:
+                            df_cloud = pd.DataFrame(db_bytes).astype(str)
+                        else:
+                            df_cloud = pd.DataFrame(columns=["article_id", "patient_name", "phone_number", "booking_date", "address", "patient_city", "mrn_no", "booking_office", "status"])
                         st.session_state["master_manifest_cache"] = df_cloud
                     except Exception:
                         df_cloud = pd.DataFrame()
@@ -1067,12 +1027,15 @@ def communications_view():
     
     query_date = st.date_input("Filter Manifest Records by Booking Date (Overridden by Search):", value=None)
     
-    with st.spinner("Processing cloud storage lookup and database audit..."):
-        # Request 2: Bandwidth Egress Optimizer using cache
+    with st.spinner("Processing cloud database lookup and audit..."):
+        # Fetching Master Ledger directly from the database table now
         if "master_manifest_cache" not in st.session_state or st.session_state["master_manifest_cache"] is None:
             try:
-                existing_master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
-                master_ledger_df = pd.read_csv(io.BytesIO(existing_master_bytes), dtype=str)
+                db_bytes = supabase.table("patient_deliveries").select("*").execute().data
+                if db_bytes:
+                    master_ledger_df = pd.DataFrame(db_bytes).astype(str)
+                else:
+                    master_ledger_df = pd.DataFrame()
                 st.session_state["master_manifest_cache"] = master_ledger_df
                 all_master_recs = master_ledger_df.to_dict(orient="records")
             except Exception:
@@ -1084,8 +1047,8 @@ def communications_view():
             all_master_recs = master_ledger_df.to_dict(orient="records")
             
         try:
-            db_action_logs = supabase.table("patient_deliveries").select("*").execute().data
-            db_logs_dictionary = {str(item["article_id"]).strip(): item for item in db_action_logs}
+            # We can use the same cache to create the dictionary since it comes from patient_deliveries
+            db_logs_dictionary = {str(item["article_id"]).strip(): item for item in all_master_recs}
         except Exception:
             db_logs_dictionary = {}
             
@@ -1093,7 +1056,7 @@ def communications_view():
         st.info("No records found in the database. Please ensure data is ingested.")
     else:
         try: dynamic_headings = list(master_ledger_df.columns)
-        except: dynamic_headings = ["patient_name", "article_id", "mrn_no", "phone_number", "address", "booking_office", "transaction_no"]
+        except: dynamic_headings = ["patient_name", "article_id", "mrn_no", "phone_number", "address", "booking_office"]
             
         unique_offices = sorted(list(set([str(r.get('booking_office', 'Lahore GPO')).strip() for r in all_master_recs])))
         unique_offices.insert(0, "All Offices")
@@ -1130,8 +1093,9 @@ def communications_view():
                 for profile in final_recs:
                     article_key = str(profile["article_id"]).strip()
                     if article_key in db_logs_dictionary:
-                        profile["id"] = db_logs_dictionary[article_key]["id"]
+                        profile["id"] = db_logs_dictionary[article_key].get("id")
                         profile["status"] = db_logs_dictionary[article_key].get("status", "Pending")
+                        if str(profile["status"]) == "nan": profile["status"] = "Pending"
                         profile["delivery_date"] = db_logs_dictionary[article_key].get("delivery_date")
                         profile["received_mode"] = db_logs_dictionary[article_key].get("received_mode")
                         profile["extra_money_charged"] = db_logs_dictionary[article_key].get("extra_money_charged")
@@ -1144,6 +1108,7 @@ def communications_view():
                 options_list = []
                 for r in final_recs:
                     status_val = r.get('status', 'Pending')
+                    if str(status_val) == "nan": status_val = "Pending"
                     if status_val == "Delivered":
                         status_display = "Verified"
                     else:
@@ -1227,6 +1192,7 @@ def communications_view():
                     with st.expander("🖨️ Individual Profile Print Desk"):
                         print_operator = target_profile.get('operator_stamp', st.session_state.full_name)
                         print_status = target_profile.get('status', 'Pending')
+                        if str(print_status) == "nan": print_status = "Pending"
                         
                         if print_status == "Delivered":
                             delivery_date = target_profile.get('delivery_date', 'N/A')
@@ -1348,7 +1314,7 @@ def communications_view():
                     st.markdown("#### 📝 Live Patient Verification & Feedback Questionnaire")
                     
                     allow_questionnaire = True
-                    if target_profile["status"] not in ["Pending", "Pending Retry"]:
+                    if str(target_profile["status"]) not in ["Pending", "Pending Retry", "nan"]:
                         st.warning(f"⚠️ Note: The questionnaire for this patient has already been processed! Current Status: [{target_profile['status']}]")
                         unlock_re = st.radio("Do you want to process this verified profile again?", ["No", "Yes"], index=0)
                         if unlock_re == "No": 
