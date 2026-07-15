@@ -69,7 +69,7 @@ if "fetched_emtts_data" not in st.session_state: st.session_state.fetched_emtts_
 if "master_manifest_cache" not in st.session_state: st.session_state["master_manifest_cache"] = None
 
 # Initialize Column Mappings Memory
-mapping_keys = ["map_article", "map_name", "map_city", "map_phone", "map_date", "map_mrn", "map_address", "map_bo", "map_dup", "map_tx"]
+mapping_keys = ["map_article", "map_name", "map_city", "map_phone", "map_date", "map_mrn", "map_address", "map_bo", "map_dup", "map_tx", "map_db_col"]
 for key in mapping_keys:
     if key not in st.session_state:
         st.session_state[key] = None
@@ -809,6 +809,18 @@ def ingestion_view():
         else: 
             df = st.session_state[file_key]
         
+        # 1. Supabase se dynamic columns fetch karna (Match Dropdown ke liye)
+        db_cols = []
+        try:
+            temp_res = supabase.table("patient_deliveries").select("*").limit(1).execute()
+            if temp_res.data:
+                db_cols = list(temp_res.data[0].keys())
+            else:
+                db_cols = ["transaction_id", "article_id", "patient_name", "phone_number", "booking_date", "address", "patient_city", "mrn_no", "booking_office", "status"]
+        except Exception:
+            db_cols = ["transaction_id", "article_id", "patient_name", "phone_number", "booking_date", "address", "patient_city", "mrn_no", "booking_office", "status"]
+
+        # Dropdowns
         mc1, mc2, mc3 = st.columns(3)
         with mc1:
             c_article = st.selectbox("Article ID Column:", df.columns, index=calculate_mapped_index(df.columns, "map_article", "Article ID"))
@@ -824,6 +836,16 @@ def ingestion_view():
             c_tx = st.selectbox("Transaction No Column:", df.columns, index=calculate_mapped_index(df.columns, "map_tx", "Transaction No"))
             c_dup = st.selectbox("Duplication Log Column:", df.columns, index=calculate_mapped_index(df.columns, "map_dup", "Duplicate"))
 
+        st.markdown("---")
+        st.markdown("#### ⚙️ Dynamic Unique Key & Deduplication Selection")
+        dup_col1, dup_col2 = st.columns(2)
+        with dup_col1:
+            # User se check krwana ke kis column se Excel ke andar duplication chk krni hai (default to Transaction No if found)
+            excel_dup_col = st.selectbox("📁 Select Excel Column for Unique Duplication Check:", df.columns, index=df.columns.get_loc(c_tx) if c_tx in df.columns else 0)
+        with dup_col2:
+            # User se select krwana ke wo table ke kis column se match ho
+            db_dup_col = st.selectbox("🗄️ Match with Supabase Database Table Column:", db_cols, index=db_cols.index("transaction_id") if "transaction_id" in db_cols else (db_cols.index("article_id") if "article_id" in db_cols else 0))
+
         if st.button("🚀 Push Verified Records to Cloud Database Table", use_container_width=True):
             ui_blocker = st.empty()
             ui_blocker.markdown("<style> [data-testid='stSidebar'], [data-testid='stHeader'] { pointer-events: none !important; opacity: 0.6 !important; filter: blur(0.5px) !important; } </style>", unsafe_allow_html=True)
@@ -834,25 +856,23 @@ def ingestion_view():
             status_progress_text.text("Connecting with database nodes... (15% Complete)")
             progress_bar_control.progress(15)
             
-            # 🛠️ SMART DUPLICATION CHECK FOR LARGE DATABASE
-            # Jab database me 1.7M rows hon, select('*') crash kar deta hai. 
-            # Hum sirf upload hone wali list ke batch ko target karke existing check karenge.
-            raw_articles = df[c_article].astype(str).str.strip().unique().tolist()
-            raw_articles = [x for x in raw_articles if x not in ["", "nan", "NaN", "None"]]
+            # 🛠️ SMART DUPLICATION CHECK FOR LARGE DATABASE USING SELECTED COLUMN
+            raw_unique_vals = df[excel_dup_col].astype(str).str.strip().unique().tolist()
+            raw_unique_vals = [x for x in raw_unique_vals if x not in ["", "nan", "NaN", "None"]]
             
-            existing_articles = set()
-            status_progress_text.text("Checking cloud database for duplicates in batches... (30% Complete)")
+            existing_db_records = set()
+            status_progress_text.text(f"Checking cloud database for duplicates against column '{db_dup_col}'... (30% Complete)")
             progress_bar_control.progress(30)
             
             # 10,000 ke sub-batches me check karenge taake server overload na ho
             check_batch_size = 10000
-            for k in range(0, len(raw_articles), check_batch_size):
-                sub_batch = raw_articles[k:k+check_batch_size]
+            for k in range(0, len(raw_unique_vals), check_batch_size):
+                sub_batch = raw_unique_vals[k:k+check_batch_size]
                 try:
-                    db_res = supabase.table("patient_deliveries").select("article_id").in_("article_id", sub_batch).execute().data
+                    db_res = supabase.table("patient_deliveries").select(db_dup_col).in_(db_dup_col, sub_batch).execute().data
                     for r in db_res:
-                        if "article_id" in r:
-                            existing_articles.add(str(r["article_id"]).strip())
+                        if db_dup_col in r:
+                            existing_db_records.add(str(r[db_dup_col]).strip())
                 except Exception as e:
                     pass
 
@@ -861,6 +881,7 @@ def ingestion_view():
             
             # DataFrame create karte waqt columns ko saaf suthra string data dein
             uploaded_records_df = pd.DataFrame({
+                "transaction_id": df[c_tx].astype(str).str.strip() if c_tx in df.columns else "",
                 "article_id": df[c_article].astype(str).str.strip(),
                 "patient_name": df[c_name].astype(str).str.strip(),
                 "phone_number": df[c_phone].astype(str).str.strip(),
@@ -871,6 +892,9 @@ def ingestion_view():
                 "booking_office": df[c_bo].astype(str).str.strip() if c_bo in df.columns else "Lahore GPO"
             })
             
+            # Jo column deduplication ke liye chuna gaya tha uski values ko mapping array me shamil karein
+            uploaded_records_df["_dup_check_col_"] = df[excel_dup_col].astype(str).str.strip()
+            
             # 🛠️ Dobara check karke double secure karein ke koi "nan" values dictionary me na jayein
             uploaded_records_df = uploaded_records_df.fillna("")
             uploaded_records_df = uploaded_records_df.replace(to_replace=r'^[Nn][Aa][Nn]$', value='', regex=True)
@@ -880,19 +904,16 @@ def ingestion_view():
             status_progress_text.text("Scanning database for cross-duplications... (70% Complete)")
             progress_bar_control.progress(70)
             
-            # Clean article_id column (remove spaces and empty rows)
-            uploaded_records_df["article_id_clean"] = uploaded_records_df["article_id"].str.strip()
-            
             # Jo pehle se database me hain unhe filter out karein
-            is_duplicate_by_article = uploaded_records_df["article_id_clean"].isin(existing_articles) | (uploaded_records_df["article_id_clean"] == "")
-            clean_unique_records = uploaded_records_df[~is_duplicate_by_article].copy()
+            is_duplicate_in_db = uploaded_records_df["_dup_check_col_"].isin(existing_db_records) | (uploaded_records_df["_dup_check_col_"] == "")
+            clean_unique_records = uploaded_records_df[~is_duplicate_in_db].copy()
             
             # Apne upload file ke andar ki duplicates bhi saaf karein
-            clean_unique_records = clean_unique_records.drop_duplicates(subset=["article_id_clean"])
+            clean_unique_records = clean_unique_records.drop_duplicates(subset=["_dup_check_col_"])
             
             # Extra temp column drop karein
-            if "article_id_clean" in clean_unique_records.columns:
-                clean_unique_records = clean_unique_records.drop(columns=["article_id_clean"])
+            if "_dup_check_col_" in clean_unique_records.columns:
+                clean_unique_records = clean_unique_records.drop(columns=["_dup_check_col_"])
                 
             total_duplicates_cleared = total_input_count - len(clean_unique_records)
             
@@ -915,7 +936,8 @@ def ingestion_view():
                     status_progress_text.text(f"Synchronizing database stream: {i} of {total_records_to_send} records processed... ({percentage_done}% Complete)")
                     progress_bar_control.progress(percentage_done)
                     
-                    supabase.table("patient_deliveries").upsert(chunk, on_conflict="article_id").execute()
+                    # Direct insert ki bajaye normal insert ab smoothly chalegi bina primary key conflicts k
+                    supabase.table("patient_deliveries").insert(chunk).execute()
                 
                 # Clear cache
                 st.session_state["master_manifest_cache"] = None
@@ -923,7 +945,7 @@ def ingestion_view():
                 status_progress_text.empty()
                 progress_bar_control.empty()
                 ui_blocker.empty()
-                st.success(f"🟢 Success: File processed successfully! Out of {total_input_count} total records, {total_duplicates_cleared} duplicate entries were detected and removed. The unique records ({len(records_to_insert)}) have been securely inserted into the 'patient_deliveries' table.")
+                st.success(f"🟢 Success: File processed successfully! Out of {total_input_count} total records, {total_duplicates_cleared} duplicate entries were detected and removed using column '{excel_dup_col}'. The unique records ({len(records_to_insert)}) have been securely inserted into the 'patient_deliveries' table.")
             except Exception as store_ex:
                 ui_blocker.empty()
                 st.error(f"Failed to synchronize database stream archive: {store_ex}")
@@ -947,7 +969,7 @@ def ingestion_view():
                         if db_bytes:
                             df_cloud = pd.DataFrame(db_bytes).astype(str).fillna("").replace(to_replace=r'^[Nn][Aa][Nn]$', value='', regex=True)
                         else:
-                            df_cloud = pd.DataFrame(columns=["article_id", "patient_name", "phone_number", "booking_date", "address", "patient_city", "mrn_no", "booking_office", "status"])
+                            df_cloud = pd.DataFrame(columns=["transaction_id", "article_id", "patient_name", "phone_number", "booking_date", "address", "patient_city", "mrn_no", "booking_office", "status"])
                         st.session_state["master_manifest_cache"] = df_cloud
                     except Exception:
                         df_cloud = pd.DataFrame()
@@ -1539,7 +1561,8 @@ def communications_view():
                                     payload_buffer["booking_office"] = target_profile["booking_office"]
                                     
                                     try:
-                                        supabase.table("patient_deliveries").upsert(payload_buffer, on_conflict="article_id").execute()
+                                        # Database insert me ab conflicts ki parwa kiye bina seamlessly upsert/update hoga
+                                        supabase.table("patient_deliveries").update(payload_buffer).eq("id", target_profile.get("id")).execute() if target_profile.get("id") else supabase.table("patient_deliveries").insert(payload_buffer).execute()
                                         st.success("Updated securely with your operator identity stamp!")
                                         st.session_state.selected_profile_index += 1
                                         save_operator_state()
