@@ -212,7 +212,8 @@ div[data-testid="stExpander"] > div[data-testid="stExpanderBody"] {
 }
 """
 
-st.markdown(f"""
+st.markdown(
+    """
     <style>
     /* Complete & Absolute Removal of Streamlit Watermarks, Headers, Footers, Badges & Links */
     div[data-testid="stToolbar"], #MainMenu, footer, header,
@@ -221,7 +222,7 @@ st.markdown(f"""
     .stDeployButton, .stAppDeployButton, button[kind="header"],
     [data-testid="stViewerBadge"], div[class^="viewerBadge"], div[class*="viewerBadge"],
     .viewerBadge_container__1616G, a[href*="streamlit.io"],
-    div[data-testid="stBottom"], div[data-testid="stBottomBlockContainer"] {{
+    div[data-testid="stBottom"], div[data-testid="stBottomBlockContainer"] {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
@@ -231,7 +232,11 @@ st.markdown(f"""
         max-width: 0px !important;
         pointer-events: none !important;
         overflow: hidden !important;
-    }}
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
     
     {generic_expander_highlight_css} 
     {sidebar_css_rule}
