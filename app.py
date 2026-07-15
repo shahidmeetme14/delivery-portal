@@ -123,14 +123,7 @@ div[data-testid="stExpander"] > div[data-testid="stExpanderBody"] {
 }
 """
 
-# --- CSS Styling Section ---
-
-# 1. Purane CSS variable ko safety ke sath run karein
-st.markdown(generic_expander_highlight_css, unsafe_allow_html=True)
-
-# 2. Naye custom CSS (Watermark Removal + Brand Styling) ko ek sath run karein
-st.markdown(
-    """
+st.markdown(f"""
     <style>
     /* Complete & Absolute Removal of Streamlit Watermarks, Headers, Footers, Badges & Links */
     div[data-testid="stToolbar"], #MainMenu, footer, header,
@@ -139,10 +132,7 @@ st.markdown(
     .stDeployButton, .stAppDeployButton, button[kind="header"],
     [data-testid="stViewerBadge"], div[class^="viewerBadge"], div[class*="viewerBadge"],
     .viewerBadge_container__1616G, a[href*="streamlit.io"],
-    div[data-testid="stBottom"], div[data-testid="stBottomBlockContainer"],
-    iframe[title="streamlitApp"], .embeddedStreamlitApp, 
-    .stAppViewerBadge, [data-testid="stEmbedViewerBadge"],
-    footer, .viewerBadge_container__1616G, [class^="viewerBadge"] {
+    div[data-testid="stBottom"], div[data-testid="stBottomBlockContainer"] {{
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
@@ -152,30 +142,14 @@ st.markdown(
         max-width: 0px !important;
         pointer-events: none !important;
         overflow: hidden !important;
-    }
+    }}
     
-    /* Brand Title & Background Custom Styles */
-    .stApp { 
-        background-color: #fdfcf9 !important; 
-    }
-    .brand-title { 
-        color: #a61c1c !important; 
-        font-weight: 800 !important; 
-        font-size: 2.1rem !important; 
-        margin-bottom: 2px !important; 
-    }
-    .brand-subtitle { 
-        color: #5c1414 !important; 
-        font-size: 1.05rem !important; 
-        margin-bottom: 25px !important; 
-        font-weight: 600 !important; 
-        border-left: 4px solid #d4af37 !important; 
-        padding-left: 12px !important; 
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+    {generic_expander_highlight_css} 
+    {sidebar_css_rule}
+    
+    .stApp {{ background-color: #fdfcf9; }}
+    .brand-title {{ color: #a61c1c; font-weight: 800; font-size: 2.1rem; margin-bottom: 2px; }}
+    .brand-subtitle {{ color: #5c1414; font-size: 1.05rem; margin-bottom: 25px; font-weight: 600; border-left: 4px solid #d4af37; padding-left: 12px; }}
     
     /* 📦 3D Premium Cards for Admin Alerts */
     .alert-3d-card {{
@@ -264,28 +238,17 @@ st.markdown(
     }}
     
     /* 🔴 Terminate Session Button */
-    /* 🔴 Terminate Session Button (Cyberpunk Shiny Red Glow) */
     div:has(> .terminate-btn-anchor) + div button,
-    div:has(.terminate-btn-anchor) + div button {
-        background: linear-gradient(180deg, #1f1f24 0%, #151518 100%) !important;
-        color: #ff3333 !important; /* Shiny Red Text Color */
-        border: 2px solid #ff3333 !important; /* Neon Red Border */
-        border-bottom: 5px solid #990000 !important; /* 3D Depth */
+    div:has(.terminate-btn-anchor) + div button {{
+        background: linear-gradient(180deg, #ff4d4d 0%, #c31414 100%) !important;
+        color: #ffffff !important;
+        border: 2px solid rgba(255, 255, 255, 0.4) !important;
+        border-bottom: 5px solid #800a0a !important;
         border-radius: 10px !important;
         padding: 10px 20px !important;
-        font-weight: 900 !important;
-        /* Shiny Red Neon Glow effect on Text & Button */
-        text-shadow: 0 0 8px #ff3333, 0 0 15px #ff1a1a !important;
-        box-shadow: 0 4px 15px rgba(255, 51, 51, 0.35) !important;
-        transition: all 0.2s ease !important;
-    }
-    
-    div:has(> .terminate-btn-anchor) + div button:hover,
-    div:has(.terminate-btn-anchor) + div button:hover {
-        background: linear-gradient(180deg, #151518 0%, #000000 100%) !important;
-        box-shadow: 0 0 20px rgba(255, 51, 51, 0.6) !important;
-        transform: translateY(-1px);
-    }
+        font-weight: 800 !important;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
+    }}
     
     /* ✨ 3D Dropdowns, Inputs & Textareas */
     div[data-baseweb="select"] > div, 
@@ -811,7 +774,7 @@ def recovery_view():
 def ingestion_view():
     st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine"
     st.markdown("### 📥 Bulk Articles Ingestion Engine")
-    source_file = st.file_uploader("Upload Medicine Article Sheet", type=["xlsx", "csv"], key="bulk_uploader_main")
+    ssource_file = st.file_uploader("Upload Medicine Article Sheet", type=["xlsx", "csv"], key="bulk_uploader_main")
     if source_file is not None:
         # ⚠️ 50MB Limit Check (50 * 1024 * 1024 Bytes)
         if source_file.size > 50 * 1024 * 1024:
