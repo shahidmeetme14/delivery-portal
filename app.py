@@ -69,7 +69,7 @@ if "fetched_emtts_data" not in st.session_state: st.session_state.fetched_emtts_
 if "master_manifest_cache" not in st.session_state: st.session_state["master_manifest_cache"] = None
 
 # Initialize Column Mappings Memory
-mapping_keys = ["map_article", "map_name", "map_city", "map_phone", "map_date", "map_mrn", "map_address", "map_bo", "map_dup"]
+mapping_keys = ["map_article", "map_name", "map_city", "map_phone", "map_date", "map_mrn", "map_address", "map_bo", "map_dup", "map_tx"]
 for key in mapping_keys:
     if key not in st.session_state:
         st.session_state[key] = None
@@ -821,6 +821,7 @@ def ingestion_view():
         with mc3:
             c_city = st.selectbox("City Column:", df.columns, index=calculate_mapped_index(df.columns, "map_city", "City"))
             c_bo = st.selectbox("Booking Office Column:", df.columns, index=calculate_mapped_index(df.columns, "map_bo", "Booking Office"))
+            c_tx = st.selectbox("Transaction No Column:", df.columns, index=calculate_mapped_index(df.columns, "map_tx", "Transaction No"))
             c_dup = st.selectbox("Duplication Log Column:", df.columns, index=calculate_mapped_index(df.columns, "map_dup", "Duplicate"))
 
         if st.button("🚀 Push Verified Records to Cloud Database Table", use_container_width=True):
