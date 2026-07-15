@@ -1101,16 +1101,20 @@ def communications_view():
     query_date = st.date_input("Filter Manifest Records by Booking Date (Overridden by Search):", value=None)
     
     with st.spinner("Processing cloud database lookup and audit..."):
-        # Fetching Master Ledger directly from the database table now
-        if "master_manifest_cache" not in st.session_state or st.session_state["master_manifest_cache"] is None:
-            try:
-                db_bytes = supabase.table("patient_deliveries").select("*").execute().data
-                if db_bytes:
-                    master_ledger_df = pd.DataFrame(db_bytes).astype(str)
-                else:
-                    master_ledger_df = pd.DataFrame()
-                st.session_state["master_manifest_cache"] = master_ledger_df
-                all_master_recs = master_ledger_df.to_dict(orient="records")
+                        # Fetching Master Ledger directly from the database table now
+                        if "master_manifest_cache" not in st.session_state or st.session_state["master_manifest_cache"] is None:
+                            try:
+                                # 🇵🇰 Aaj raat 12:00 AM PKT ka start timestamp nikalna
+                                today_start = datetime.datetime.now(PKT_TZ).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+                                
+                                # Supabase se sirf aaj ki entries fetch karna
+                                db_bytes = supabase.table("patient_deliveries").select("*").gte("created_at", today_start).execute().data
+                                if db_bytes:
+                                    master_ledger_df = pd.DataFrame(db_bytes).astype(str)
+                                else:
+                                    master_ledger_df = pd.DataFrame()
+                                st.session_state["master_manifest_cache"] = master_ledger_df
+                                all_master_recs = master_ledger_df.to_dict(orient="records")
             except Exception:
                 all_master_recs = []
                 master_ledger_df = pd.DataFrame()
