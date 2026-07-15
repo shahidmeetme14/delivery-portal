@@ -1115,10 +1115,10 @@ def communications_view():
                                     master_ledger_df = pd.DataFrame()
                                 st.session_state["master_manifest_cache"] = master_ledger_df
                                 all_master_recs = master_ledger_df.to_dict(orient="records")
-            except Exception:
-            all_master_recs = []
-            master_ledger_df = pd.DataFrame()
-            st.session_state["master_manifest_cache"] = master_ledger_df
+                           except Exception:
+                                all_master_recs = []
+                                master_ledger_df = pd.DataFrame()
+                                st.session_state["master_manifest_cache"] = master_ledger_df
         else:
             master_ledger_df = st.session_state["master_manifest_cache"]
             all_master_recs = master_ledger_df.to_dict(orient="records")
