@@ -124,10 +124,11 @@ div[data-testid="stExpander"] > div[data-testid="stExpanderBody"] {
 """
 
 # --- CSS Styling Section ---
+
 # 1. Purane CSS variable ko safety ke sath run karein
 st.markdown(generic_expander_highlight_css, unsafe_allow_html=True)
 
-# 2. Naye custom CSS (Watermark & Footer Removal) ko alag se run karein
+# 2. Naye custom CSS (Watermark Removal + Brand Styling) ko ek sath run karein
 st.markdown(
     """
     <style>
@@ -152,14 +153,29 @@ st.markdown(
         pointer-events: none !important;
         overflow: hidden !important;
     }
+    
+    /* Brand Title & Background Custom Styles */
+    .stApp { 
+        background-color: #fdfcf9 !important; 
+    }
+    .brand-title { 
+        color: #a61c1c !important; 
+        font-weight: 800 !important; 
+        font-size: 2.1rem !important; 
+        margin-bottom: 2px !important; 
+    }
+    .brand-subtitle { 
+        color: #5c1414 !important; 
+        font-size: 1.05rem !important; 
+        margin-bottom: 25px !important; 
+        font-weight: 600 !important; 
+        border-left: 4px solid #d4af37 !important; 
+        padding-left: 12px !important; 
+    }
     </style>
     """,
     unsafe_allow_html=True
 )
-        
-    .stApp {{ background-color: #fdfcf9; }}
-    .brand-title {{ color: #a61c1c; font-weight: 800; font-size: 2.1rem; margin-bottom: 2px; }}
-    .brand-subtitle {{ color: #5c1414; font-size: 1.05rem; margin-bottom: 25px; font-weight: 600; border-left: 4px solid #d4af37; padding-left: 12px; }}
     
     /* 📦 3D Premium Cards for Admin Alerts */
     .alert-3d-card {{
