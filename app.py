@@ -237,18 +237,28 @@ st.markdown(f"""
         text-shadow: 0px 1px 1px rgba(255, 255, 255, 0.6) !important;
     }}
     
-    /* 🔴 Terminate Session Button */
+    /* 🔴 Terminate Session Button (Cyberpunk Shiny Red Glow) */
     div:has(> .terminate-btn-anchor) + div button,
-    div:has(.terminate-btn-anchor) + div button {{
-        background: linear-gradient(180deg, #ff4d4d 0%, #c31414 100%) !important;
-        color: #ffffff !important;
-        border: 2px solid rgba(255, 255, 255, 0.4) !important;
-        border-bottom: 5px solid #800a0a !important;
+    div:has(.terminate-btn-anchor) + div button {
+        background: linear-gradient(180deg, #1f1f24 0%, #151518 100%) !important;
+        color: #ff3333 !important; /* Shiny Red Text Color */
+        border: 2px solid #ff3333 !important; /* Neon Red Border */
+        border-bottom: 5px solid #990000 !important; /* 3D Depth */
         border-radius: 10px !important;
         padding: 10px 20px !important;
-        font-weight: 800 !important;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
-    }}
+        font-weight: 900 !important;
+        /* Shiny Red Neon Glow effect on Text & Button */
+        text-shadow: 0 0 8px #ff3333, 0 0 15px #ff1a1a !important;
+        box-shadow: 0 4px 15px rgba(255, 51, 51, 0.35) !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    div:has(> .terminate-btn-anchor) + div button:hover,
+    div:has(.terminate-btn-anchor) + div button:hover {
+        background: linear-gradient(180deg, #151518 0%, #000000 100%) !important;
+        box-shadow: 0 0 20px rgba(255, 51, 51, 0.6) !important;
+        transform: translateY(-1px);
+    }
     
     /* ✨ 3D Dropdowns, Inputs & Textareas */
     div[data-baseweb="select"] > div, 
