@@ -37,6 +37,18 @@ if not st.session_state.logged_in and "usr" in st.query_params:
             st.session_state.last_activity = time.time()  # Keep session alive on page refresh
             if "tab" in st.query_params:
                 st.session_state.current_navigation_tab = str(st.query_params.get("tab"))
+                
+            # Log auto-login credentials to user_logins table
+            try:
+                supabase.table("user_logins").insert({
+                    "username": st.session_state.username,
+                    "full_name": st.session_state.full_name,
+                    "role": st.session_state.role,
+                    "login_time": datetime.datetime.now(PKT_TZ).strftime('%Y-%m-%d %I:%M:%S %p'),
+                    "created_at": datetime.datetime.now(PKT_TZ).isoformat()
+                }).execute()
+            except Exception:
+                pass
         else:
             st.query_params.clear()
     except Exception:
@@ -53,6 +65,8 @@ if "show_recovery_prompt" not in st.session_state: st.session_state.show_recover
 if "cached_recovery_data" not in st.session_state: st.session_state.cached_recovery_data = {}
 if "duplicate_log_csv" not in st.session_state: st.session_state.duplicate_log_csv = None
 if "fetched_emtts_data" not in st.session_state: st.session_state.fetched_emtts_data = {}
+# Session Memory Cache for Supabase Egress Control
+if "master_manifest_cache" not in st.session_state: st.session_state["master_manifest_cache"] = None
 
 # Initialize Column Mappings Memory
 mapping_keys = ["map_article", "map_name", "map_city", "map_phone", "map_date", "map_mrn", "map_address", "map_bo", "map_dup"]
@@ -693,16 +707,17 @@ def login_view():
                         try:
                             ud = supabase.table("app_users").select("*").eq("username", input_user.strip()).eq("password", input_pass.strip()).execute().data
                             if ud:
-                                # Insert login log securely into user_logins table
+                                # Insert detailed audit login logs into user_logins table (Request 3)
                                 try:
                                     supabase.table("user_logins").insert({
                                         "username": ud[0]["username"],
                                         "full_name": ud[0]["full_name"],
                                         "role": ud[0]["role"],
-                                        "login_time": datetime.datetime.now(PKT_TZ).isoformat()
+                                        "login_time": datetime.datetime.now(PKT_TZ).strftime('%Y-%m-%d %I:%M:%S %p'),
+                                        "created_at": datetime.datetime.now(PKT_TZ).isoformat()
                                     }).execute()
                                 except Exception:
-                                    # Fail-safe database insert in case of alternate schema structure
+                                    # Fail-safe fallback database insert
                                     try:
                                         supabase.table("user_logins").insert({
                                             "username": ud[0]["username"],
@@ -843,15 +858,27 @@ def ingestion_view():
             status_progress_text.text("Scanning master datastore for cross-duplications... (75% Complete)")
             progress_bar_control.progress(75)
             
-            is_duplicate_by_transaction = uploaded_records_df["transaction_no"].isin(master_ledger_df["transaction_no"]) & (uploaded_records_df["transaction_no"] != "") & (uploaded_records_df["transaction_no"] != "nan")
-            global_duplication_mask = is_duplicate_by_transaction
+            # Request 1: Enhanced multi-field deduplication engine ensuring absolutely zero master data replacement
+            is_duplicate_by_article = uploaded_records_df["article_id"].isin(master_ledger_df["article_id"]) & (uploaded_records_df["article_id"] != "") & (uploaded_records_df["article_id"] != "nan")
+            
+            if "transaction_no" in master_ledger_df.columns and "transaction_no" in uploaded_records_df.columns:
+                is_duplicate_by_transaction = uploaded_records_df["transaction_no"].isin(master_ledger_df["transaction_no"]) & (uploaded_records_df["transaction_no"] != "") & (uploaded_records_df["transaction_no"] != "nan")
+                global_duplication_mask = is_duplicate_by_article | is_duplicate_by_transaction
+            else:
+                global_duplication_mask = is_duplicate_by_article
             
             clean_unique_records = uploaded_records_df[~global_duplication_mask]
+            
+            # Clean internal duplicates from uploaded chunk
+            clean_unique_records = clean_unique_records.drop_duplicates(subset=["article_id"])
             if "transaction_no" in clean_unique_records.columns:
-                clean_unique_records = clean_unique_records.drop_duplicates(subset=["transaction_no"])
+                valid_tx = clean_unique_records["transaction_no"].notna() & (clean_unique_records["transaction_no"] != "") & (clean_unique_records["transaction_no"] != "nan")
+                tx_dups = clean_unique_records[valid_tx].duplicated(subset=["transaction_no"])
+                clean_unique_records = clean_unique_records[~clean_unique_records.index.isin(clean_unique_records[valid_tx][tx_dups].index)]
             
             total_duplicates_cleared = total_input_count - len(clean_unique_records)
             
+            # Safe append strategy for 1.7M records
             final_consolidated_df = pd.concat([master_ledger_df, clean_unique_records], ignore_index=True)
             
             status_progress_text.text("Synchronizing clean ledger stream into cloud core... (95% Complete)")
@@ -865,14 +892,13 @@ def ingestion_view():
                 try: supabase.storage.from_("manifests").remove(["master_manifest_store.csv"])
                 except: pass
                 
-                # Update consolidated repository file
+                # Update master storage database file
                 supabase.storage.from_("manifests").upload(path="master_manifest_store.csv", file=master_csv_bytes, file_options={"content-type": "text/csv", "upsert": "true"})
                 
-                # Fix Point 1: Upload original raw file under its unique actual name to remain fully visible in the bucket
-                try:
-                    supabase.storage.from_("manifests").upload(path=source_file.name, file=source_file.getvalue(), file_options={"upsert": "true"})
-                except Exception:
-                    pass
+                # Request 2: Store cache to avoid network download egress costs
+                st.session_state["master_manifest_cache"] = final_consolidated_df
+                
+                # Note: Request 1 explicitly disables saving the source file separately in the bucket
                 
                 status_progress_text.empty()
                 progress_bar_control.empty()
@@ -893,11 +919,16 @@ def ingestion_view():
             df_match = pd.read_excel(match_file, dtype=str) if match_file.name.endswith('.xlsx') else pd.read_csv(match_file, low_memory=False, dtype=str)
             
             with st.spinner("Fetching cloud database for matching..."):
-                try:
-                    master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
-                    df_cloud = pd.read_csv(io.BytesIO(master_bytes), dtype=str)
-                except Exception:
-                    df_cloud = pd.DataFrame()
+                # Request 2: Use cache for Cloud Matching to eliminate redundant egress costs
+                if "master_manifest_cache" not in st.session_state or st.session_state["master_manifest_cache"] is None:
+                    try:
+                        master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
+                        df_cloud = pd.read_csv(io.BytesIO(master_bytes), dtype=str)
+                        st.session_state["master_manifest_cache"] = df_cloud
+                    except Exception:
+                        df_cloud = pd.DataFrame()
+                else:
+                    df_cloud = st.session_state["master_manifest_cache"]
             
             if df_cloud.empty:
                 st.error("Cloud database is currently empty. Nothing to match against.")
@@ -1021,13 +1052,20 @@ def communications_view():
     query_date = st.date_input("Filter Manifest Records by Booking Date (Overridden by Search):", datetime.date.today())
     
     with st.spinner("Processing cloud storage lookup and database audit..."):
-        try:
-            existing_master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
-            master_ledger_df = pd.read_csv(io.BytesIO(existing_master_bytes), dtype=str)
+        # Request 2: Bandwidth Egress Optimizer using cache
+        if "master_manifest_cache" not in st.session_state or st.session_state["master_manifest_cache"] is None:
+            try:
+                existing_master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
+                master_ledger_df = pd.read_csv(io.BytesIO(existing_master_bytes), dtype=str)
+                st.session_state["master_manifest_cache"] = master_ledger_df
+                all_master_recs = master_ledger_df.to_dict(orient="records")
+            except Exception:
+                all_master_recs = []
+                master_ledger_df = pd.DataFrame()
+                st.session_state["master_manifest_cache"] = master_ledger_df
+        else:
+            master_ledger_df = st.session_state["master_manifest_cache"]
             all_master_recs = master_ledger_df.to_dict(orient="records")
-        except Exception:
-            all_master_recs = []
-            master_ledger_df = pd.DataFrame()
             
         try:
             db_action_logs = supabase.table("patient_deliveries").select("*").execute().data
@@ -1044,11 +1082,16 @@ def communications_view():
         unique_offices = sorted(list(set([str(r.get('booking_office', 'Lahore GPO')).strip() for r in all_master_recs])))
         unique_offices.insert(0, "All Offices")
         
-        # Fix Point 2: Completely exposed, prominent multi-filtering search grid accessible identically by Admin & Staff roles
-        filter_col1, filter_col2, filter_col3 = st.columns([1.5, 1.5, 1.5])
+        # 4-Column Header including egress refresh controller button (Request 2)
+        filter_col1, filter_col2, filter_col3, filter_col4 = st.columns([1.5, 1.5, 1.5, 1.2])
         with filter_col1: selected_office = st.selectbox("🏥 Filter by Booking Office:", unique_offices)
         with filter_col2: search_category = st.selectbox("🔎 Search By Heading:", ["All Fields"] + dynamic_headings)
         with filter_col3: search_term = st.text_input("Enter detail to search (Searches Entire Backend Data):", placeholder="Type patient detail here...").strip().lower()
+        with filter_col4:
+            st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+            if st.button("🔄 Sync Database", use_container_width=True, help="Force refresh local cache from cloud storage"):
+                st.session_state["master_manifest_cache"] = None
+                st.rerun()
         
         if search_term: base_recs = all_master_recs
         else: base_recs = [r for r in all_master_recs if r.get("booking_date") == str(query_date)]
@@ -1596,7 +1639,7 @@ if st.session_state.logged_in and st.session_state.role == "admin":
                             with st.spinner("..."):
                                 supabase.table("patient_deliveries").update({"extra_money_charged": "Yes (Resolved)"}).eq("id", alert["id"]).execute()
                                 time.sleep(0.5)
-                                st.rerun()
+                                    st.rerun()
                     
                     st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
             
