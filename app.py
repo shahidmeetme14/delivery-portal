@@ -1,16 +1,4 @@
 import streamlit as st
-
-# Streamlit ki default branding aur footer ko 100% gayeb karne ke liye:
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden !important;} /* Top-right hamburger menu */
-            footer {visibility: hidden !important;}    /* Bottom-right "Made with Streamlit" */
-            header {visibility: hidden !important;}    /* Top decorative colored bar */
-            div.viewerBadge_container__1S137 {display: none !important;} /* Cloud deploy badge (if any) */
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-import streamlit as st
 from supabase import create_client, Client
 import pandas as pd
 import datetime
