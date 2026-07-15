@@ -123,9 +123,10 @@ div[data-testid="stExpander"] > div[data-testid="stExpanderBody"] {
 }
 """
 
-st.markdown(f"""
+# --- CSS Styling Section ---
+st.markdown(
+    """
     <style>
-    /* Complete & Absolute Removal of Streamlit Watermarks, Headers, Footers, Badges & Links */
     /* Complete & Absolute Removal of Streamlit Watermarks, Headers, Footers, Badges & Links */
     div[data-testid="stToolbar"], #MainMenu, footer, header,
     [data-testid="stHeader"], [data-testid="stDecoration"],
@@ -147,6 +148,10 @@ st.markdown(f"""
         pointer-events: none !important;
         overflow: hidden !important;
     }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
     
     {generic_expander_highlight_css} 
     {sidebar_css_rule}
