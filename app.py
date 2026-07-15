@@ -1032,14 +1032,12 @@ def operator_matrix_view():
         st.markdown("#### 🕒 Real-time Session Login Logs")
         try:
             try:
-                logs_res = supabase.table("user_logins").select("*").order("created_at", desc=True).limit(50).execute().data
+                logs_res = supabase.table("user_logins").select("*").order("id", desc=True).limit(50).execute().data
             except Exception:
                 logs_res = supabase.table("user_logins").select("*").limit(50).execute().data
                 
             if logs_res:
                 df_logs = pd.DataFrame(logs_res)
-                if "created_at" in df_logs.columns:
-                    df_logs = df_logs.sort_values(by="created_at", ascending=False)
                 display_cols_logs = [c for c in ["username", "full_name", "role", "login_time", "created_at"] if c in df_logs.columns]
                 st.dataframe(df_logs[display_cols_logs], use_container_width=True)
             else:
@@ -1051,7 +1049,7 @@ def communications_view():
     st.session_state.current_navigation_tab = "📞 Outbound Communications Desk"
     st.markdown("### 📞 Outbound Communications Desk")
     
-    query_date = st.date_input("Filter Manifest Records by Booking Date (Overridden by Search):", value=None)
+    query_date = st.date_input("Filter Manifest Records by Booking Date (Overridden by Search):", datetime.date.today())
     
     with st.spinner("Processing cloud storage lookup and database audit..."):
         # Request 2: Bandwidth Egress Optimizer using cache
@@ -1084,439 +1082,441 @@ def communications_view():
         unique_offices = sorted(list(set([str(r.get('booking_office', 'Lahore GPO')).strip() for r in all_master_recs])))
         unique_offices.insert(0, "All Offices")
         
-        # 3-Column Header (Sync button removed as requested)
-        filter_col1, filter_col2, filter_col3 = st.columns([1.5, 1.5, 1.5])
+        # 4-Column Header including egress refresh controller button (Request 2)
+        filter_col1, filter_col2, filter_col3, filter_col4 = st.columns([1.5, 1.5, 1.5, 1.2])
         with filter_col1: selected_office = st.selectbox("🏥 Filter by Booking Office:", unique_offices)
         with filter_col2: search_category = st.selectbox("🔎 Search By Heading:", ["All Fields"] + dynamic_headings)
         with filter_col3: search_term = st.text_input("Enter detail to search (Searches Entire Backend Data):", placeholder="Type patient detail here...").strip().lower()
+        with filter_col4:
+            st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+            if st.button("🔄 Sync Database", use_container_width=True, help="Force refresh local cache from cloud storage"):
+                st.session_state["master_manifest_cache"] = None
+                st.rerun()
         
-        if not query_date and not search_term:
-            st.info("📅 Please select a Date from above or use the Search bar to load patient records.")
-        else:
-            if search_term: base_recs = all_master_recs
-            else: base_recs = [r for r in all_master_recs if r.get("booking_date") == str(query_date)]
-                
-            filtered_by_office = base_recs if selected_office == "All Offices" else [r for r in base_recs if str(r.get('booking_office')).strip() == selected_office]
+        if search_term: base_recs = all_master_recs
+        else: base_recs = [r for r in all_master_recs if r.get("booking_date") == str(query_date)]
             
-            if search_term:
-                if search_category == "All Fields":
-                    final_recs = [r for r in filtered_by_office if any(search_term in str(val).lower() for val in r.values())]
-                else:
-                    final_recs = [r for r in filtered_by_office if search_term in str(r.get(search_category, '')).lower()]
-            else: final_recs = filtered_by_office
-
-            if not final_recs: st.warning("No records matched your filters or search.")
+        filtered_by_office = base_recs if selected_office == "All Offices" else [r for r in base_recs if str(r.get('booking_office')).strip() == selected_office]
+        
+        if search_term:
+            if search_category == "All Fields":
+                final_recs = [r for r in filtered_by_office if any(search_term in str(val).lower() for val in r.values())]
             else:
-                if search_term and len(final_recs) > 1:
-                    st.markdown("##### 📑 Multiple Matches Detected")
-                    st.info("Please review the matching entries below and select the correct one from the dropdown to proceed.")
-                    display_df = pd.DataFrame(final_recs)[['patient_name', 'mrn_no', 'article_id', 'phone_number', 'booking_office', 'booking_date']]
-                    st.dataframe(display_df, use_container_width=True)
+                final_recs = [r for r in filtered_by_office if search_term in str(r.get(search_category, '')).lower()]
+        else: final_recs = filtered_by_office
 
-                for profile in final_recs:
-                    article_key = str(profile["article_id"]).strip()
-                    if article_key in db_logs_dictionary:
-                        profile["id"] = db_logs_dictionary[article_key]["id"]
-                        profile["status"] = db_logs_dictionary[article_key].get("status", "Pending")
-                        profile["delivery_date"] = db_logs_dictionary[article_key].get("delivery_date")
-                        profile["received_mode"] = db_logs_dictionary[article_key].get("received_mode")
-                        profile["extra_money_charged"] = db_logs_dictionary[article_key].get("extra_money_charged")
-                        profile["issue_reason"] = db_logs_dictionary[article_key].get("issue_reason")
-                        profile["operator_stamp"] = db_logs_dictionary[article_key].get("operator_stamp")
-                    else:
-                        profile["id"] = None
-                        profile["status"] = "Pending"
+        if not final_recs: st.warning("No records matched your filters or search.")
+        else:
+            if search_term and len(final_recs) > 1:
+                st.markdown("##### 📑 Multiple Matches Detected")
+                st.info("Please review the matching entries below and select the correct one from the dropdown to proceed.")
+                display_df = pd.DataFrame(final_recs)[['patient_name', 'mrn_no', 'article_id', 'phone_number', 'booking_office', 'booking_date']]
+                st.dataframe(display_df, use_container_width=True)
 
-                options_list = []
-                for r in final_recs:
-                    status_val = r.get('status', 'Pending')
-                    if status_val == "Delivered":
-                        status_display = "Verified"
-                    else:
-                        status_display = status_val
-                    options_list.append(f"{str(r['patient_name']).upper()} (MRN: {r.get('mrn_no', 'N/A')}) - [{status_display}]")
-                    
-                if st.session_state.selected_profile_index >= len(options_list): st.session_state.selected_profile_index = 0
-                    
-                selected_prof_str = st.selectbox("Select Patient Profile to Process:", options_list, index=st.session_state.selected_profile_index, key="outbound_profile_select")
-                actual_index = options_list.index(selected_prof_str) if selected_prof_str in options_list else 0
-                target_profile = final_recs[actual_index]
-                current_article_id = target_profile['article_id']
+            for profile in final_recs:
+                article_key = str(profile["article_id"]).strip()
+                if article_key in db_logs_dictionary:
+                    profile["id"] = db_logs_dictionary[article_key]["id"]
+                    profile["status"] = db_logs_dictionary[article_key].get("status", "Pending")
+                    profile["delivery_date"] = db_logs_dictionary[article_key].get("delivery_date")
+                    profile["received_mode"] = db_logs_dictionary[article_key].get("received_mode")
+                    profile["extra_money_charged"] = db_logs_dictionary[article_key].get("extra_money_charged")
+                    profile["issue_reason"] = db_logs_dictionary[article_key].get("issue_reason")
+                    profile["operator_stamp"] = db_logs_dictionary[article_key].get("operator_stamp")
+                else:
+                    profile["id"] = None
+                    profile["status"] = "Pending"
 
-                st.markdown("<hr>", unsafe_allow_html=True)
-                l_panel, r_panel = st.columns(2)
+            options_list = []
+            for r in final_recs:
+                status_val = r.get('status', 'Pending')
+                if status_val == "Delivered":
+                    status_display = "Verified"
+                else:
+                    status_display = status_val
+                options_list.append(f"{str(r['patient_name']).upper()} (MRN: {r.get('mrn_no', 'N/A')}) - [{status_display}]")
                 
-                with l_panel:
-                    st.markdown(f"<div class='patient-card-header'>👤 {target_profile['patient_name']}</div>", unsafe_allow_html=True)
-                    st.markdown(f"""
-                        <div class='data-card'>
-                            <div class='data-row'>🔢 <b>MRN Number:</b><br><span class='data-value'>{target_profile.get('mrn_no', 'N/A')}</span></div>
-                            <div class='data-row'>📦 <b>Consignment ID (Article):</b><br><span class='data-value-alt'>{target_profile['article_id']}</span></div>
-                            <div class='data-row'>🏥 <b>Booking GPO Station:</b><br><span style='font-size:18px; font-weight:600; color:#1e293b;'>{target_profile.get('booking_office', 'Unknown GPO')}</span></div>
-                            <div class='data-row'>🏠 <b>Address:</b><br><span style='font-size:17px; font-weight:600; color:#1e293b; background:#f8fafc; padding:6px; display:block; border-radius:4px; border:1px solid #e2e8f0; margin-top:4px;'>{target_profile['address']}</span></div>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    
-                    st.markdown("#### 🌐 Pakistan Post Live EMTTS Tracking")
-                    opt_col1, opt_col2 = st.columns(2)
-                    with opt_col1: data_mode = st.radio("Display Transformation:", ["Fetch Live (Raw Mode)", "Fetch Snipped Data (Mapped Mode)"])
-                    with opt_col2: report_scope = st.radio("Reporting Scope Evaluation:", ["Only Last Status", "All Statuses (Full History)"])
-                    
-                    if st.button("🔍 Fetch Live Status from PakPost Server", use_container_width=True):
-                        with st.spinner("Connecting to EMTTS Website..."):
-                            data, err = fetch_live_emtts_status(current_article_id)
-                            if err: 
-                                st.error(err)
-                            elif data and data["history"]:
-                                st.session_state.fetched_emtts_data[current_article_id] = data
-                                
-                    cached_emtts_lpanel = st.session_state.fetched_emtts_data.get(current_article_id)
-                    if cached_emtts_lpanel and "history" in cached_emtts_lpanel:
-                        history_list = cached_emtts_lpanel["history"]
-                        last_entry = history_list[-1]
-                        last_status_lower = last_entry["status"].lower()
-                        
-                        is_historical_anomaly = any("delivered" in h["status"].lower() or "return" in h["status"].lower() or "rts" in h["status"].lower() for h in history_list[:-1])
-                        is_last_delivered = "delivered" in last_status_lower
-                        is_last_rts = "return" in last_status_lower or "rts" in last_status_lower
-                        
-                        if is_historical_anomaly and not (is_last_delivered or is_last_rts):
-                            st.markdown("<div style='background-color:#dc2626; color:white; padding:14px; border-radius:6px; font-weight:800; text-align:center;'>⚠️ ANOMALY DETECTED: Marked Delivered/RTS in history but NOT currently!</div>", unsafe_allow_html=True)
-                        
-                        if is_last_delivered: st.success(f"✅ FINAL STATUS: {last_entry['status']} ({last_entry['datetime']})")
-                        elif is_last_rts: st.error(f"❌ FINAL STATUS: {last_entry['status']} ({last_entry['datetime']})")
-                        else: st.info(f"📍 CURRENT STATUS: {last_entry['status']} ({last_entry['office']})")
+            if st.session_state.selected_profile_index >= len(options_list): st.session_state.selected_profile_index = 0
+                
+            selected_prof_str = st.selectbox("Select Patient Profile to Process:", options_list, index=st.session_state.selected_profile_index, key="outbound_profile_select")
+            actual_index = options_list.index(selected_prof_str) if selected_prof_str in options_list else 0
+            target_profile = final_recs[actual_index]
+            current_article_id = target_profile['article_id']
 
-                        use_mapped = (data_mode == "Fetch Snipped Data (Mapped Mode)")
-                        if report_scope == "All Statuses (Full History)":
-                            processed_rows = [{"Event": i+1, "Timestamp": h["datetime"], "Office": h["office"], "Status": map_status(h["status"]) if use_mapped else h["status"]} for i, h in enumerate(history_list)]
-                            st.dataframe(pd.DataFrame(processed_rows), use_container_width=True)
-                        else:
-                            final_status_str = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
-                            st.markdown(f"""
-                                <div style='background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px; margin-bottom: 15px;'>
-                                    <div style='font-size: 13px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;'>Latest Status</div>
-                                    <div style='font-size: 20px; font-weight: 700; color: #1e293b; line-height: 1.3; word-wrap: break-word;'>{final_status_str}</div>
-                                </div>
-                            """, unsafe_allow_html=True)
+            st.markdown("<hr>", unsafe_allow_html=True)
+            l_panel, r_panel = st.columns(2)
+            
+            with l_panel:
+                st.markdown(f"<div class='patient-card-header'>👤 {target_profile['patient_name']}</div>", unsafe_allow_html=True)
+                st.markdown(f"""
+                    <div class='data-card'>
+                        <div class='data-row'>🔢 <b>MRN Number:</b><br><span class='data-value'>{target_profile.get('mrn_no', 'N/A')}</span></div>
+                        <div class='data-row'>📦 <b>Consignment ID (Article):</b><br><span class='data-value-alt'>{target_profile['article_id']}</span></div>
+                        <div class='data-row'>🏥 <b>Booking GPO Station:</b><br><span style='font-size:18px; font-weight:600; color:#1e293b;'>{target_profile.get('booking_office', 'Unknown GPO')}</span></div>
+                        <div class='data-row'>🏠 <b>Address:</b><br><span style='font-size:17px; font-weight:600; color:#1e293b; background:#f8fafc; padding:6px; display:block; border-radius:4px; border:1px solid #e2e8f0; margin-top:4px;'>{target_profile['address']}</span></div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                st.markdown("#### 🌐 Pakistan Post Live EMTTS Tracking")
+                opt_col1, opt_col2 = st.columns(2)
+                with opt_col1: data_mode = st.radio("Display Transformation:", ["Fetch Live (Raw Mode)", "Fetch Snipped Data (Mapped Mode)"])
+                with opt_col2: report_scope = st.radio("Reporting Scope Evaluation:", ["Only Last Status", "All Statuses (Full History)"])
+                
+                if st.button("🔍 Fetch Live Status from PakPost Server", use_container_width=True):
+                    with st.spinner("Connecting to EMTTS Website..."):
+                        data, err = fetch_live_emtts_status(current_article_id)
+                        if err: 
+                            st.error(err)
+                        elif data and data["history"]:
+                            st.session_state.fetched_emtts_data[current_article_id] = data
+                            
+                cached_emtts_lpanel = st.session_state.fetched_emtts_data.get(current_article_id)
+                if cached_emtts_lpanel and "history" in cached_emtts_lpanel:
+                    history_list = cached_emtts_lpanel["history"]
+                    last_entry = history_list[-1]
+                    last_status_lower = last_entry["status"].lower()
+                    
+                    is_historical_anomaly = any("delivered" in h["status"].lower() or "return" in h["status"].lower() or "rts" in h["status"].lower() for h in history_list[:-1])
+                    is_last_delivered = "delivered" in last_status_lower
+                    is_last_rts = "return" in last_status_lower or "rts" in last_status_lower
+                    
+                    if is_historical_anomaly and not (is_last_delivered or is_last_rts):
+                        st.markdown("<div style='background-color:#dc2626; color:white; padding:14px; border-radius:6px; font-weight:800; text-align:center;'>⚠️ ANOMALY DETECTED: Marked Delivered/RTS in history but NOT currently!</div>", unsafe_allow_html=True)
+                    
+                    if is_last_delivered: st.success(f"✅ FINAL STATUS: {last_entry['status']} ({last_entry['datetime']})")
+                    elif is_last_rts: st.error(f"❌ FINAL STATUS: {last_entry['status']} ({last_entry['datetime']})")
+                    else: st.info(f"📍 CURRENT STATUS: {last_entry['status']} ({last_entry['office']})")
 
-                    st.markdown("<div style='font-size: 22px; font-weight: 800; color: #334155; margin-bottom: 6px;'>🎴 DIAL THIS PHONE NUMBER FROM LANDLINE:</div>", unsafe_allow_html=True)
-                    raw_phone = str(target_profile.get('phone_number', '')).strip()
-                    if not raw_phone or raw_phone.lower() in ['none', 'nan', 'null', ''] or len(raw_phone) < 5:
-                        st.markdown("<div class='no-phone-display'>⚠️ No Contact Number Available</div>", unsafe_allow_html=True)
-                        raw_phone = ""
+                    use_mapped = (data_mode == "Fetch Snipped Data (Mapped Mode)")
+                    if report_scope == "All Statuses (Full History)":
+                        processed_rows = [{"Event": i+1, "Timestamp": h["datetime"], "Office": h["office"], "Status": map_status(h["status"]) if use_mapped else h["status"]} for i, h in enumerate(history_list)]
+                        st.dataframe(pd.DataFrame(processed_rows), use_container_width=True)
                     else:
-                        if not raw_phone.startswith('0') and raw_phone.isdigit(): raw_phone = '0' + raw_phone
-                        st.markdown(f"<div class='big-phone-display'>{raw_phone}</div>", unsafe_allow_html=True)
-                    
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    with st.expander("🖨️ Individual Profile Print Desk"):
-                        print_operator = target_profile.get('operator_stamp', st.session_state.full_name)
-                        print_status = target_profile.get('status', 'Pending')
-                        
-                        if print_status == "Delivered":
-                            delivery_date = target_profile.get('delivery_date', 'N/A')
-                            received_mode = target_profile.get('received_mode', 'N/A')
-                            extra_money = target_profile.get('extra_money_charged', 'N/A')
-                            print_status_detail = f"""
-                            <b style="color: green;">Delivered</b><br>
-                            <span style="font-size: 13px; font-weight: 600; color: #334155; line-height: 1.4;">
-                                • Date: {delivery_date}<br>
-                                • Mode: {received_mode}<br>
-                                • Extra Money Requested: <b style="color: {'#dc2626' if extra_money != 'No' else '#1e293b'}">{extra_money}</b>
-                            </span>
-                            """
-                        elif print_status == "Issue / Complaint":
-                            issue_reason = target_profile.get('issue_reason', 'N/A')
-                            print_status_detail = f"""
-                            <b style="color: #dc2626;">Issue / Complaint</b><br>
-                            <span style="font-size: 13px; font-weight: 600; color: #334155; line-height: 1.4;">
-                                • Reason: {issue_reason}
-                            </span>
-                            """
-                        else:
-                            print_status_detail = f"<b style='color: #475569;'>{print_status}</b>"
-
-                        cached_emtts = st.session_state.fetched_emtts_data.get(current_article_id)
-                        if not cached_emtts:
-                            st.info("ℹ️ Live tracking status has not been fetched from the main engine above.")
-                            st.markdown("##### 📥 Fetch EMTTS Live Status Directly in Print Desk")
-                            print_data_mode = st.radio("Print Display Transformation:", ["Fetch Live (Raw Mode)", "Fetch Snipped Data (Mapped Mode)"], key="print_data_mode_sel")
-                            
-                            if st.button("🔍 Fetch Status inside Print Card", use_container_width=True, key="print_direct_fetch_btn"):
-                                with st.spinner("Connecting to EMTTS Website..."):
-                                    data, err = fetch_live_emtts_status(current_article_id)
-                                    if err: st.error(err)
-                                    else:
-                                        st.session_state.fetched_emtts_data[current_article_id] = data
-                                        st.success("Successfully loaded live status! Now you can print.")
-                                        st.rerun()
-                        
-                        cached_emtts = st.session_state.fetched_emtts_data.get(current_article_id)
-
-                        if cached_emtts and "history" in cached_emtts:
-                            history_list = cached_emtts["history"]
-                            active_data_mode = st.session_state.get("print_data_mode_sel", data_mode)
-                            use_mapped = (active_data_mode == "Fetch Snipped Data (Mapped Mode)")
-                            
-                            last_entry = history_list[-1]
-                            status_val = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
-                            
-                            print_historical_anomaly = any("delivered" in h["status"].lower() or "return" in h["status"].lower() or "rts" in h["status"].lower() for h in history_list[:-1])
-                            last_status_lower_print = last_entry["status"].lower()
-                            print_last_delivered = "delivered" in last_status_lower_print
-                            print_last_rts = "return" in last_status_lower_print or "rts" in last_status_lower_print
-                            
-                            print_anomaly_box_html = ""
-                            if print_historical_anomaly and not (print_last_delivered or print_last_rts):
-                                print_anomaly_box_html = f"""
-                                <div style="background-color: #dc2626 !important; color: #ffffff !important; padding: 12px; border-radius: 6px; font-weight: bold; font-size: 13px; margin-bottom: 15px; border: 1px solid #b91c1c; word-wrap: break-word; white-space: normal; line-height: 1.4; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
-                                    ⚠️ ANOMALY DETECTED: Marked Delivered/RTS in history but NOT currently!
-                                </div>
-                                """
-                            
-                            emtts_status_html = f"""
-                            {print_anomaly_box_html}
-                            <div style="font-weight: bold; color: #1e293b; font-size: 15px; word-wrap: break-word; white-space: normal; line-height: 1.4;">{status_val}</div>
-                            <div style="font-size: 12px; color: #475569; margin-top: 4px; line-height: 1.3;">
-                                📍 Office: {last_entry['office']} <br> 🕒 Date-Time: {last_entry['datetime']}
-                            </div>
-                            """
-                        else:
-                            emtts_status_html = "<span style='color: #94a3b8; font-style: italic; font-size: 13px;'>Live status not fetched yet (Use options above to fetch)</span>"
-
-                        current_pkt_time = datetime.datetime.now(PKT_TZ).strftime('%Y-%m-%d %I:%M:%S %p')
-
+                        final_status_str = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
                         st.markdown(f"""
-                            <div class="print-manifest-card" style="background: #ffffff; border: 3px double #a61c1c; padding: 25px; font-family: 'Segoe UI', sans-serif; color: #000000;">
-                                <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 10px; margin-bottom: 20px;">
-                                    <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
-                                    <p style="margin: 5px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Quality Verification & Consignee Audit Certificate</p>
-                                </div>
-                                <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #000000;">
-                                    <tr><td style="padding: 8px 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['patient_name']}</td></tr>
-                                    <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">MRN Number:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('mrn_no', 'N/A')}</td></tr>
-                                    <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Consignment ID (Article):</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: 700; color: #a61c1c;">{target_profile['article_id']}</td></tr>
-                                    <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Contact Number:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{raw_phone if raw_phone else 'N/A'}</td></tr>
-                                    <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Booking GPO Station:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('booking_office', 'N/A')}</td></tr>
-                                    <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Mailing Address:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['address']}</td></tr>
-                                    <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">EMTTS Tracking Status:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top;">{emtts_status_html}</td></tr>
-                                    <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Verification Status:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{print_status_detail}</td></tr>
-                                </table>
-                                <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 15px; color: #000000;">
-                                    <div>
-                                        <b>Verified By (Operator ID):</b> {print_operator}<br>
-                                        <span style="font-size: 11px; color: #475569;">Timestamp: {current_pkt_time} (PKT)</span>
-                                    </div>
-                                </div>
+                            <div style='background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px; margin-bottom: 15px;'>
+                                <div style='font-size: 13px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;'>Latest Status</div>
+                                <div style='font-size: 20px; font-weight: 700; color: #1e293b; line-height: 1.3; word-wrap: break-word;'>{final_status_str}</div>
                             </div>
                         """, unsafe_allow_html=True)
 
-                        if cached_emtts and "history" in cached_emtts:
-                            components.html(f"""
-                            <style>
-                            .custom-print-btn {{ background: linear-gradient(180deg, #cc2424 0%, #a61c1c 100%) !important; color: #ffffff !important; border: 1px solid #801414 !important; border-bottom: 4px solid #590d0d !important; border-radius: 6px !important; padding: 12px 24px !important; font-weight: 700; font-size: 14px; font-family: 'Segoe UI', sans-serif; box-shadow: 0px 4px 8px rgba(0,0,0,0.12); cursor: pointer; width: 100%; transition: all 0.1s ease; display: block; text-align: center; }}
-                            .custom-print-btn:hover {{ background: linear-gradient(180deg, #e53e3e 0%, #cc2424 100%) !important; }}
-                            body {{ margin: 0; padding: 0; overflow: hidden; background: transparent; }}
-                            
-                            /* Fix: Permanently hide print buttons from inside frames when triggered */
-                            @media print {{
-                                body {{ display: none !important; visibility: hidden !important; }}
-                                .custom-print-btn {{ display: none !important; visibility: hidden !important; }}
-                            }}
-                            </style>
-                            <button onclick="window.parent.print()" class="custom-print-btn">🖨️ PRINT FEEDBACK MANIFEST</button>
-                            """, height=55)
-                        else:
-                            st.warning("⚠️ Live tracking status is required before printing.")
+                st.markdown("<div style='font-size: 22px; font-weight: 800; color: #334155; margin-bottom: 6px;'>🎴 DIAL THIS PHONE NUMBER FROM LANDLINE:</div>", unsafe_allow_html=True)
+                raw_phone = str(target_profile.get('phone_number', '')).strip()
+                if not raw_phone or raw_phone.lower() in ['none', 'nan', 'null', ''] or len(raw_phone) < 5:
+                    st.markdown("<div class='no-phone-display'>⚠️ No Contact Number Available</div>", unsafe_allow_html=True)
+                    raw_phone = ""
+                else:
+                    if not raw_phone.startswith('0') and raw_phone.isdigit(): raw_phone = '0' + raw_phone
+                    st.markdown(f"<div class='big-phone-display'>{raw_phone}</div>", unsafe_allow_html=True)
                 
-                with r_panel:
-                    st.markdown("#### 📝 Live Patient Verification & Feedback Questionnaire")
+                st.markdown("<br>", unsafe_allow_html=True)
+                with st.expander("🖨️ Individual Profile Print Desk"):
+                    print_operator = target_profile.get('operator_stamp', st.session_state.full_name)
+                    print_status = target_profile.get('status', 'Pending')
                     
-                    allow_questionnaire = True
-                    if target_profile["status"] not in ["Pending", "Pending Retry"]:
-                        st.warning(f"⚠️ Note: The questionnaire for this patient has already been processed! Current Status: [{target_profile['status']}]")
-                        unlock_re = st.radio("Do you want to process this verified profile again?", ["No", "Yes"], index=0)
-                        if unlock_re == "No": 
-                            allow_questionnaire = False
-                    
-                    if allow_questionnaire:
-                        payload_buffer = {}
-                        can_submit = False
-                        
-                        cached_emtts = st.session_state.fetched_emtts_data.get(current_article_id)
-                        live_status = ""
-                        live_date = ""
-                        if cached_emtts and "history" in cached_emtts and len(cached_emtts["history"]) > 0:
-                            live_status = cached_emtts["history"][-1]["status"].lower()
-                            live_date = cached_emtts["history"][-1]["datetime"]
+                    if print_status == "Delivered":
+                        delivery_date = target_profile.get('delivery_date', 'N/A')
+                        received_mode = target_profile.get('received_mode', 'N/A')
+                        extra_money = target_profile.get('extra_money_charged', 'N/A')
+                        print_status_detail = f"""
+                        <b style="color: green;">Delivered</b><br>
+                        <span style="font-size: 13px; font-weight: 600; color: #334155; line-height: 1.4;">
+                            • Date: {delivery_date}<br>
+                            • Mode: {received_mode}<br>
+                            • Extra Money Requested: <b style="color: {'#dc2626' if extra_money != 'No' else '#1e293b'}">{extra_money}</b>
+                        </span>
+                        """
+                    elif print_status == "Issue / Complaint":
+                        issue_reason = target_profile.get('issue_reason', 'N/A')
+                        print_status_detail = f"""
+                        <b style="color: #dc2626;">Issue / Complaint</b><br>
+                        <span style="font-size: 13px; font-weight: 600; color: #334155; line-height: 1.4;">
+                            • Reason: {issue_reason}
+                        </span>
+                        """
+                    else:
+                        print_status_detail = f"<b style='color: #475569;'>{print_status}</b>"
 
-                        contact_status = st.radio("📞 Was the patient successfully contacted on call?", ["Select Option", "Yes", "No"])
+                    cached_emtts = st.session_state.fetched_emtts_data.get(current_article_id)
+                    if not cached_emtts:
+                        st.info("ℹ️ Live tracking status has not been fetched from the main engine above.")
+                        st.markdown("##### 📥 Fetch EMTTS Live Status Directly in Print Desk")
+                        print_data_mode = st.radio("Print Display Transformation:", ["Fetch Live (Raw Mode)", "Fetch Snipped Data (Mapped Mode)"], key="print_data_mode_sel")
                         
-                        if contact_status == "No":
-                            payload_buffer["contact_status"] = "No"
-                            no_contact_reason = st.selectbox("Reason for failure to contact:", ["Select Reason", "Phone number not valid", "Phone number wrong", "Phone switched off", "Did not pick up"])
-                            
-                            if no_contact_reason == "Did not pick up":
-                                st.warning("⏱️ **Patient did not pick up the call.** Please attempt a follow-up call after 2 hours.")
-                                retry_action = st.radio("Action Strategy:", ["Mark for Retry (Pending)", "Close as Unreachable (Max Attempts Reached)"])
-                                if retry_action == "Mark for Retry (Pending)": 
-                                    payload_buffer["status"] = "Pending Retry"
-                                    payload_buffer["no_contact_reason"] = "Did not pick up - Pending Retry"
-                                    can_submit = True
-                                elif retry_action == "Close as Unreachable (Max Attempts Reached)":
-                                    payload_buffer["status"] = "Unreachable"
-                                    payload_buffer["no_contact_reason"] = "Did not pick up - Final"
-                                    can_submit = True
-                            elif no_contact_reason != "Select Reason":
-                                payload_buffer["status"] = f"Unreachable"
-                                payload_buffer["no_contact_reason"] = no_contact_reason
-                                can_submit = True
-                                
-                        elif contact_status == "Yes":
-                            payload_buffer["contact_status"] = "Yes"
-                            is_delivered = st.radio("📦 According to the patient, have they received the medicine?", ["Select Option", "Yes", "No"])
-                            
-                            if is_delivered == "Yes":
-                                payload_buffer["status"] = "Delivered"
-                                st.markdown("##### 📅 Delivery Date & Verification")
-                                
-                                col_d1, col_d2 = st.columns(2)
-                                with col_d1: delivery_date = st.date_input("Select the date patient received the parcel:", datetime.date.today())
-                                with col_d2: st.info(f"**EMTTS Fetched Date:**\n{live_date if live_date else 'Not Fetched Yet'}")
-                                    
-                                if live_date:
-                                    d_str1 = delivery_date.strftime("%Y-%m-%d")
-                                    d_str2 = delivery_date.strftime("%d-%m-%Y")
-                                    d_str3 = delivery_date.strftime("%B %d, %Y")
-                                    d_str4 = delivery_date.strftime("%b %d, %Y")
-                                    
-                                    ld_lower = live_date.lower()
-                                    matched_dates = any(d.lower() in ld_lower for d in [d_str1, d_str2, d_str3, d_str4, str(delivery_date)])
-                                    
-                                    if not matched_dates:
-                                        st.error("⚠️ **Date Conflict Alert:** The date provided by the patient differs from the official EMTTS log date.")
-                                        payload_buffer["emtts_conflict"] = "Date Mismatch Detected"
+                        if st.button("🔍 Fetch Status inside Print Card", use_container_width=True, key="print_direct_fetch_btn"):
+                            with st.spinner("Connecting to EMTTS Website..."):
+                                data, err = fetch_live_emtts_status(current_article_id)
+                                if err: st.error(err)
                                 else:
-                                    st.info("💡 Tip: Fetch Live Status from the left panel to automatically verify the EMTTS dates.")
+                                    st.session_state.fetched_emtts_data[current_article_id] = data
+                                    st.success("Successfully loaded live status! Now you can print.")
+                                    st.rerun()
+                    
+                    cached_emtts = st.session_state.fetched_emtts_data.get(current_article_id)
 
-                                if live_status and "delivered" not in live_status:
-                                    st.error("🚨 **EMTTS STATUS CONFLICT:** The EMTTS tracking shows this parcel is NOT delivered, but the patient confirmed they received it.")
-                                    payload_buffer["emtts_conflict"] = "Status Mismatch (Not Delivered on EMTTS)"
-                                    
-                                payload_buffer["delivery_date"] = str(delivery_date)
+                    if cached_emtts and "history" in cached_emtts:
+                        history_list = cached_emtts["history"]
+                        active_data_mode = st.session_state.get("print_data_mode_sel", data_mode)
+                        use_mapped = (active_data_mode == "Fetch Snipped Data (Mapped Mode)")
+                        
+                        last_entry = history_list[-1]
+                        status_val = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
+                        
+                        print_historical_anomaly = any("delivered" in h["status"].lower() or "return" in h["status"].lower() or "rts" in h["status"].lower() for h in history_list[:-1])
+                        last_status_lower_print = last_entry["status"].lower()
+                        print_last_delivered = "delivered" in last_status_lower_print
+                        print_last_rts = "return" in last_status_lower_print or "rts" in last_status_lower_print
+                        
+                        print_anomaly_box_html = ""
+                        if print_historical_anomaly and not (print_last_delivered or print_last_rts):
+                            print_anomaly_box_html = f"""
+                            <div style="background-color: #dc2626 !important; color: #ffffff !important; padding: 12px; border-radius: 6px; font-weight: bold; font-size: 13px; margin-bottom: 15px; border: 1px solid #b91c1c; word-wrap: break-word; white-space: normal; line-height: 1.4; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
+                                ⚠️ ANOMALY DETECTED: Marked Delivered/RTS in history but NOT currently!
+                            </div>
+                            """
+                        
+                        emtts_status_html = f"""
+                        {print_anomaly_box_html}
+                        <div style="font-weight: bold; color: #1e293b; font-size: 15px; word-wrap: break-word; white-space: normal; line-height: 1.4;">{status_val}</div>
+                        <div style="font-size: 12px; color: #475569; margin-top: 4px; line-height: 1.3;">
+                            📍 Office: {last_entry['office']} <br> 🕒 Date-Time: {last_entry['datetime']}
+                        </div>
+                        """
+                    else:
+                        emtts_status_html = "<span style='color: #94a3b8; font-style: italic; font-size: 13px;'>Live status not fetched yet (Use options above to fetch)</span>"
+
+                    current_pkt_time = datetime.datetime.now(PKT_TZ).strftime('%Y-%m-%d %I:%M:%S %p')
+
+                    st.markdown(f"""
+                        <div class="print-manifest-card" style="background: #ffffff; border: 3px double #a61c1c; padding: 25px; font-family: 'Segoe UI', sans-serif; color: #000000;">
+                            <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 10px; margin-bottom: 20px;">
+                                <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
+                                <p style="margin: 5px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Quality Verification & Consignee Audit Certificate</p>
+                            </div>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #000000;">
+                                <tr><td style="padding: 8px 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['patient_name']}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">MRN Number:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('mrn_no', 'N/A')}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Consignment ID (Article):</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: 700; color: #a61c1c;">{target_profile['article_id']}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Contact Number:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{raw_phone if raw_phone else 'N/A'}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Booking GPO Station:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('booking_office', 'N/A')}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Mailing Address:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['address']}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">EMTTS Tracking Status:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top;">{emtts_status_html}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Verification Status:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{print_status_detail}</td></tr>
+                            </table>
+                            <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 15px; color: #000000;">
+                                <div>
+                                    <b>Verified By (Operator ID):</b> {print_operator}<br>
+                                    <span style="font-size: 11px; color: #475569;">Timestamp: {current_pkt_time} (PKT)</span>
+                                </div>
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+
+                    if cached_emtts and "history" in cached_emtts:
+                        components.html(f"""
+                        <style>
+                        .custom-print-btn {{ background: linear-gradient(180deg, #cc2424 0%, #a61c1c 100%) !important; color: #ffffff !important; border: 1px solid #801414 !important; border-bottom: 4px solid #590d0d !important; border-radius: 6px !important; padding: 12px 24px !important; font-weight: 700; font-size: 14px; font-family: 'Segoe UI', sans-serif; box-shadow: 0px 4px 8px rgba(0,0,0,0.12); cursor: pointer; width: 100%; transition: all 0.1s ease; display: block; text-align: center; }}
+                        .custom-print-btn:hover {{ background: linear-gradient(180deg, #e53e3e 0%, #cc2424 100%) !important; }}
+                        body {{ margin: 0; padding: 0; overflow: hidden; background: transparent; }}
+                        
+                        /* Fix: Permanently hide print buttons from inside frames when triggered */
+                        @media print {{
+                            body {{ display: none !important; visibility: hidden !important; }}
+                            .custom-print-btn {{ display: none !important; visibility: hidden !important; }}
+                        }}
+                        </style>
+                        <button onclick="window.parent.print()" class="custom-print-btn">🖨️ PRINT FEEDBACK MANIFEST</button>
+                        """, height=55)
+                    else:
+                        st.warning("⚠️ Live tracking status is required before printing.")
+            
+            with r_panel:
+                st.markdown("#### 📝 Live Patient Verification & Feedback Questionnaire")
+                
+                allow_questionnaire = True
+                if target_profile["status"] not in ["Pending", "Pending Retry"]:
+                    st.warning(f"⚠️ Note: The questionnaire for this patient has already been processed! Current Status: [{target_profile['status']}]")
+                    unlock_re = st.radio("Do you want to process this verified profile again?", ["No", "Yes"], index=0)
+                    if unlock_re == "No": 
+                        allow_questionnaire = False
+                
+                if allow_questionnaire:
+                    payload_buffer = {}
+                    can_submit = False
+                    
+                    cached_emtts = st.session_state.fetched_emtts_data.get(current_article_id)
+                    live_status = ""
+                    live_date = ""
+                    if cached_emtts and "history" in cached_emtts and len(cached_emtts["history"]) > 0:
+                        live_status = cached_emtts["history"][-1]["status"].lower()
+                        live_date = cached_emtts["history"][-1]["datetime"]
+
+                    contact_status = st.radio("📞 Was the patient successfully contacted on call?", ["Select Option", "Yes", "No"])
+                    
+                    if contact_status == "No":
+                        payload_buffer["contact_status"] = "No"
+                        no_contact_reason = st.selectbox("Reason for failure to contact:", ["Select Reason", "Phone number not valid", "Phone number wrong", "Phone switched off", "Did not pick up"])
+                        
+                        if no_contact_reason == "Did not pick up":
+                            st.warning("⏱️ **Patient did not pick up the call.** Please attempt a follow-up call after 2 hours.")
+                            retry_action = st.radio("Action Strategy:", ["Mark for Retry (Pending)", "Close as Unreachable (Max Attempts Reached)"])
+                            if retry_action == "Mark for Retry (Pending)": 
+                                payload_buffer["status"] = "Pending Retry"
+                                payload_buffer["no_contact_reason"] = "Did not pick up - Pending Retry"
+                                can_submit = True
+                            elif retry_action == "Close as Unreachable (Max Attempts Reached)":
+                                payload_buffer["status"] = "Unreachable"
+                                payload_buffer["no_contact_reason"] = "Did not pick up - Final"
+                                can_submit = True
+                        elif no_contact_reason != "Select Reason":
+                            payload_buffer["status"] = f"Unreachable"
+                            payload_buffer["no_contact_reason"] = no_contact_reason
+                            can_submit = True
+                            
+                    elif contact_status == "Yes":
+                        payload_buffer["contact_status"] = "Yes"
+                        is_delivered = st.radio("📦 According to the patient, have they received the medicine?", ["Select Option", "Yes", "No"])
+                        
+                        if is_delivered == "Yes":
+                            payload_buffer["status"] = "Delivered"
+                            st.markdown("##### 📅 Delivery Date & Verification")
+                            
+                            col_d1, col_d2 = st.columns(2)
+                            with col_d1: delivery_date = st.date_input("Select the date patient received the parcel:", datetime.date.today())
+                            with col_d2: st.info(f"**EMTTS Fetched Date:**\n{live_date if live_date else 'Not Fetched Yet'}")
                                 
-                                received_mode = st.radio("📍 Delivery Execution Mode:", ["Select Mode", "Delivered by postman to home address", "Collected directly from local post office branch"])
-                                payload_buffer["received_mode"] = received_mode
+                            if live_date:
+                                d_str1 = delivery_date.strftime("%Y-%m-%d")
+                                d_str2 = delivery_date.strftime("%d-%m-%Y")
+                                d_str3 = delivery_date.strftime("%B %d, %Y")
+                                d_str4 = delivery_date.strftime("%b %d, %Y")
                                 
-                                if received_mode == "Delivered by postman to home address":
-                                    st.markdown("##### 🕵️ Postman Conduct & Ethics Assessment")
-                                    extra_money = st.radio("Did the postman ask for any unauthorized extra money or tips?", ["Select", "No", "Yes"])
+                                ld_lower = live_date.lower()
+                                matched_dates = any(d.lower() in ld_lower for d in [d_str1, d_str2, d_str3, d_str4, str(delivery_date)])
+                                
+                                if not matched_dates:
+                                    st.error("⚠️ **Date Conflict Alert:** The date provided by the patient differs from the official EMTTS log date.")
+                                    payload_buffer["emtts_conflict"] = "Date Mismatch Detected"
+                            else:
+                                st.info("💡 Tip: Fetch Live Status from the left panel to automatically verify the EMTTS dates.")
+
+                            if live_status and "delivered" not in live_status:
+                                st.error("🚨 **EMTTS STATUS CONFLICT:** The EMTTS tracking shows this parcel is NOT delivered, but the patient confirmed they received it.")
+                                payload_buffer["emtts_conflict"] = "Status Mismatch (Not Delivered on EMTTS)"
+                                
+                            payload_buffer["delivery_date"] = str(delivery_date)
+                            
+                            received_mode = st.radio("📍 Delivery Execution Mode:", ["Select Mode", "Delivered by postman to home address", "Collected directly from local post office branch"])
+                            payload_buffer["received_mode"] = received_mode
+                            
+                            if received_mode == "Delivered by postman to home address":
+                                st.markdown("##### 🕵️ Postman Conduct & Ethics Assessment")
+                                extra_money = st.radio("Did the postman ask for any unauthorized extra money or tips?", ["Select", "No", "Yes"])
+                                
+                                if extra_money == "Yes":
+                                    st.error("🚨 **CRITICAL CORRUPTION ALERT:** Extra charges were demanded. This case will be highlighted for Admin Resolution.")
+                                    payload_buffer["extra_money_charged"] = "Yes"
+                                    payload_buffer["postman_issue_type"] = "Extra Charges Demanded"
+                                    payload_buffer["extra_money_amount"] = st.text_input("Amount Demanded (Rs.):")
                                     
-                                    if extra_money == "Yes":
-                                        st.error("🚨 **CRITICAL CORRUPTION ALERT:** Extra charges were demanded. This case will be highlighted for Admin Resolution.")
-                                        payload_buffer["extra_money_charged"] = "Yes"
-                                        payload_buffer["postman_issue_type"] = "Extra Charges Demanded"
-                                        payload_buffer["extra_money_amount"] = st.text_input("Amount Demanded (Rs.):")
+                                    col_p1, col_p2 = st.columns(2)
+                                    with col_p1: payload_buffer["postman_name"] = st.text_input("Postman Name (if known):")
+                                    with col_p2: payload_buffer["postman_phone"] = st.text_input("Postman Phone No. (if known):")
+                                    payload_buffer["post_office_name"] = st.text_input("Concerned Post Office Name:")
+                                    
+                                    if payload_buffer["extra_money_amount"] and payload_buffer["post_office_name"]: can_submit = True
                                         
+                                elif extra_money == "No":
+                                    payload_buffer["extra_money_charged"] = "No"
+                                    other_issue = st.radio("Any other issue or complaint regarding the postman?", ["No", "Yes"])
+                                    
+                                    if other_issue == "Yes":
+                                        payload_buffer["postman_issue_type"] = "Other Issue"
+                                        payload_buffer["issue_reason"] = st.text_area("Describe the issue:")
                                         col_p1, col_p2 = st.columns(2)
-                                        with col_p1: payload_buffer["postman_name"] = st.text_input("Postman Name (if known):")
-                                        with col_p2: payload_buffer["postman_phone"] = st.text_input("Postman Phone No. (if known):")
+                                        with col_p1: payload_buffer["postman_name"] = st.text_input("Postman Name:")
+                                        with col_p2: payload_buffer["postman_phone"] = st.text_input("Postman Phone No.:")
                                         payload_buffer["post_office_name"] = st.text_input("Concerned Post Office Name:")
-                                        
-                                        if payload_buffer["extra_money_amount"] and payload_buffer["post_office_name"]: can_submit = True
-                                            
-                                    elif extra_money == "No":
-                                        payload_buffer["extra_money_charged"] = "No"
-                                        other_issue = st.radio("Any other issue or complaint regarding the postman?", ["No", "Yes"])
-                                        
-                                        if other_issue == "Yes":
-                                            payload_buffer["postman_issue_type"] = "Other Issue"
-                                            payload_buffer["issue_reason"] = st.text_area("Describe the issue:")
-                                            col_p1, col_p2 = st.columns(2)
-                                            with col_p1: payload_buffer["postman_name"] = st.text_input("Postman Name:")
-                                            with col_p2: payload_buffer["postman_phone"] = st.text_input("Postman Phone No.:")
-                                            payload_buffer["post_office_name"] = st.text_input("Concerned Post Office Name:")
-                                            if payload_buffer["issue_reason"] and payload_buffer["post_office_name"]: can_submit = True
-                                        else:
-                                            payload_buffer["postman_issue_type"] = "None"
-                                            can_submit = True
-
-                                elif received_mode == "Collected directly from local post office branch":
-                                    st.markdown("##### 🏢 Post Office Collection Details")
-                                    col_po1, col_po2 = st.columns(2)
-                                    with col_po1: payload_buffer["postman_name"] = st.text_input("Postman Name (if known):", key="po_p_name")
-                                    with col_po2: payload_buffer["postman_phone"] = st.text_input("Postman Phone No. (if known):", key="po_p_phone")
-                                    payload_buffer["post_office_name"] = st.text_input("Concerned Post Office Name:", key="po_name")
-                                    po_issue = st.radio("Any issue faced during collection?", ["No", "Yes"])
-                                    if po_issue == "Yes":
-                                        payload_buffer["issue_reason"] = st.text_area("Describe the issue faced at post office:")
-                                    
-                                    if payload_buffer["post_office_name"]:
+                                        if payload_buffer["issue_reason"] and payload_buffer["post_office_name"]: can_submit = True
+                                    else:
+                                        payload_buffer["postman_issue_type"] = "None"
                                         can_submit = True
 
-                            elif is_delivered == "No":
-                                payload_buffer["status"] = "Issue / Complaint"
-                                st.markdown(f"<div style='background:#f1f5f9; padding:12px; border-radius:6px; border-left:4px solid #0ea5e9; margin-bottom:15px; color:#0f172a;'><b>🏠 Verify Address with Patient:</b><br>{target_profile['address']}</div>", unsafe_allow_html=True)
-                                addr_match = st.radio("Did the patient confirm this address is correct?", ["Select Option", "Yes - Address is correct", "No - Address is wrong/mismatched"])
+                            elif received_mode == "Collected directly from local post office branch":
+                                st.markdown("##### 🏢 Post Office Collection Details")
+                                col_po1, col_po2 = st.columns(2)
+                                with col_po1: payload_buffer["postman_name"] = st.text_input("Postman Name (if known):", key="po_p_name")
+                                with col_po2: payload_buffer["postman_phone"] = st.text_input("Postman Phone No. (if known):", key="po_p_phone")
+                                payload_buffer["post_office_name"] = st.text_input("Concerned Post Office Name:", key="po_name")
+                                po_issue = st.radio("Any issue faced during collection?", ["No", "Yes"])
+                                if po_issue == "Yes":
+                                    payload_buffer["issue_reason"] = st.text_area("Describe the issue faced at post office:")
                                 
-                                address_verified_ready = False
-                                if addr_match == "No - Address is wrong/mismatched":
-                                    new_addr = st.text_input("📝 Enter the updated/correct address provided by patient:")
-                                    if new_addr:
-                                        payload_buffer["updated_address"] = new_addr
-                                        address_verified_ready = True
-                                    else:
-                                        st.warning("Please enter the updated address to continue.")
-                                elif addr_match == "Yes - Address is correct":
-                                    payload_buffer["updated_address"] = target_profile['address']
-                                    address_verified_ready = True
+                                if payload_buffer["post_office_name"]:
+                                    can_submit = True
 
-                                if address_verified_ready:
-                                    if live_status and "delivered" in live_status:
-                                        st.error("🚨 **EMTTS FAKE DELIVERY CONFLICT:** The EMTTS tracking shows this parcel IS marked as delivered, but the patient states they DID NOT receive it! Immediate investigation required.")
-                                        payload_buffer["emtts_conflict"] = "Fake Delivery Marked on EMTTS"
-                                         
-                                    postman_contact = st.radio("Did the postman contact the patient?", ["Select", "Yes", "No"])
-                                    
-                                    if postman_contact == "Yes":
-                                         payload_buffer["postman_contacted"] = "Yes"
-                                         reason = st.selectbox("Why did the patient not receive the medicine?", ["Select Reason", "Patient does not want to receive it", "Patient has passed away (Died)", "Medicine course is completed", "Other"])
-                                         
-                                         if reason != "Select Reason":
-                                             payload_buffer["not_received_reason"] = reason
-                                             payload_buffer["status"] = f"RTS Requested"
-                                             can_submit = True
-                                             
-                                    elif postman_contact == "No":
-                                         payload_buffer["postman_contacted"] = "No"
-                                         st.warning("⚠️ **NEGLIGENCE ALERT:** The postman did not deliver the parcel and did not contact the patient. Follow-up is required.")
-                                         payload_buffer["issue_reason"] = "Postman did not contact or deliver to the patient"
-                                         can_submit = True
+                        elif is_delivered == "No":
+                            payload_buffer["status"] = "Issue / Complaint"
+                            st.markdown(f"<div style='background:#f1f5f9; padding:12px; border-radius:6px; border-left:4px solid #0ea5e9; margin-bottom:15px; color:#0f172a;'><b>🏠 Verify Address with Patient:</b><br>{target_profile['address']}</div>", unsafe_allow_html=True)
+                            addr_match = st.radio("Did the patient confirm this address is correct?", ["Select Option", "Yes - Address is correct", "No - Address is wrong/mismatched"])
+                            
+                            address_verified_ready = False
+                            if addr_match == "No - Address is wrong/mismatched":
+                                new_addr = st.text_input("📝 Enter the updated/correct address provided by patient:")
+                                if new_addr:
+                                    payload_buffer["updated_address"] = new_addr
+                                    address_verified_ready = True
+                                else:
+                                    st.warning("Please enter the updated address to continue.")
+                            elif addr_match == "Yes - Address is correct":
+                                payload_buffer["updated_address"] = target_profile['address']
+                                address_verified_ready = True
+
+                            if address_verified_ready:
+                                if live_status and "delivered" in live_status:
+                                    st.error("🚨 **EMTTS FAKE DELIVERY CONFLICT:** The EMTTS tracking shows this parcel IS marked as delivered, but the patient states they DID NOT receive it! Immediate investigation required.")
+                                    payload_buffer["emtts_conflict"] = "Fake Delivery Marked on EMTTS"
                                      
-                        if can_submit:
-                            if st.button("💾 Finalize Session & Commit Logs", use_container_width=True):
-                                with st.spinner("Processing transaction submission rules..."):
-                                    payload_buffer["operator_stamp"] = st.session_state.full_name
-                                    payload_buffer["article_id"] = target_profile["article_id"]
-                                    payload_buffer["patient_name"] = target_profile["patient_name"]
-                                    payload_buffer["phone_number"] = target_profile["phone_number"]
-                                    payload_buffer["booking_date"] = target_profile["booking_date"]
-                                    payload_buffer["address"] = target_profile["address"]
-                                    payload_buffer["patient_city"] = target_profile["patient_city"]
-                                    payload_buffer["mrn_no"] = target_profile["mrn_no"]
-                                    payload_buffer["booking_office"] = target_profile["booking_office"]
-                                    
-                                    try:
-                                        supabase.table("patient_deliveries").upsert(payload_buffer, on_conflict="article_id").execute()
-                                        st.success("Updated securely with your operator identity stamp!")
-                                        st.session_state.selected_profile_index += 1
-                                        save_operator_state()
-                                        time.sleep(0.5)
-                                        st.rerun()
-                                    except Exception as e: st.error(f"Sync error: {e}")
-                    else:
-                        st.info("ℹ️ Select 'Yes' above to unlock the patient questionnaire for re-verification.")
+                                postman_contact = st.radio("Did the postman contact the patient?", ["Select", "Yes", "No"])
+                                
+                                if postman_contact == "Yes":
+                                     payload_buffer["postman_contacted"] = "Yes"
+                                     reason = st.selectbox("Why did the patient not receive the medicine?", ["Select Reason", "Patient does not want to receive it", "Patient has passed away (Died)", "Medicine course is completed", "Other"])
+                                     
+                                     if reason != "Select Reason":
+                                         payload_buffer["not_received_reason"] = reason
+                                         payload_buffer["status"] = f"RTS Requested"
+                                         can_submit = True
+                                         
+                                elif postman_contact == "No":
+                                     payload_buffer["postman_contacted"] = "No"
+                                     st.warning("⚠️ **NEGLIGENCE ALERT:** The postman did not deliver the parcel and did not contact the patient. Follow-up is required.")
+                                     payload_buffer["issue_reason"] = "Postman did not contact or deliver to the patient"
+                                     can_submit = True
+                                 
+                    if can_submit:
+                        if st.button("💾 Finalize Session & Commit Logs", use_container_width=True):
+                            with st.spinner("Processing transaction submission rules..."):
+                                payload_buffer["operator_stamp"] = st.session_state.full_name
+                                payload_buffer["article_id"] = target_profile["article_id"]
+                                payload_buffer["patient_name"] = target_profile["patient_name"]
+                                payload_buffer["phone_number"] = target_profile["phone_number"]
+                                payload_buffer["booking_date"] = target_profile["booking_date"]
+                                payload_buffer["address"] = target_profile["address"]
+                                payload_buffer["patient_city"] = target_profile["patient_city"]
+                                payload_buffer["mrn_no"] = target_profile["mrn_no"]
+                                payload_buffer["booking_office"] = target_profile["booking_office"]
+                                
+                                try:
+                                    supabase.table("patient_deliveries").upsert(payload_buffer, on_conflict="article_id").execute()
+                                    st.success("Updated securely with your operator identity stamp!")
+                                    st.session_state.selected_profile_index += 1
+                                    save_operator_state()
+                                    time.sleep(0.5)
+                                    st.rerun()
+                                except Exception as e: st.error(f"Sync error: {e}")
+                else:
+                    st.info("ℹ️ Select 'Yes' above to unlock the patient questionnaire for re-verification.")
 
 def export_center_view():
     st.session_state.current_navigation_tab = "📥 Secure Reports Export Center"
@@ -1639,7 +1639,7 @@ if st.session_state.logged_in and st.session_state.role == "admin":
                             with st.spinner("..."):
                                 supabase.table("patient_deliveries").update({"extra_money_charged": "Yes (Resolved)"}).eq("id", alert["id"]).execute()
                                 time.sleep(0.5)
-                                st.rerun()
+                                    st.rerun()
                     
                     st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
             
@@ -1728,10 +1728,10 @@ if st.session_state.logged_in:
                     /* Bulletproof Shiny Red Digital Count */
                     .machine-count, .machine-count * {{
                         color: #ffb703 !important; /* Universal Override */
-                        font-size: 22px !important; 
-                        font-weight: 800 !important;
+                        font-size: 24px !important; 
+                        font-weight: 900 !important;
                         font-family: 'Courier New', Courier, monospace !important; /* Digital Display Look */
-                        text-shadow: 0 0 10px #ff3333, 0 0 18px rgba(255, 51, 51, 0.6) !important;
+                        text-shadow: 0 0 10px #ff3333, 0 0 20px rgba(255, 51, 51, 0.6) !important;
                         margin-top: 5px !important;
                         display: block !important;
                     }}
