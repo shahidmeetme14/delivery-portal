@@ -1639,7 +1639,7 @@ if st.session_state.logged_in and st.session_state.role == "admin":
                             with st.spinner("..."):
                                 supabase.table("patient_deliveries").update({"extra_money_charged": "Yes (Resolved)"}).eq("id", alert["id"]).execute()
                                 time.sleep(0.5)
-                                    st.rerun()
+                                st.rerun()
                     
                     st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
             
