@@ -156,10 +156,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-    
-    {generic_expander_highlight_css} 
-    {sidebar_css_rule}
-    
+        
     .stApp {{ background-color: #fdfcf9; }}
     .brand-title {{ color: #a61c1c; font-weight: 800; font-size: 2.1rem; margin-bottom: 2px; }}
     .brand-subtitle {{ color: #5c1414; font-size: 1.05rem; margin-bottom: 25px; font-weight: 600; border-left: 4px solid #d4af37; padding-left: 12px; }}
