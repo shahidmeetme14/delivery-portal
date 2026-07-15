@@ -693,7 +693,7 @@ def login_view():
                         try:
                             ud = supabase.table("app_users").select("*").eq("username", input_user.strip()).eq("password", input_pass.strip()).execute().data
                             if ud:
-                                # Insert login log securely into user_logins table (Fixed Point 1)
+                                # Insert login log securely into user_logins table
                                 try:
                                     supabase.table("user_logins").insert({
                                         "username": ud[0]["username"],
@@ -776,11 +776,6 @@ def ingestion_view():
     st.markdown("### 📥 Bulk Articles Ingestion Engine")
     source_file = st.file_uploader("Upload Medicine Article Sheet", type=["xlsx", "csv"], key="bulk_uploader_main")
     if source_file is not None:
-        # 50MB Limit Check (35 * 1024 * 1024 = 36700160 bytes)
-        if source_file.size > 52428800:
-            st.error("⚠️ File size exceeds the 35MB limit for cloud uploads. Please upload a file within the upload limits.")
-            return
-            
         file_key = f"cached_df_{source_file.name}_{source_file.size}"
         if file_key not in st.session_state:
             df = pd.read_excel(source_file, dtype=str) if source_file.name.endswith('.xlsx') else pd.read_csv(source_file, low_memory=False, dtype=str)
@@ -811,19 +806,27 @@ def ingestion_view():
             status_progress_text.text("Connecting with cloud storage nodes... (15% Complete)")
             progress_bar_control.progress(15)
             
+            # Strict Connection Exception Handling to prevent accidental data wipes
             try:
                 existing_master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
                 master_ledger_df = pd.read_csv(io.BytesIO(existing_master_bytes), dtype=str)
-            except Exception:
-                master_ledger_df = pd.DataFrame(columns=[
-                    "article_id", "patient_name", "phone_number", "booking_date", 
-                    "address", "patient_city", "mrn_no", "booking_office", "transaction_no"
-                ])
+            except Exception as e:
+                err_str = str(e).lower()
+                if "not found" in err_str or "404" in err_str or "does not exist" in err_str:
+                    master_ledger_df = pd.DataFrame(columns=[
+                        "article_id", "patient_name", "phone_number", "booking_date", 
+                        "address", "patient_city", "mrn_no", "booking_office", "transaction_no"
+                    ])
+                else:
+                    ui_blocker.empty()
+                    status_progress_text.empty()
+                    progress_bar_control.empty()
+                    st.error(f"❌ Storage Safety Halt: Network or API failure detected ({e}). Upload blocked to protect old data.")
+                    st.stop()
 
             status_progress_text.text("Analyzing spreadsheet matrix structures... (45% Complete)")
             progress_bar_control.progress(45)
             
-            # High-speed vectorized string mapping to support 50MB files without cloud timeout
             uploaded_records_df = pd.DataFrame({
                 "article_id": df[c_article].astype(str).str.strip(),
                 "patient_name": df[c_name].astype(str).str.strip(),
@@ -862,7 +865,15 @@ def ingestion_view():
                 try: supabase.storage.from_("manifests").remove(["master_manifest_store.csv"])
                 except: pass
                 
+                # Update consolidated repository file
                 supabase.storage.from_("manifests").upload(path="master_manifest_store.csv", file=master_csv_bytes, file_options={"content-type": "text/csv", "upsert": "true"})
+                
+                # Fix Point 1: Upload original raw file under its unique actual name to remain fully visible in the bucket
+                try:
+                    supabase.storage.from_("manifests").upload(path=source_file.name, file=source_file.getvalue(), file_options={"upsert": "true"})
+                except Exception:
+                    pass
+                
                 status_progress_text.empty()
                 progress_bar_control.empty()
                 ui_blocker.empty()
@@ -878,11 +889,6 @@ def ingestion_view():
     match_file = st.file_uploader("Upload File for Matching", type=["xlsx", "csv"], key="match_uploader_engine")
     
     if match_file is not None:
-        # 35MB Limit Check
-        if match_file.size > 36700160:
-            st.error("⚠️ File size exceeds the 35MB limit for cloud uploads. Please upload a file within the upload limits.")
-            return
-            
         try:
             df_match = pd.read_excel(match_file, dtype=str) if match_file.name.endswith('.xlsx') else pd.read_csv(match_file, low_memory=False, dtype=str)
             
@@ -984,7 +990,6 @@ def operator_matrix_view():
             users_res = supabase.table("app_users").select("*").execute().data
             if users_res:
                 df_users = pd.DataFrame(users_res)
-                # Display available key profile columns safely
                 display_cols = [c for c in ["username", "full_name", "role"] if c in df_users.columns]
                 st.dataframe(df_users[display_cols], use_container_width=True)
             else:
@@ -995,7 +1000,6 @@ def operator_matrix_view():
     with col_l:
         st.markdown("#### 🕒 Real-time Session Login Logs")
         try:
-            # Fixed Point 1 (Changed login_logs to user_logins)
             try:
                 logs_res = supabase.table("user_logins").select("*").order("id", desc=True).limit(50).execute().data
             except Exception:
@@ -1040,10 +1044,11 @@ def communications_view():
         unique_offices = sorted(list(set([str(r.get('booking_office', 'Lahore GPO')).strip() for r in all_master_recs])))
         unique_offices.insert(0, "All Offices")
         
+        # Fix Point 2: Completely exposed, prominent multi-filtering search grid accessible identically by Admin & Staff roles
         filter_col1, filter_col2, filter_col3 = st.columns([1.5, 1.5, 1.5])
         with filter_col1: selected_office = st.selectbox("🏥 Filter by Booking Office:", unique_offices)
         with filter_col2: search_category = st.selectbox("🔎 Search By Heading:", ["All Fields"] + dynamic_headings)
-        with filter_col3: search_term = st.text_input("Enter detail to search (Searches Entire Backend):").strip().lower()
+        with filter_col3: search_term = st.text_input("Enter detail to search (Searches Entire Backend Data):", placeholder="Type patient detail here...").strip().lower()
         
         if search_term: base_recs = all_master_recs
         else: base_recs = [r for r in all_master_recs if r.get("booking_date") == str(query_date)]
@@ -1079,7 +1084,6 @@ def communications_view():
                     profile["id"] = None
                     profile["status"] = "Pending"
 
-            # Visual alignment to match user's UI layout
             options_list = []
             for r in final_recs:
                 status_val = r.get('status', 'Pending')
@@ -1240,7 +1244,6 @@ def communications_view():
 
                     current_pkt_time = datetime.datetime.now(PKT_TZ).strftime('%Y-%m-%d %I:%M:%S %p')
 
-                    # Print Layout Box fitted exactly to one A4 portrait page (Fixed Point 2 & 3)
                     st.markdown(f"""
                         <div class="print-manifest-card" style="background: #ffffff; border: 3px double #a61c1c; padding: 25px; font-family: 'Segoe UI', sans-serif; color: #000000;">
                             <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 10px; margin-bottom: 20px;">
@@ -1654,46 +1657,9 @@ if st.session_state.logged_in:
             
             count_label = "Total Verifications Today"
             st.markdown(f"""
-                <style>
-                    /* 3D Machine Box Style */
-                    .machine-box {{
-                        background: linear-gradient(145deg, #151518, #1f1f24) !important;
-                        border: 2px solid #ff3333 !important;
-                        border-bottom: 5px solid #990000 !important; /* 3D Base Depth */
-                        border-radius: 12px !important;
-                        padding: 6px !important;
-                        text-align: center !important;
-                        /* 3D Outer Shadow + Inside Glow */
-                        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6), 
-                                    inset 0 0 12px rgba(255, 51, 51, 0.2) !important;
-                        margin-top: 15px !important;
-                        margin-bottom: 15px !important;
-                    }}
-                    
-                    /* Machine Label */
-                    .machine-label, .machine-label * {{
-                        color: #94a3b8 !important;
-                        font-size: 11px !important;
-                        font-weight: 700 !important;
-                        text-transform: uppercase !important;
-                        letter-spacing: 1px !important;
-                    }}
-                    
-                    /* Bulletproof Shiny Red Digital Count */
-                    .machine-count, .machine-count * {{
-                        color: #ffb703 !important; /* Universal Override */
-                        font-size: 24px !important; 
-                        font-weight: 900 !important;
-                        font-family: 'Courier New', Courier, monospace !important; /* Digital Display Look */
-                        text-shadow: 0 0 10px #ff3333, 0 0 20px rgba(255, 51, 51, 0.6) !important;
-                        margin-top: 5px !important;
-                        display: block !important;
-                    }}
-                </style>
-                
-                <div class='machine-box'>
-                    <div class='machine-label'>{count_label}</div>
-                    <span class='machine-count'>{today_count}</span>
+                <div style='background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid rgba(212, 175, 55, 0.3); margin-top: 15px; margin-bottom: 15px;'>
+                    <div style='color: #cbd5e1; font-size: 13px; font-weight: 600; margin-bottom: 5px;'>{count_label}</div>
+                    <div style='color: #d4af37; font-size: 24px; font-weight: 800;'>{today_count}</div>
                 </div>
             """, unsafe_allow_html=True)
             
