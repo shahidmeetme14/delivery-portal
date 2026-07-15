@@ -823,11 +823,16 @@ def ingestion_view():
             
             # Strict Connection Exception Handling to prevent accidental data wipes
             try:
-                existing_master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
-                master_ledger_df = pd.read_csv(io.BytesIO(existing_master_bytes), dtype=str)
+                # Use cache first to save memory and egress, then fallback to download
+                if st.session_state.get("master_manifest_cache") is not None:
+                    master_ledger_df = st.session_state["master_manifest_cache"].copy()
+                else:
+                    existing_master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
+                    master_ledger_df = pd.read_csv(io.BytesIO(existing_master_bytes), dtype=str)
+                    st.session_state["master_manifest_cache"] = master_ledger_df
             except Exception as e:
                 err_str = str(e).lower()
-                if "not found" in err_str or "404" in err_str or "does not exist" in err_str:
+                if "not found" in err_str or "404" in err_str or "does not exist" in err_str or "not exist" in err_str:
                     master_ledger_df = pd.DataFrame(columns=[
                         "article_id", "patient_name", "phone_number", "booking_date", 
                         "address", "patient_city", "mrn_no", "booking_office", "transaction_no"
@@ -889,11 +894,20 @@ def ingestion_view():
             master_csv_bytes = master_csv_buffer.getvalue().encode('utf-8')
             
             try:
-                try: supabase.storage.from_("manifests").remove(["master_manifest_store.csv"])
-                except: pass
-                
-                # Update master storage database file
-                supabase.storage.from_("manifests").upload(path="master_manifest_store.csv", file=master_csv_bytes, file_options={"content-type": "text/csv", "upsert": "true"})
+                # CRITICAL FIX: Removed the dangerous .remove() call that caused data deletion on timeouts.
+                # Using update() safely replaces the content. If it doesn't exist, fallback to upload(upsert=True)
+                try:
+                    supabase.storage.from_("manifests").update(
+                        path="master_manifest_store.csv", 
+                        file=master_csv_bytes, 
+                        file_options={"content-type": "text/csv"}
+                    )
+                except Exception:
+                    supabase.storage.from_("manifests").upload(
+                        path="master_manifest_store.csv", 
+                        file=master_csv_bytes, 
+                        file_options={"content-type": "text/csv", "upsert": "true", "x-upsert": "true"}
+                    )
                 
                 # Request 2: Store cache to avoid network download egress costs
                 st.session_state["master_manifest_cache"] = final_consolidated_df
@@ -903,7 +917,7 @@ def ingestion_view():
                 status_progress_text.empty()
                 progress_bar_control.empty()
                 ui_blocker.empty()
-                st.success(f"🟢 Success: File processed successfully! Out of {total_input_count} total records, {total_duplicates_cleared} duplicate entries were detected and removed based on the selected deduplication parameters. The remaining unique records have been securely saved.")
+                st.success(f"🟢 Success: File processed successfully! Out of {total_input_count} total records, {total_duplicates_cleared} duplicate entries were detected and removed based on the selected deduplication parameters. The remaining unique records have been securely saved and merged with the master file.")
             except Exception as store_ex:
                 ui_blocker.empty()
                 st.error(f"Failed to synchronize master stream archive: {store_ex}")
