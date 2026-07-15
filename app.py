@@ -778,7 +778,7 @@ def ingestion_view():
     if source_file is not None:
         # 50MB Limit Check (50 * 1024 * 1024 = 52428800 bytes)
         if source_file.size > 52428800:
-            st.error("⚠️ File size 50MB se zyada hai! Supabase sirf 50MB tak support karta hai. Please choti file upload karein.")
+            st.error("⚠️ File size exceeds the 50MB limit for cloud uploads. Please upload a file within the upload limits.")
             return
             
         file_key = f"cached_df_{source_file.name}_{source_file.size}"
@@ -880,7 +880,7 @@ def ingestion_view():
     if match_file is not None:
         # 50MB Limit Check
         if match_file.size > 52428800:
-            st.error("⚠️ File size 50MB se zyada hai! Supabase sirf 50MB tak support karta hai. Please choti file upload karein.")
+            st.error("⚠️ File size exceeds the 50MB limit for cloud uploads. Please upload a file within the upload limits.")
             return
             
         try:
