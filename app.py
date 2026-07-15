@@ -453,15 +453,6 @@ except Exception as e:
     st.error(f"Database core failure: {e}")
     st.stop()
 
-# 🛡️ Egress Control System: Cache the massive manifest file for 30 minutes to save bandwidth!
-@st.cache_data(ttl=1800, show_spinner=False)
-def fetch_master_manifest_cached():
-    try:
-        existing_master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
-        return pd.read_csv(io.BytesIO(existing_master_bytes), dtype=str)
-    except Exception:
-        return pd.DataFrame()
-
 def save_operator_state():
     if st.session_state.logged_in and st.session_state.username:
         state_payload = {
@@ -702,7 +693,7 @@ def login_view():
                         try:
                             ud = supabase.table("app_users").select("*").eq("username", input_user.strip()).eq("password", input_pass.strip()).execute().data
                             if ud:
-                                # Insert login log securely into user_logins table (Strict schema match based on user instructions)
+                                # Insert login log securely into user_logins table
                                 try:
                                     supabase.table("user_logins").insert({
                                         "username": ud[0]["username"],
@@ -808,18 +799,21 @@ def ingestion_view():
             
             # Strict Connection Exception Handling to prevent accidental data wipes
             try:
-                master_ledger_df = fetch_master_manifest_cached()
-                if master_ledger_df.empty:
+                existing_master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
+                master_ledger_df = pd.read_csv(io.BytesIO(existing_master_bytes), dtype=str)
+            except Exception as e:
+                err_str = str(e).lower()
+                if "not found" in err_str or "404" in err_str or "does not exist" in err_str:
                     master_ledger_df = pd.DataFrame(columns=[
                         "article_id", "patient_name", "phone_number", "booking_date", 
                         "address", "patient_city", "mrn_no", "booking_office", "transaction_no"
                     ])
-            except Exception as e:
-                ui_blocker.empty()
-                status_progress_text.empty()
-                progress_bar_control.empty()
-                st.error(f"❌ Storage Safety Halt: Network or API failure detected ({e}). Upload blocked to protect old data.")
-                st.stop()
+                else:
+                    ui_blocker.empty()
+                    status_progress_text.empty()
+                    progress_bar_control.empty()
+                    st.error(f"❌ Storage Safety Halt: Network or API failure detected ({e}). Upload blocked to protect old data.")
+                    st.stop()
 
             status_progress_text.text("Analyzing spreadsheet matrix structures... (45% Complete)")
             progress_bar_control.progress(45)
@@ -865,9 +859,6 @@ def ingestion_view():
                 # Update consolidated repository file
                 supabase.storage.from_("manifests").upload(path="master_manifest_store.csv", file=master_csv_bytes, file_options={"content-type": "text/csv", "upsert": "true"})
                 
-                # Clear the cache so the new updated data is fetched for other operations without egress waste
-                fetch_master_manifest_cached.clear()
-                
                 status_progress_text.empty()
                 progress_bar_control.empty()
                 ui_blocker.empty()
@@ -888,7 +879,8 @@ def ingestion_view():
             
             with st.spinner("Fetching cloud database for matching..."):
                 try:
-                    df_cloud = fetch_master_manifest_cached()
+                    master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
+                    df_cloud = pd.read_csv(io.BytesIO(master_bytes), dtype=str)
                 except Exception:
                     df_cloud = pd.DataFrame()
             
@@ -1015,11 +1007,9 @@ def communications_view():
     
     with st.spinner("Processing cloud storage lookup and database audit..."):
         try:
-            master_ledger_df = fetch_master_manifest_cached()
-            if master_ledger_df.empty:
-                all_master_recs = []
-            else:
-                all_master_recs = master_ledger_df.to_dict(orient="records")
+            existing_master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
+            master_ledger_df = pd.read_csv(io.BytesIO(existing_master_bytes), dtype=str)
+            all_master_recs = master_ledger_df.to_dict(orient="records")
         except Exception:
             all_master_recs = []
             master_ledger_df = pd.DataFrame()
@@ -1719,9 +1709,5 @@ if st.session_state.logged_in:
         st.markdown("<div class='terminate-btn-anchor'></div>", unsafe_allow_html=True)
         if st.button("🛑 Terminate Secure Session", use_container_width=True):
             st.session_state.logged_in = False
-            st.session_state.username = ""
-            st.session_state.full_name = ""
-            st.session_state.role = ""
-            st.session_state.current_navigation_tab = None
             st.query_params.clear()
             st.rerun()
