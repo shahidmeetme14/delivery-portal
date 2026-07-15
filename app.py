@@ -693,24 +693,17 @@ def login_view():
                         try:
                             ud = supabase.table("app_users").select("*").eq("username", input_user.strip()).eq("password", input_pass.strip()).execute().data
                             if ud:
-                                # Insert login log securely into user_logins table
+                                # Insert login log securely matching exact screenshot columns (id, username, ip_address, device_info, login_time)
                                 try:
                                     supabase.table("user_logins").insert({
                                         "username": ud[0]["username"],
-                                        "full_name": ud[0]["full_name"],
-                                        "role": ud[0]["role"],
+                                        "ip_address": "System Managed",
+                                        "device_info": "Web Portal Login",
                                         "login_time": datetime.datetime.now(PKT_TZ).isoformat()
                                     }).execute()
-                                except Exception:
-                                    # Fail-safe database insert in case of alternate schema structure
-                                    try:
-                                        supabase.table("user_logins").insert({
-                                            "username": ud[0]["username"],
-                                            "full_name": ud[0]["full_name"],
-                                            "role": ud[0]["role"]
-                                        }).execute()
-                                    except Exception:
-                                        pass
+                                except Exception as log_err:
+                                    print(f"Logging log failed: {log_err}")
+                                    pass
                                     
                                 recovery_data = fetch_operator_state(ud[0]["username"])
                                 
@@ -854,6 +847,10 @@ def ingestion_view():
             
             final_consolidated_df = pd.concat([master_ledger_df, clean_unique_records], ignore_index=True)
             
+            # Ensuring strict duplication removal across the whole file keeping the latest entries
+            if "article_id" in final_consolidated_df.columns:
+                final_consolidated_df = final_consolidated_df.drop_duplicates(subset=["article_id"], keep="last")
+            
             status_progress_text.text("Synchronizing clean ledger stream into cloud core... (95% Complete)")
             progress_bar_control.progress(95)
             
@@ -865,15 +862,13 @@ def ingestion_view():
                 try: supabase.storage.from_("manifests").remove(["master_manifest_store.csv"])
                 except: pass
                 
-                # Update consolidated repository file
+                # Update consolidated repository file securely
                 supabase.storage.from_("manifests").upload(path="master_manifest_store.csv", file=master_csv_bytes, file_options={"content-type": "text/csv", "upsert": "true"})
-                
-                # OMITTED: Raw file upload has been removed to save Supabase Storage.
                 
                 status_progress_text.empty()
                 progress_bar_control.empty()
                 ui_blocker.empty()
-                st.success(f"🟢 Success: File processed successfully! Out of {total_input_count} total records, {total_duplicates_cleared} duplicate entries were detected and removed based on the selected deduplication parameters. The remaining unique records have been securely saved.")
+                st.success(f"🟢 Success: File processed successfully! Out of {total_input_count} total records, {total_duplicates_cleared} duplicate entries were detected and removed based on the selected deduplication parameters. The remaining unique records have been securely saved with previous entries.")
             except Exception as store_ex:
                 ui_blocker.empty()
                 st.error(f"Failed to synchronize master stream archive: {store_ex}")
@@ -1003,7 +998,7 @@ def operator_matrix_view():
                 
             if logs_res:
                 df_logs = pd.DataFrame(logs_res)
-                display_cols_logs = [c for c in ["username", "full_name", "role", "login_time", "created_at"] if c in df_logs.columns]
+                display_cols_logs = [c for c in ["username", "ip_address", "device_info", "login_time", "created_at"] if c in df_logs.columns]
                 st.dataframe(df_logs[display_cols_logs], use_container_width=True)
             else:
                 st.info("No active operator session logs recorded yet.")
