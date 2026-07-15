@@ -396,53 +396,31 @@ st.markdown(f"""
             border: none !important;
         }}
 
-        .print-manifest-card { 
+        .print-manifest-card {{ 
             visibility: visible !important; 
             position: fixed !important; 
-            top: 10mm !important; 
-            left: 10mm !important; 
-            right: 10mm !important; 
-            bottom: 10mm !important; 
-            width: calc(100% - 20mm) !important; 
-            height: calc(100% - 20mm) !important; 
+            top: 15mm !important; 
+            left: 15mm !important; 
+            right: 15mm !important; 
+            bottom: 15mm !important; 
+            width: calc(100% - 30mm) !important; 
+            height: calc(100% - 30mm) !important; 
             box-sizing: border-box !important; 
             margin: 0 !important; 
-            padding: 15px 20px !important; 
-            border: 3px double #DA291C !important; /* Official Pakistan Post Red */
-            border-radius: 0px !important; 
+            padding: 25px !important; 
+            border: 3px double #a61c1c !important; /* Elegant double border */
+            border-radius: 0px !important; /* Formal Square Border */
             background: #ffffff !important; 
             background-color: #ffffff !important; 
             page-break-inside: avoid !important; 
             page-break-after: avoid !important; 
             page-break-before: avoid !important; 
             z-index: 99999999 !important; 
-            display: block !important; 
+            display: flex !important; 
+            flex-direction: column !important;
+            justify-content: space-between !important;
             overflow: hidden !important;
-        }
-
-        /* 🔴 Watermark Styling - Visible on screen & print without blocking text */
-        .print-watermark {
-            position: absolute !important;
-            top: 45% !important;
-            left: 50% !important;
-            transform: translate(-50%, -50%) rotate(-30deg) !important;
-            z-index: 1 !important;
-            pointer-events: none !important;
-            width: 100% !important;
-            text-align: center !important;
-            color: rgba(218, 41, 28, 0.08) !important; /* Official Red with light 8% opacity */
-            font-size: 52px !important;
-            font-weight: 900 !important;
-            font-family: 'Segoe UI', Arial, sans-serif !important;
-            text-transform: uppercase !important;
-            letter-spacing: 3px !important;
-        }
-
-        .print-manifest-card table, .print-manifest-card tr, .print-manifest-card td, .print-manifest-card th { 
-            background-color: transparent !important; /* Ensures watermark is visible behind table */
-            z-index: 2 !important;
-            position: relative !important;
-        }
+        }}
 
         .print-manifest-card * {{ 
             visibility: visible !important; 
@@ -683,14 +661,13 @@ def open_alert_manifest(alert_data):
         
     st.markdown(f"""
         <div class="print-manifest-card" style="background: #ffffff; border: 3px double #a61c1c; padding: 25px; font-family: 'Segoe UI', sans-serif; color: #000000;">
-            <div class="print-watermark">SHC Cell Lahore GPO</div>
-            <div style="text-align: center; border-bottom: 2px solid #DA291C; padding-bottom: 4px; margin-bottom: 8px;">
+            <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 5px; margin-bottom: 10px;">
                 <img src="https://www.pakpost.gov.pk/images/New%20Logo%20PPO.jpg" style="height: 65px; margin-bottom: 5px;" alt="Pak Post Logo">
-                <h2 style="margin: 0 0 2px 0; color: #DA291C; font-size: 20px; font-weight: 800; line-height: 1.1;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
-                <h4 style="margin: 0 0 2px 0; color: #1e293b; font-size: 14px; font-weight: 700;">Office of the Chief Postmaster Lahore GPO</h4>
-                <p style="margin: 0; color: #475569; font-size: 12px; font-weight: 600;">Patient Feedback & Medicine Delivery Audit Certificate</p>
+                <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
+                <p style="margin: 3px 0 0 0; color: #1e293b; font-size: 16px; font-weight: 700;">OFFICE OF THE CHIEF POSTMASTER LAHORE GPO</p>
+                <p style="margin: 3px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Patient Feedback & Medicine Delivery Audit Certificate</p>
             </div>
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #000000; margin-top: 4px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 15px; color: #000000;">
                 <tr><td style="padding: 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('patient_name', 'N/A')}</td></tr>
                 <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">MRN Number:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('mrn_no', 'N/A')}</td></tr>
                 <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Consignment ID (Article):</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: 700; color: #a61c1c;">{alert_data['article_id']}</td></tr>
@@ -1566,35 +1543,15 @@ def communications_view():
                                 payload_buffer["mrn_no"] = target_profile["mrn_no"]
                                 payload_buffer["booking_office"] = target_profile["booking_office"]
                                 
-                                # 🛠️ Clean NaN values to prevent database JSON errors
-                                    clean_payload = {}
-                                    for k, v in payload_buffer.items():
-                                        if pd.isna(v) or str(v).lower() == "nan":
-                                            clean_payload[k] = ""
-                                        else:
-                                            clean_payload[k] = str(v).strip()
-                                            
-                                    # Verification timestamp add karein taake daily counter me count ho
-                                    clean_payload["updated_at"] = datetime.datetime.now(PKT_TZ).isoformat()
-                                    if target_profile.get("transaction_id"):
-                                        clean_payload["transaction_id"] = str(target_profile.get("transaction_id")).strip()
-                                    
-                                    try:
-                                        # Secure Update using Unique ID / Transaction ID (Prevents conflict crashes)
-                                        if target_profile.get("id"):
-                                            supabase.table("patient_deliveries").update(clean_payload).eq("id", target_profile["id"]).execute()
-                                        elif target_profile.get("transaction_id"):
-                                            supabase.table("patient_deliveries").update(clean_payload).eq("transaction_id", target_profile["transaction_id"]).execute()
-                                        else:
-                                            supabase.table("patient_deliveries").update(clean_payload).eq("article_id", target_profile["article_id"]).execute()
-                                            
-                                        st.success("✅ Updated securely with your operator identity stamp!")
-                                        st.session_state.selected_profile_index += 1
-                                        save_operator_state()
-                                        time.sleep(0.5)
-                                        st.rerun()
-                                    except Exception as e: 
-                                        st.error(f"❌ Database Sync Error: {e}")
+                                try:
+                                    # Database insert me ab conflicts ki parwa kiye bina seamlessly upsert/update hoga
+                                    supabase.table("patient_deliveries").update(payload_buffer).eq("id", target_profile.get("id")).execute() if target_profile.get("id") else supabase.table("patient_deliveries").insert(payload_buffer).execute()
+                                    st.success("Updated securely with your operator identity stamp!")
+                                    st.session_state.selected_profile_index += 1
+                                    save_operator_state()
+                                    time.sleep(0.5)
+                                    st.rerun()
+                                except Exception as e: st.error(f"Sync error: {e}")
                 else:
                     st.info("ℹ️ Select 'Yes' above to unlock the patient questionnaire for re-verification.")
 
@@ -1763,25 +1720,25 @@ if st.session_state.logged_in:
         st.markdown(f"<div class='sb-privilege-label'>Privilege Cluster: <span>{st.session_state.role.upper()}</span></div>", unsafe_allow_html=True)
         
         try:
-            # 🇵🇰 PKT timezone ke mutabiq aaj ki date
-            today_pkt = datetime.datetime.now(PKT_TZ).date()
+            today = datetime.date.today()
             today_count = 0
             
+            # 1. Database se 'created_at' ke sath 'status' ka column bhi mangwaya
             if st.session_state.role == "admin":
-                # Admin: Tamam staff ki aaj ki verifications ka total sum
-                res_stats = supabase.table("patient_deliveries").select("updated_at, created_at, status").neq("status", "Pending").execute().data
+                res_stats = supabase.table("patient_deliveries").select("created_at, status").execute().data
             else:
-                # Staff: Sirf apni aaj ki verifications ka counter
-                res_stats = supabase.table("patient_deliveries").select("updated_at, created_at, status").eq("operator_stamp", st.session_state.full_name).neq("status", "Pending").execute().data
+                res_stats = supabase.table("patient_deliveries").select("created_at, status").eq("operator_stamp", st.session_state.full_name).execute().data
                 
-            if res_stats:
-                for r in res_stats:
-                    # Verification ke waqt updated_at save hota hai, is liye pehle wo check hoga
-                    time_str = r.get('updated_at') or r.get('created_at')
-                    if time_str:
+            for r in res_stats:
+                # 2. Check lagaya ke current record ka status kya hai
+                status_val = str(r.get('status', 'Pending')).strip()
+                
+                # 3. Agar status in mein se NAI hai, sirf tabhi count karo
+                if status_val not in ["Pending", "Pending Retry", "nan", "None", ""]:
+                    if 'created_at' in r and r['created_at']:
                         try:
-                            dt = datetime.datetime.fromisoformat(str(time_str).replace('Z', '+00:00')).date()
-                            if dt == today_pkt:
+                            dt = datetime.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00')).date()
+                            if dt == today:
                                 today_count += 1
                         except: pass
             
