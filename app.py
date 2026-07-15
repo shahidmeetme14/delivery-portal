@@ -776,9 +776,9 @@ def ingestion_view():
     st.markdown("### 📥 Bulk Articles Ingestion Engine")
     source_file = st.file_uploader("Upload Medicine Article Sheet", type=["xlsx", "csv"], key="bulk_uploader_main")
     if source_file is not None:
-        # 50MB Limit Check (50 * 1024 * 1024 = 52428800 bytes)
+        # 50MB Limit Check (35 * 1024 * 1024 = 36700160 bytes)
         if source_file.size > 52428800:
-            st.error("⚠️ File size exceeds the 50MB limit for cloud uploads. Please upload a file within the upload limits.")
+            st.error("⚠️ File size exceeds the 35MB limit for cloud uploads. Please upload a file within the upload limits.")
             return
             
         file_key = f"cached_df_{source_file.name}_{source_file.size}"
@@ -878,9 +878,9 @@ def ingestion_view():
     match_file = st.file_uploader("Upload File for Matching", type=["xlsx", "csv"], key="match_uploader_engine")
     
     if match_file is not None:
-        # 50MB Limit Check
-        if match_file.size > 52428800:
-            st.error("⚠️ File size exceeds the 50MB limit for cloud uploads. Please upload a file within the upload limits.")
+        # 35MB Limit Check
+        if match_file.size > 36700160:
+            st.error("⚠️ File size exceeds the 35MB limit for cloud uploads. Please upload a file within the upload limits.")
             return
             
         try:
