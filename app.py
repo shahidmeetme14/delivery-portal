@@ -471,38 +471,37 @@ st.markdown(f"""
             border: none !important;
         }}
 
-        .print-manifest-card {{ 
-            visibility: visible !important; 
-            position: fixed !important; 
-            top: 10mm !important; 
-            left: 15mm !important; 
-            right: 15mm !important; 
-            bottom: 10mm !important; 
-            width: calc(100% - 30mm) !important; 
-            height: calc(100% - 20mm) !important; 
-            box-sizing: border-box !important; 
-            margin: 0 !important; 
-            padding: 15px !important; 
-            border: 3px double #a61c1c !important; 
-            border-radius: 0px !important; 
-            background: #ffffff !important; 
-            background-color: #ffffff !important; 
-            page-break-inside: avoid !important; 
-            page-break-after: avoid !important; 
-            page-break-before: avoid !important; 
-            z-index: 99999999 !important; 
-            display: flex !important; 
-            flex-direction: column !important;
-            justify-content: space-between !important;
-            overflow: hidden !important;
-        }}
-
-        /* Faint Watermark on Print Page */
-        .print-manifest-card::before {
-            st.markdown()
+        st.markdown(
     """
     <style>
-    .your-class-name::before {
+    .print-manifest-card { 
+        visibility: visible !important; 
+        position: fixed !important; 
+        top: 10mm !important; 
+        left: 15mm !important; 
+        right: 15mm !important; 
+        bottom: 10mm !important; 
+        width: calc(100% - 30mm) !important; 
+        height: calc(100% - 20mm) !important; 
+        box-sizing: border-box !important; 
+        margin: 0 !important; 
+        padding: 15px !important; 
+        border: 3px double #a61c1c !important; 
+        border-radius: 0px !important; 
+        background: #ffffff !important; 
+        background-color: #ffffff !important; 
+        page-break-inside: avoid !important; 
+        page-break-after: avoid !important; 
+        page-break-before: avoid !important; 
+        z-index: 99999999 !important; 
+        display: flex !important; 
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        overflow: hidden !important;
+    }
+
+    /* Faint Watermark on Print Page */
+    .print-manifest-card::before {
         content: "SHC Cell Lahore GPO" !important;
     }
     </style>
