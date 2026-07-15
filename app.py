@@ -1352,7 +1352,7 @@ def communications_view():
                     status_display = status_val
                 
                 src_lbl = "💻 Local" if r.get("_source_db") == "local" else "☁️ Cloud"
-                options_list.append(f"{str(r.get('patient_name', ''))).upper()} (MRN: {r.get('mrn_no', 'N/A')}) - [{status_display}] ({src_lbl})")
+                options_list.append(f"{str(r.get('patient_name', '')).upper()} (MRN: {r.get('mrn_no', 'N/A')}) - [{status_display}]")
                 
             if st.session_state.selected_profile_index >= len(options_list): st.session_state.selected_profile_index = 0
                 
