@@ -124,6 +124,10 @@ div[data-testid="stExpander"] > div[data-testid="stExpanderBody"] {
 """
 
 # --- CSS Styling Section ---
+# 1. Purane CSS variable ko safety ke sath run karein
+st.markdown(generic_expander_highlight_css, unsafe_allow_html=True)
+
+# 2. Naye custom CSS (Watermark & Footer Removal) ko alag se run karein
 st.markdown(
     """
     <style>
