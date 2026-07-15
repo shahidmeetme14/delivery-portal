@@ -1,14 +1,4 @@
 import streamlit as st
-
-# ---- WATERMARK AUR FOOTER HATANE KE LIYE ----
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 from supabase import create_client, Client
 import pandas as pd
 import datetime
@@ -136,13 +126,17 @@ div[data-testid="stExpander"] > div[data-testid="stExpanderBody"] {
 st.markdown(f"""
     <style>
     /* Complete & Absolute Removal of Streamlit Watermarks, Headers, Footers, Badges & Links */
+    /* Complete & Absolute Removal of Streamlit Watermarks, Headers, Footers, Badges & Links */
     div[data-testid="stToolbar"], #MainMenu, footer, header,
     [data-testid="stHeader"], [data-testid="stDecoration"],
     [data-testid="stStatusWidget"], [data-testid="stActionElements"],
     .stDeployButton, .stAppDeployButton, button[kind="header"],
     [data-testid="stViewerBadge"], div[class^="viewerBadge"], div[class*="viewerBadge"],
     .viewerBadge_container__1616G, a[href*="streamlit.io"],
-    div[data-testid="stBottom"], div[data-testid="stBottomBlockContainer"] {{
+    div[data-testid="stBottom"], div[data-testid="stBottomBlockContainer"],
+    iframe[title="streamlitApp"], .embeddedStreamlitApp, 
+    .stAppViewerBadge, [data-testid="stEmbedViewerBadge"],
+    footer, .viewerBadge_container__1616G, [class^="viewerBadge"] {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
@@ -152,7 +146,7 @@ st.markdown(f"""
         max-width: 0px !important;
         pointer-events: none !important;
         overflow: hidden !important;
-    }}
+    }
     
     {generic_expander_highlight_css} 
     {sidebar_css_rule}
@@ -248,17 +242,28 @@ st.markdown(f"""
     }}
     
     /* 🔴 Terminate Session Button */
+    /* 🔴 Terminate Session Button (Cyberpunk Shiny Red Glow) */
     div:has(> .terminate-btn-anchor) + div button,
-    div:has(.terminate-btn-anchor) + div button {{
-        background: linear-gradient(180deg, #ff4d4d 0%, #c31414 100%) !important;
-        color: #ffffff !important;
-        border: 2px solid rgba(255, 255, 255, 0.4) !important;
-        border-bottom: 5px solid #800a0a !important;
+    div:has(.terminate-btn-anchor) + div button {
+        background: linear-gradient(180deg, #1f1f24 0%, #151518 100%) !important;
+        color: #ff3333 !important; /* Shiny Red Text Color */
+        border: 2px solid #ff3333 !important; /* Neon Red Border */
+        border-bottom: 5px solid #990000 !important; /* 3D Depth */
         border-radius: 10px !important;
         padding: 10px 20px !important;
-        font-weight: 800 !important;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
-    }}
+        font-weight: 900 !important;
+        /* Shiny Red Neon Glow effect on Text & Button */
+        text-shadow: 0 0 8px #ff3333, 0 0 15px #ff1a1a !important;
+        box-shadow: 0 4px 15px rgba(255, 51, 51, 0.35) !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    div:has(> .terminate-btn-anchor) + div button:hover,
+    div:has(.terminate-btn-anchor) + div button:hover {
+        background: linear-gradient(180deg, #151518 0%, #000000 100%) !important;
+        box-shadow: 0 0 20px rgba(255, 51, 51, 0.6) !important;
+        transform: translateY(-1px);
+    }
     
     /* ✨ 3D Dropdowns, Inputs & Textareas */
     div[data-baseweb="select"] > div, 
@@ -781,12 +786,16 @@ def recovery_view():
                     save_operator_state()
                     st.rerun()
 
-# Is purane code ko dhoondhein:
-def ingestion_view(): # ya def ingestion_view():
+def ingestion_view():
     st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine"
     st.markdown("### 📥 Bulk Articles Ingestion Engine")
     source_file = st.file_uploader("Upload Medicine Article Sheet", type=["xlsx", "csv"], key="bulk_uploader_main")
     if source_file is not None:
+        # ⚠️ 50MB Limit Check (50 * 1024 * 1024 Bytes)
+        if source_file.size > 50 * 1024 * 1024:
+            st.error("⚠️ File size exceeds the 50MB limit allowed by Supabase! Please upload a smaller file.")
+            st.stop()
+            
         file_key = f"cached_df_{source_file.name}_{source_file.size}"
         if file_key not in st.session_state:
             df = pd.read_excel(source_file, dtype=str) if source_file.name.endswith('.xlsx') else pd.read_csv(source_file, low_memory=False, dtype=str)
@@ -884,6 +893,10 @@ def ingestion_view(): # ya def ingestion_view():
     match_file = st.file_uploader("Upload File for Matching", type=["xlsx", "csv"], key="match_uploader_engine")
     
     if match_file is not None:
+        # ⚠️ 50MB Limit Check (50 * 1024 * 1024 Bytes)
+        if match_file.size > 50 * 1024 * 1024:
+            st.error("⚠️ File size exceeds the 50MB limit allowed by Supabase! Please upload a smaller file.")
+            st.stop()
         try:
             df_match = pd.read_excel(match_file, dtype=str) if match_file.name.endswith('.xlsx') else pd.read_csv(match_file, low_memory=False, dtype=str)
             
