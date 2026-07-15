@@ -1104,7 +1104,7 @@ def communications_view():
                         # Fetching Master Ledger directly from the database table now
                         if "master_manifest_cache" not in st.session_state or st.session_state["master_manifest_cache"] is None:
                             try:
-                                # 🇵🇰 Aaj raat 12:00 AM PKT ka start timestamp nikalna
+                                # Aaj raat 12:00 AM PKT ka start timestamp
                                 today_start = datetime.datetime.now(PKT_TZ).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
                                 
                                 # Supabase se sirf aaj ki entries fetch karna
@@ -1115,10 +1115,9 @@ def communications_view():
                                     master_ledger_df = pd.DataFrame()
                                 st.session_state["master_manifest_cache"] = master_ledger_df
                                 all_master_recs = master_ledger_df.to_dict(orient="records")
-                           except Exception:
-                                all_master_recs = []
+                            except Exception:
                                 master_ledger_df = pd.DataFrame()
-                                st.session_state["master_manifest_cache"] = master_ledger_df
+                                all_master_recs = []
         else:
             master_ledger_df = st.session_state["master_manifest_cache"]
             all_master_recs = master_ledger_df.to_dict(orient="records")
