@@ -1118,9 +1118,9 @@ def communications_view():
                             except Exception:
                                 master_ledger_df = pd.DataFrame()
                                 all_master_recs = []
-        else:
-            master_ledger_df = st.session_state["master_manifest_cache"]
-            all_master_recs = master_ledger_df.to_dict(orient="records")
+                        else:
+                            master_ledger_df = st.session_state["master_manifest_cache"]
+                            all_master_recs = master_ledger_df.to_dict(orient="records")
             
         try:
             # We can use the same cache to create the dictionary since it comes from patient_deliveries
