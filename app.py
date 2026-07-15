@@ -782,15 +782,39 @@ def recovery_view():
                     st.rerun()
 
 def ingestion_view():
+    # ---- 1. WATERMARK AUR FOOTER KO HIDE KARNE KA CODE (Yahan add kiya hai) ----
+    hide_streamlit_style = """
+        <style>
+        #MainMenu {visibility: hidden !important;}
+        footer {visibility: hidden !important;}
+        header {visibility: hidden !important;}
+        /* Top right pe jo Deploy button aata hai usko bhi hide karne ke liye */
+        .stAppDeployButton {display: none !important;}
+        </style>
+    """
+    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
     st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine"
     st.markdown("### 📥 Bulk Articles Ingestion Engine")
-    source_file = st.file_uploader("Upload Medicine Article Sheet", type=["xlsx", "csv"], key="bulk_uploader_main")
+    
+    # Label mein humne Max 50MB mention kar diya hai
+    source_file = st.file_uploader("Upload Medicine Article Sheet (Max 50MB)", type=["xlsx", "csv"], key="bulk_uploader_main")
+    
     if source_file is not None:
+        # ---- 2. FILE SIZE CHECK (50MB LIMIT) ----
+        # 50MB ko bytes mein convert kiya (50 * 1024 * 1024)
+        max_file_size = 50 * 1024 * 1024 
+        
+        if source_file.size > max_file_size:
+            st.error("⚠️ File size 50MB se bada hai! Supabase limit ki wajah se aap isse badi file upload nahi kar sakte.")
+            st.stop() # Isse aage ka code run nahi hoga aur crash hone se bach jayega
+            
         file_key = f"cached_df_{source_file.name}_{source_file.size}"
         if file_key not in st.session_state:
             df = pd.read_excel(source_file, dtype=str) if source_file.name.endswith('.xlsx') else pd.read_csv(source_file, low_memory=False, dtype=str)
             st.session_state[file_key] = df
-        else: df = st.session_state[file_key]
+        else: 
+            df = st.session_state[file_key]
         
         mc1, mc2, mc3 = st.columns(3)
         with mc1:
