@@ -237,7 +237,7 @@ st.markdown(f"""
         text-shadow: 0px 1px 1px rgba(255, 255, 255, 0.6) !important;
     }}
     
-    /* 🔴 Terminate Session Button */
+     /* 🔴 Terminate Session Button */
     div:has(> .terminate-btn-anchor) + div button,
     div:has(.terminate-btn-anchor) + div button {{
         background: linear-gradient(180deg, #ff4d4d 0%, #c31414 100%) !important;
