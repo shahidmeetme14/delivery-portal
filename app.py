@@ -1728,10 +1728,10 @@ if st.session_state.logged_in:
                     /* Bulletproof Shiny Red Digital Count */
                     .machine-count, .machine-count * {{
                         color: #ffb703 !important; /* Universal Override */
-                        font-size: 24px !important; 
-                        font-weight: 900 !important;
+                        font-size: 22px !important; 
+                        font-weight: 800 !important;
                         font-family: 'Courier New', Courier, monospace !important; /* Digital Display Look */
-                        text-shadow: 0 0 10px #ff3333, 0 0 20px rgba(255, 51, 51, 0.6) !important;
+                        text-shadow: 0 0 10px #ff3333, 0 0 18px rgba(255, 51, 51, 0.6) !important;
                         margin-top: 5px !important;
                         display: block !important;
                     }}
