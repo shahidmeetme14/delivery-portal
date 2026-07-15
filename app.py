@@ -475,6 +475,8 @@ st.markdown(f"""
     """
     st.markdown(
     """
+    st.markdown(
+    """
     <style>
     .print-manifest-card { 
         visibility: visible !important; 
@@ -505,62 +507,57 @@ st.markdown(f"""
     /* Faint Watermark on Print Page */
     .print-manifest-card::before {
         content: "SHC Cell Lahore GPO" !important;
+        position: absolute !important;
+        top: 55% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) rotate(-30deg) !important;
+        font-size: 55px !important;
+        font-weight: 900 !important;
+        color: rgba(166, 28, 28, 0.05) !important;
+        white-space: nowrap !important;
+        z-index: 0 !important;
+        pointer-events: none !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .print-manifest-card * { 
+        visibility: visible !important; 
+        color: #000000 !important; 
+        background-color: #ffffff !important; 
+        box-shadow: none !important; 
+        text-shadow: none !important; 
+        position: relative;
+        z-index: 1;
+    }
+    
+    .print-manifest-card table { 
+        width: 100% !important; 
+        display: table !important; 
+        border-collapse: collapse !important; 
+        margin-top: 5px !important; 
+    }
+    
+    .print-manifest-card tr { 
+        display: table-row !important; 
+        page-break-inside: avoid !important; 
+    }
+    
+    .print-manifest-card td, .print-manifest-card th { 
+        display: table-cell !important; 
+        padding: 5px 8px !important; 
+        font-size: 14px !important; 
+        color: #000000 !important; 
+        border-bottom: 1px solid #cbd5e1 !important; 
+    }
+    
+    .screen-only-timestamp { 
+        display: none !important; 
     }
     </style>
     """,
     unsafe_allow_html=True
 )
-            position: absolute !important;
-            top: 55% !important;
-            left: 50% !important;
-            transform: translate(-50%, -50%) rotate(-30deg) !important;
-            font-size: 55px !important;
-            font-weight: 900 !important;
-            color: rgba(166, 28, 28, 0.05) !important;
-            white-space: nowrap !important;
-            z-index: 0 !important;
-            pointer-events: none !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-
-        .print-manifest-card * {{ 
-            visibility: visible !important; 
-            color: #000000 !important; 
-            background-color: #ffffff !important; 
-            box-shadow: none !important; 
-            text-shadow: none !important; 
-            position: relative;
-            z-index: 1;
-        }}
-        
-        .print-manifest-card table {{ 
-            width: 100% !important; 
-            display: table !important; 
-            border-collapse: collapse !important; 
-            margin-top: 5px !important; 
-        }}
-        
-        .print-manifest-card tr {{ 
-            display: table-row !important; 
-            page-break-inside: avoid !important; 
-        }}
-        
-        .print-manifest-card td, .print-manifest-card th {{ 
-            display: table-cell !important; 
-            padding: 5px 8px !important; 
-            font-size: 14px !important; 
-            color: #000000 !important; 
-            border-bottom: 1px solid #cbd5e1 !important; 
-        }}
-        
-        .screen-only-timestamp {{ 
-            display: none !important; 
-        }}
-    }}
-    </style>
-""", unsafe_allow_html=True)
-
 def save_operator_state():
     if st.session_state.logged_in and st.session_state.username:
         state_payload = {
