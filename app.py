@@ -1657,9 +1657,46 @@ if st.session_state.logged_in:
             
             count_label = "Total Verifications Today"
             st.markdown(f"""
-                <div style='background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid rgba(212, 175, 55, 0.3); margin-top: 15px; margin-bottom: 15px;'>
-                    <div style='color: #cbd5e1; font-size: 13px; font-weight: 600; margin-bottom: 5px;'>{count_label}</div>
-                    <div style='color: #d4af37; font-size: 24px; font-weight: 800;'>{today_count}</div>
+                <style>
+                    /* 3D Machine Box Style */
+                    .machine-box {{
+                        background: linear-gradient(145deg, #151518, #1f1f24) !important;
+                        border: 2px solid #ff3333 !important;
+                        border-bottom: 5px solid #990000 !important; /* 3D Base Depth */
+                        border-radius: 12px !important;
+                        padding: 6px !important;
+                        text-align: center !important;
+                        /* 3D Outer Shadow + Inside Glow */
+                        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6), 
+                                    inset 0 0 12px rgba(255, 51, 51, 0.2) !important;
+                        margin-top: 15px !important;
+                        margin-bottom: 15px !important;
+                    }}
+                    
+                    /* Machine Label */
+                    .machine-label, .machine-label * {{
+                        color: #94a3b8 !important;
+                        font-size: 11px !important;
+                        font-weight: 700 !important;
+                        text-transform: uppercase !important;
+                        letter-spacing: 1px !important;
+                    }}
+                    
+                    /* Bulletproof Shiny Red Digital Count */
+                    .machine-count, .machine-count * {{
+                        color: #ffb703 !important; /* Universal Override */
+                        font-size: 24px !important; 
+                        font-weight: 900 !important;
+                        font-family: 'Courier New', Courier, monospace !important; /* Digital Display Look */
+                        text-shadow: 0 0 10px #ff3333, 0 0 20px rgba(255, 51, 51, 0.6) !important;
+                        margin-top: 5px !important;
+                        display: block !important;
+                    }}
+                </style>
+                
+                <div class='machine-box'>
+                    <div class='machine-label'>{count_label}</div>
+                    <span class='machine-count'>{today_count}</span>
                 </div>
             """, unsafe_allow_html=True)
             
