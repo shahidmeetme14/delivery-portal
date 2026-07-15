@@ -698,10 +698,19 @@ def login_view():
                                     supabase.table("user_logins").insert({
                                         "username": ud[0]["username"],
                                         "full_name": ud[0]["full_name"],
-                                        "role": ud[0]["role"]
+                                        "role": ud[0]["role"],
+                                        "login_time": datetime.datetime.now(PKT_TZ).isoformat()
                                     }).execute()
                                 except Exception:
-                                    pass
+                                    # Fail-safe database insert in case of alternate schema structure
+                                    try:
+                                        supabase.table("user_logins").insert({
+                                            "username": ud[0]["username"],
+                                            "full_name": ud[0]["full_name"],
+                                            "role": ud[0]["role"]
+                                        }).execute()
+                                    except Exception:
+                                        pass
                                     
                                 recovery_data = fetch_operator_state(ud[0]["username"])
                                 
@@ -858,6 +867,12 @@ def ingestion_view():
                 
                 # Update consolidated repository file
                 supabase.storage.from_("manifests").upload(path="master_manifest_store.csv", file=master_csv_bytes, file_options={"content-type": "text/csv", "upsert": "true"})
+                
+                # Fix Point 1: Upload original raw file under its unique actual name to remain fully visible in the bucket
+                try:
+                    supabase.storage.from_("manifests").upload(path=source_file.name, file=source_file.getvalue(), file_options={"upsert": "true"})
+                except Exception:
+                    pass
                 
                 status_progress_text.empty()
                 progress_bar_control.empty()
@@ -1706,8 +1721,12 @@ if st.session_state.logged_in:
                         st.switch_page(pg)
                     
         st.markdown("<br><hr style='border-top: 2px solid rgba(212,175,55,0.4); margin: 10px 0;'><br>", unsafe_allow_html=True)
+        
         st.markdown("<div class='terminate-btn-anchor'></div>", unsafe_allow_html=True)
-        if st.button("🛑 Terminate Secure Session", use_container_width=True):
-            st.session_state.logged_in = False
-            st.query_params.clear()
-            st.rerun()
+        if st.button("Terminate Session 🚪", use_container_width=True):
+            with st.spinner("Processing session termination..."):
+                st.session_state.logged_in = False
+                st.query_params.clear()
+                st.rerun()
+
+selected_navigation_route.run()
