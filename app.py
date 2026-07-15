@@ -1100,28 +1100,24 @@ def communications_view():
     
     query_date = st.date_input("Filter Manifest Records by Booking Date (Overridden by Search):", value=None)
     
-    if st.button("🔍 Execute System Audit & Database Sync", use_container_width=True):
-                    with st.spinner("Processing cloud database lookup and audit..."):
-                        # Fetching Master Ledger directly from the database table now
-                        if "master_manifest_cache" not in st.session_state or st.session_state["master_manifest_cache"] is None:
-                            try:
-                                # Aaj raat 12:00 AM PKT ka start timestamp
-                                today_start = datetime.datetime.now(PKT_TZ).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
-                                
-                                # Supabase se sirf aaj ki entries fetch karna
-                                db_bytes = supabase.table("patient_deliveries").select("*").gte("created_at", today_start).execute().data
-                                if db_bytes:
-                                    master_ledger_df = pd.DataFrame(db_bytes).astype(str)
-                                else:
-                                    master_ledger_df = pd.DataFrame()
-                                st.session_state["master_manifest_cache"] = master_ledger_df
-                                all_master_recs = master_ledger_df.to_dict(orient="records")
-                            except Exception:
-                                master_ledger_df = pd.DataFrame()
-                                all_master_recs = []
-                        else:
-                            master_ledger_df = st.session_state["master_manifest_cache"]
-                            all_master_recs = master_ledger_df.to_dict(orient="records")
+    with st.spinner("Processing cloud database lookup and audit..."):
+        # Fetching Master Ledger directly from the database table now
+        if "master_manifest_cache" not in st.session_state or st.session_state["master_manifest_cache"] is None:
+            try:
+                db_bytes = supabase.table("patient_deliveries").select("*").execute().data
+                if db_bytes:
+                    master_ledger_df = pd.DataFrame(db_bytes).astype(str)
+                else:
+                    master_ledger_df = pd.DataFrame()
+                st.session_state["master_manifest_cache"] = master_ledger_df
+                all_master_recs = master_ledger_df.to_dict(orient="records")
+            except Exception:
+                all_master_recs = []
+                master_ledger_df = pd.DataFrame()
+                st.session_state["master_manifest_cache"] = master_ledger_df
+        else:
+            master_ledger_df = st.session_state["master_manifest_cache"]
+            all_master_recs = master_ledger_df.to_dict(orient="records")
             
         try:
             # We can use the same cache to create the dictionary since it comes from patient_deliveries
