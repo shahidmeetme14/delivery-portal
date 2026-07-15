@@ -477,6 +477,8 @@ st.markdown(f"""
     """
     st.markdown(
     """
+    st.markdown(
+    """
     <style>
     .print-manifest-card { 
         visibility: visible !important; 
@@ -557,6 +559,7 @@ st.markdown(f"""
     </style>
     """,
     unsafe_allow_html=True
+)
 )
 def save_operator_state():
     if st.session_state.logged_in and st.session_state.username:
