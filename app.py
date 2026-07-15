@@ -693,17 +693,24 @@ def login_view():
                         try:
                             ud = supabase.table("app_users").select("*").eq("username", input_user.strip()).eq("password", input_pass.strip()).execute().data
                             if ud:
-                                # Insert login log securely matching exact screenshot columns (id, username, ip_address, device_info, login_time)
+                                # Insert login log securely into user_logins table
                                 try:
                                     supabase.table("user_logins").insert({
                                         "username": ud[0]["username"],
-                                        "ip_address": "System Managed",
-                                        "device_info": "Web Portal Login",
+                                        "full_name": ud[0]["full_name"],
+                                        "role": ud[0]["role"],
                                         "login_time": datetime.datetime.now(PKT_TZ).isoformat()
                                     }).execute()
-                                except Exception as log_err:
-                                    print(f"Logging log failed: {log_err}")
-                                    pass
+                                except Exception:
+                                    # Fail-safe database insert in case of alternate schema structure
+                                    try:
+                                        supabase.table("user_logins").insert({
+                                            "username": ud[0]["username"],
+                                            "full_name": ud[0]["full_name"],
+                                            "role": ud[0]["role"]
+                                        }).execute()
+                                    except Exception:
+                                        pass
                                     
                                 recovery_data = fetch_operator_state(ud[0]["username"])
                                 
@@ -847,10 +854,6 @@ def ingestion_view():
             
             final_consolidated_df = pd.concat([master_ledger_df, clean_unique_records], ignore_index=True)
             
-            # Ensuring strict duplication removal across the whole file keeping the latest entries
-            if "article_id" in final_consolidated_df.columns:
-                final_consolidated_df = final_consolidated_df.drop_duplicates(subset=["article_id"], keep="last")
-            
             status_progress_text.text("Synchronizing clean ledger stream into cloud core... (95% Complete)")
             progress_bar_control.progress(95)
             
@@ -862,13 +865,19 @@ def ingestion_view():
                 try: supabase.storage.from_("manifests").remove(["master_manifest_store.csv"])
                 except: pass
                 
-                # Update consolidated repository file securely
+                # Update consolidated repository file
                 supabase.storage.from_("manifests").upload(path="master_manifest_store.csv", file=master_csv_bytes, file_options={"content-type": "text/csv", "upsert": "true"})
+                
+                # Fix Point 1: Upload original raw file under its unique actual name to remain fully visible in the bucket
+                try:
+                    supabase.storage.from_("manifests").upload(path=source_file.name, file=source_file.getvalue(), file_options={"upsert": "true"})
+                except Exception:
+                    pass
                 
                 status_progress_text.empty()
                 progress_bar_control.empty()
                 ui_blocker.empty()
-                st.success(f"🟢 Success: File processed successfully! Out of {total_input_count} total records, {total_duplicates_cleared} duplicate entries were detected and removed based on the selected deduplication parameters. The remaining unique records have been securely saved with previous entries.")
+                st.success(f"🟢 Success: File processed successfully! Out of {total_input_count} total records, {total_duplicates_cleared} duplicate entries were detected and removed based on the selected deduplication parameters. The remaining unique records have been securely saved.")
             except Exception as store_ex:
                 ui_blocker.empty()
                 st.error(f"Failed to synchronize master stream archive: {store_ex}")
@@ -998,7 +1007,7 @@ def operator_matrix_view():
                 
             if logs_res:
                 df_logs = pd.DataFrame(logs_res)
-                display_cols_logs = [c for c in ["username", "ip_address", "device_info", "login_time", "created_at"] if c in df_logs.columns]
+                display_cols_logs = [c for c in ["username", "full_name", "role", "login_time", "created_at"] if c in df_logs.columns]
                 st.dataframe(df_logs[display_cols_logs], use_container_width=True)
             else:
                 st.info("No active operator session logs recorded yet.")
@@ -1464,4 +1473,260 @@ def communications_view():
                                     st.rerun()
                                 except Exception as e: st.error(f"Sync error: {e}")
                 else:
-                    st.info("ℹ️ Select 'Yes' above to unlock the")
+                    st.info("ℹ️ Select 'Yes' above to unlock the patient questionnaire for re-verification.")
+
+def export_center_view():
+    st.session_state.current_navigation_tab = "📥 Secure Reports Export Center"
+    st.markdown("### 📥 Secure Data Export & Cloud Records Center")
+    st.info("💡 Note: All real-time backups are already fully updated and securely stored on the cloud storage data nodes.")
+    
+    st.markdown("#### 📅 Filter Data by Verification Date")
+    ec1, ec2 = st.columns(2)
+    with ec1: exp_start_date = st.date_input("From Date", datetime.date.today() - datetime.timedelta(days=30), key="export_from_date")
+    with ec2: exp_end_date = st.date_input("To Date", datetime.date.today(), key="export_to_date")
+    st.markdown("<hr style='border-top: 1px solid #cbd5e1; margin-top: 10px; margin-bottom: 20px;'>", unsafe_allow_html=True)
+    
+    try:
+        with st.spinner("Fetching data logs matrix..."):
+            all_records = supabase.table("patient_deliveries").select("*").execute().data
+        if all_records:
+            df_export = pd.DataFrame(all_records)
+            
+            if 'created_at' in df_export.columns:
+                df_export['parsed_date'] = pd.to_datetime(df_export['created_at']).dt.date
+                mask = (df_export['parsed_date'] >= exp_start_date) & (df_export['parsed_date'] <= exp_end_date)
+                df_export = df_export.loc[mask].drop(columns=['parsed_date'])
+                
+            if "operator_stamp" not in df_export.columns: df_export["operator_stamp"] = "Unassigned Logs"
+            
+            if st.session_state.role == "admin":
+                st.markdown("#### 🛠️ Admin Export Panel (Full Ledger Control)")
+                distinct_operators = list(df_export["operator_stamp"].dropna().unique())
+                distinct_operators.insert(0, "Download Everything (All Operators combined)")
+                
+                target_selection = st.selectbox("Select Data Slice / Operator Filter Target:", distinct_operators)
+                if target_selection != "Download Everything (All Operators combined)":
+                    df_final_download = df_export[df_export["operator_stamp"] == target_selection]
+                else: df_final_download = df_export
+            else:
+                st.markdown("#### 🔒 Operator Export Panel (Your Individual Action Log)")
+                df_final_download = df_export[df_export["operator_stamp"] == st.session_state.full_name]
+                st.write(f"Total verified entries stamped under your account for selected dates: `{len(df_final_download)}`")
+            
+            if not df_final_download.empty:
+                csv_buffer = io.StringIO()
+                df_final_download.to_csv(csv_buffer, index=False)
+                csv_data = csv_buffer.getvalue().encode('utf-8')
+                st.download_button(label="📥 Download Authenticated Security Sheet (.CSV File)", data=csv_data, file_name=f"Verified_Deliveries_Log_{exp_start_date}_to_{exp_end_date}.csv", mime="text/csv", use_container_width=True)
+            else: st.warning("No recorded data matching your credentials or filters found inside the backup matrix.")
+        else: st.warning("Cloud database nodes are currently empty.")
+    except Exception as err: st.error(f"Failed to compile export ledger sheets: {err}")
+
+# Routing Engine setup
+def is_default_page(title_keyword):
+    curr = st.session_state.get("current_navigation_tab")
+    return curr is not None and title_keyword in curr
+
+if not st.session_state.logged_in: 
+    pages_to_display = [st.Page(login_view, title="Authentication Desk", icon="🔒")]
+elif st.session_state.show_recovery_prompt: 
+    pages_to_display = [st.Page(recovery_view, title="Session Recovery", icon="🔄")]
+else:
+    if st.session_state.role == "admin": 
+        pages_to_display = [
+            st.Page(ingestion_view, title="Ingestion Engine", icon="📊", default=is_default_page("Ingestion")),
+            st.Page(operator_matrix_view, title="Operator Matrix", icon="👥", default=is_default_page("Operator Matrix")),
+            st.Page(communications_view, title="Communications Desk", icon="📞", default=is_default_page("Communications Desk")),
+            st.Page(export_center_view, title="Export Center & Backup", icon="📥", default=is_default_page("Export Center"))
+        ]
+    else: 
+        pages_to_display = [
+            st.Page(communications_view, title="Communications Desk", icon="📞", default=is_default_page("Communications Desk")),
+            st.Page(export_center_view, title="My Exports & Backup", icon="📥", default=is_default_page("Export Center"))
+        ]
+
+selected_navigation_route = st.navigation(pages_to_display, position="hidden")
+
+st.markdown("<div class='brand-title'>📮 SHC & Pak Post | Free Home Delivery of Medicine</div>", unsafe_allow_html=True)
+st.markdown("<div class='brand-subtitle'>Article Tracking & Patient Feedback Report</div>", unsafe_allow_html=True)
+
+if st.session_state.logged_in and st.session_state.role == "admin":
+    try:
+        alert_records_query = supabase.table("patient_deliveries").select("*").neq("extra_money_charged", "No").execute().data
+        active_alerts = [a for a in alert_records_query if a.get("extra_money_charged") in ["Yes", "Under Enquiry"]]
+        
+        if active_alerts:
+            with st.expander("🚨 Critical Corruption & Extra Charges Alerts", expanded=False):
+                st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+                
+                for alert in active_alerts:
+                    is_enquiry = (alert.get("extra_money_charged") == "Under Enquiry")
+                    enquiry_flag = "🚩 Under Enquiry" if is_enquiry else "🔴 Alert Active"
+                    
+                    st.markdown(f"""
+                    <div class="alert-3d-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div class="alert-3d-title">{alert['patient_name']}</div>
+                                <div class="alert-3d-subtitle">MRN: <span style="color:#a61c1c; font-weight:600;">{alert.get('mrn_no', 'N/A')}</span> &nbsp;|&nbsp; Article ID: <span style="font-family:monospace; font-weight:700; font-size:15px; color:#1e293b;">{alert['article_id']}</span></div>
+                                <div class="alert-3d-subtitle" style="margin-top:4px;">🛠️ Operator: <b>{alert.get('operator_stamp', 'Staff')}</b></div>
+                            </div>
+                            <div style="text-align: right;">
+                                <span class="alert-3d-badge">{enquiry_flag}</span>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    ac1, ac2, ac3, ac4 = st.columns([1.5, 1.5, 1.5, 5])
+                    with ac1:
+                        if st.button("🖨️ Print Manifest", key=f"print_alert_{alert['id']}", help="Print Auto Manifest", use_container_width=True): 
+                            open_alert_manifest(alert)
+                    with ac2:
+                        if not is_enquiry:
+                            if st.button("🚩 Mark Enquiry", key=f"enquiry_charge_{alert['id']}", help="Mark Under Enquiry", use_container_width=True):
+                                with st.spinner("..."):
+                                    supabase.table("patient_deliveries").update({"extra_money_charged": "Under Enquiry"}).eq("id", alert["id"]).execute()
+                                    time.sleep(0.5)
+                                    st.rerun()
+                        else:
+                            st.markdown("<div style='text-align:center; padding-top:10px; color:#94a3b8; font-weight:bold;'>⏳ In Progress</div>", unsafe_allow_html=True)
+                    with ac3:
+                        if st.button("✅ Resolve Issue", key=f"resolve_charge_{alert['id']}", help="Resolve Alert", use_container_width=True):
+                            with st.spinner("..."):
+                                supabase.table("patient_deliveries").update({"extra_money_charged": "Yes (Resolved)"}).eq("id", alert["id"]).execute()
+                                time.sleep(0.5)
+                                st.rerun()
+                    
+                    st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
+            
+        resolved_or_history_alerts = [a for a in alert_records_query if a.get("extra_money_charged") in ["Yes (Resolved)", "Under Enquiry"]]
+        if resolved_or_history_alerts:
+            with st.expander("📁 View & Download Alert History Logs (Backup)"):
+                st.markdown("""
+                <div class="alert-3d-card" style="border-left-color: #d4af37; background: linear-gradient(145deg, #ffffff, #fdfdfa);">
+                    <h4 style="margin-top:0; color:#1e293b;">📥 Download Historical Alert Records</h4>
+                    <p style="color:#64748b; font-size:14px; margin-bottom: 0;">Download logs for all previous alerts (Resolved and Under Enquiry cases).</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                hc1, hc2 = st.columns(2)
+                with hc1: d_from = st.date_input("From Date", datetime.date.today() - datetime.timedelta(days=7), key="dfrom_alert")
+                with hc2: d_to = st.date_input("To Date", datetime.date.today(), key="dto_alert")
+                
+                if st.button("📥 Download Alert Logs", use_container_width=True):
+                    history_logs = []
+                    for a in resolved_or_history_alerts:
+                        if 'created_at' in a and a['created_at']:
+                            try:
+                                dt = datetime.datetime.fromisoformat(a['created_at'].replace('Z', '+00:00')).date()
+                                if d_from <= dt <= d_to:
+                                    history_logs.append(a)
+                            except: pass
+                    
+                    if history_logs:
+                        df_hist = pd.DataFrame(history_logs)
+                        csv_buf = io.StringIO()
+                        df_hist.to_csv(csv_buf, index=False)
+                        st.download_button("Download CSV Backup", data=csv_buf.getvalue().encode('utf-8'), file_name=f"Alert_Logs_{d_from}_to_{d_to}.csv", mime="text/csv", use_container_width=True)
+                    else:
+                        st.warning("No alert logs found in this date range.")
+    except Exception as e: pass
+
+if st.session_state.logged_in:
+    with st.sidebar:
+        st.markdown("<div class='sb-headline-custom'>🖥️ Enterprise Console</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='sb-login-label'>Logged in as:</div><div class='sb-username-display'>{st.session_state.full_name}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='sb-privilege-label'>Privilege Cluster: <span>{st.session_state.role.upper()}</span></div>", unsafe_allow_html=True)
+        
+        try:
+            today = datetime.date.today()
+            today_count = 0
+            if st.session_state.role == "admin":
+                res_stats = supabase.table("patient_deliveries").select("created_at").execute().data
+            else:
+                res_stats = supabase.table("patient_deliveries").select("created_at").eq("operator_stamp", st.session_state.full_name).execute().data
+                
+            for r in res_stats:
+                if 'created_at' in r and r['created_at']:
+                    try:
+                        dt = datetime.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00')).date()
+                        if dt == today:
+                            today_count += 1
+                    except: pass
+            
+            count_label = "Total Verifications Today"
+            st.markdown(f"""
+                <style>
+                    /* 3D Machine Box Style */
+                    .machine-box {{
+                        background: linear-gradient(145deg, #151518, #1f1f24) !important;
+                        border: 2px solid #ff3333 !important;
+                        border-bottom: 5px solid #990000 !important; /* 3D Base Depth */
+                        border-radius: 12px !important;
+                        padding: 6px !important;
+                        text-align: center !important;
+                        /* 3D Outer Shadow + Inside Glow */
+                        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6), 
+                                    inset 0 0 12px rgba(255, 51, 51, 0.2) !important;
+                        margin-top: 15px !important;
+                        margin-bottom: 15px !important;
+                    }}
+                    
+                    /* Machine Label */
+                    .machine-label, .machine-label * {{
+                        color: #94a3b8 !important;
+                        font-size: 11px !important;
+                        font-weight: 700 !important;
+                        text-transform: uppercase !important;
+                        letter-spacing: 1px !important;
+                    }}
+                    
+                    /* Bulletproof Shiny Red Digital Count */
+                    .machine-count, .machine-count * {{
+                        color: #ffb703 !important; /* Universal Override */
+                        font-size: 24px !important; 
+                        font-weight: 900 !important;
+                        font-family: 'Courier New', Courier, monospace !important; /* Digital Display Look */
+                        text-shadow: 0 0 10px #ff3333, 0 0 20px rgba(255, 51, 51, 0.6) !important;
+                        margin-top: 5px !important;
+                        display: block !important;
+                    }}
+                </style>
+                
+                <div class='machine-box'>
+                    <div class='machine-label'>{count_label}</div>
+                    <span class='machine-count'>{today_count}</span>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("📅 View Date-wise Stats", use_container_width=True):
+                user_stats_dialog()
+                
+        except Exception: pass
+        
+        st.markdown("<div class='password-btn-anchor'></div>", unsafe_allow_html=True)
+        if st.button("🔐 Change User Password", use_container_width=True): change_password_dialog()
+        
+        if not st.session_state.show_recovery_prompt:
+            st.markdown("<br><hr style='border-top: 2px solid rgba(212,175,55,0.4); margin: 10px 0;'><br>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size: 15px; font-weight: 800; color: #d4af37; margin-bottom: 12px; letter-spacing: 1.5px;'>📂 SYSTEM NAVIGATION</div>", unsafe_allow_html=True)
+            
+            for pg in pages_to_display:
+                button_label = f"▶️ **{pg.icon} {pg.title}**" if pg.title == selected_navigation_route.title else f"{pg.icon} {pg.title}"
+                if st.button(button_label, use_container_width=True, key=f"nav_btn_{pg.title}"): 
+                    if pg.title != selected_navigation_route.title:
+                        st.session_state.current_navigation_tab = pg.title
+                        st.query_params["tab"] = pg.title
+                        st.switch_page(pg)
+                    
+        st.markdown("<br><hr style='border-top: 2px solid rgba(212,175,55,0.4); margin: 10px 0;'><br>", unsafe_allow_html=True)
+        
+        st.markdown("<div class='terminate-btn-anchor'></div>", unsafe_allow_html=True)
+        if st.button("Terminate Session 🚪", use_container_width=True):
+            with st.spinner("Processing session termination..."):
+                st.session_state.logged_in = False
+                st.query_params.clear()
+                st.rerun()
+
+selected_navigation_route.run()
