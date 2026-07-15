@@ -790,12 +790,24 @@ def ingestion_view():
     st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine"
     st.markdown("### 📥 Bulk Articles Ingestion Engine")
     source_file = st.file_uploader("Upload Medicine Article Sheet", type=["xlsx", "csv"], key="bulk_uploader_main")
+    
     if source_file is not None:
         file_key = f"cached_df_{source_file.name}_{source_file.size}"
         if file_key not in st.session_state:
-            df = pd.read_excel(source_file, dtype=str) if source_file.name.endswith('.xlsx') else pd.read_csv(source_file, low_memory=False, dtype=str)
+            # File ko load karte waqt dtype=str lagaya hai aur NaN ko khali string se fill kar diya hai
+            if source_file.name.endswith('.xlsx'):
+                df = pd.read_excel(source_file, dtype=str)
+            else:
+                df = pd.read_csv(source_file, low_memory=False, dtype=str)
+            
+            # 🛠️ ERROR KA ILAJ: Saari 'nan' ya empty values ko safe khali strings me badlein
+            df = df.fillna("")
+            # Agar 'nan' string me convert ho chuka ho, usko bhi normal blank karein
+            df = df.replace(to_replace=r'^[Nn][Aa][Nn]$', value='', regex=True)
+            
             st.session_state[file_key] = df
-        else: df = st.session_state[file_key]
+        else: 
+            df = st.session_state[file_key]
         
         mc1, mc2, mc3 = st.columns(3)
         with mc1:
@@ -821,16 +833,32 @@ def ingestion_view():
             status_progress_text.text("Connecting with database nodes... (15% Complete)")
             progress_bar_control.progress(15)
             
-            # Fetch existing Article IDs from patient_deliveries to calculate duplicates accurately
-            try:
-                db_res = supabase.table("patient_deliveries").select("article_id").execute().data
-                existing_articles = [str(r["article_id"]).strip() for r in db_res if "article_id" in r]
-            except Exception as e:
-                existing_articles = []
+            # 🛠️ SMART DUPLICATION CHECK FOR LARGE DATABASE
+            # Jab database me 1.7M rows hon, select('*') crash kar deta hai. 
+            # Hum sirf upload hone wali list ke batch ko target karke existing check karenge.
+            raw_articles = df[c_article].astype(str).str.strip().unique().tolist()
+            raw_articles = [x for x in raw_articles if x not in ["", "nan", "NaN", "None"]]
+            
+            existing_articles = set()
+            status_progress_text.text("Checking cloud database for duplicates in batches... (30% Complete)")
+            progress_bar_control.progress(30)
+            
+            # 10,000 ke sub-batches me check karenge taake server overload na ho
+            check_batch_size = 10000
+            for k in range(0, len(raw_articles), check_batch_size):
+                sub_batch = raw_articles[k:k+check_batch_size]
+                try:
+                    db_res = supabase.table("patient_deliveries").select("article_id").in_("article_id", sub_batch).execute().data
+                    for r in db_res:
+                        if "article_id" in r:
+                            existing_articles.add(str(r["article_id"]).strip())
+                except Exception as e:
+                    pass
 
             status_progress_text.text("Analyzing spreadsheet matrix structures... (45% Complete)")
             progress_bar_control.progress(45)
             
+            # DataFrame create karte waqt columns ko saaf suthra string data dein
             uploaded_records_df = pd.DataFrame({
                 "article_id": df[c_article].astype(str).str.strip(),
                 "patient_name": df[c_name].astype(str).str.strip(),
@@ -841,40 +869,60 @@ def ingestion_view():
                 "mrn_no": df[c_mrn].astype(str).str.strip(),
                 "booking_office": df[c_bo].astype(str).str.strip() if c_bo in df.columns else "Lahore GPO"
             })
+            
+            # 🛠️ Dobara check karke double secure karein ke koi "nan" values dictionary me na jayein
+            uploaded_records_df = uploaded_records_df.fillna("")
+            uploaded_records_df = uploaded_records_df.replace(to_replace=r'^[Nn][Aa][Nn]$', value='', regex=True)
+            
             total_input_count = len(uploaded_records_df)
 
-            status_progress_text.text("Scanning database for cross-duplications... (75% Complete)")
-            progress_bar_control.progress(75)
+            status_progress_text.text("Scanning database for cross-duplications... (70% Complete)")
+            progress_bar_control.progress(70)
             
-            # Check duplication directly with database records
-            is_duplicate_by_article = uploaded_records_df["article_id"].isin(existing_articles) & (uploaded_records_df["article_id"] != "") & (uploaded_records_df["article_id"] != "nan")
+            # Clean article_id column (remove spaces and empty rows)
+            uploaded_records_df["article_id_clean"] = uploaded_records_df["article_id"].str.strip()
             
-            clean_unique_records = uploaded_records_df[~is_duplicate_by_article]
+            # Jo pehle se database me hain unhe filter out karein
+            is_duplicate_by_article = uploaded_records_df["article_id_clean"].isin(existing_articles) | (uploaded_records_df["article_id_clean"] == "")
+            clean_unique_records = uploaded_records_df[~is_duplicate_by_article].copy()
             
-            # Clean internal duplicates from uploaded chunk
-            clean_unique_records = clean_unique_records.drop_duplicates(subset=["article_id"])
+            # Apne upload file ke andar ki duplicates bhi saaf karein
+            clean_unique_records = clean_unique_records.drop_duplicates(subset=["article_id_clean"])
             
+            # Extra temp column drop karein
+            if "article_id_clean" in clean_unique_records.columns:
+                clean_unique_records = clean_unique_records.drop(columns=["article_id_clean"])
+                
             total_duplicates_cleared = total_input_count - len(clean_unique_records)
             
-            status_progress_text.text("Synchronizing ledger stream into cloud table... (95% Complete)")
-            progress_bar_control.progress(95)
+            status_progress_text.text("Converting ledger stream... (80% Complete)")
+            progress_bar_control.progress(80)
             
+            # Dict me convert karein aur final check karein koi float NaN na bacha ho
             records_to_insert = clean_unique_records.to_dict(orient="records")
+            
+            # Safe Chunking mechanism for upload
             chunk_size = 3000
+            total_records_to_send = len(records_to_insert)
             
             try:
-                # Upsert to database in chunks to prevent payload too large errors
-                for i in range(0, len(records_to_insert), chunk_size):
+                for i in range(0, total_records_to_send, chunk_size):
                     chunk = records_to_insert[i:i+chunk_size]
+                    
+                    # Progress update show karne ke liye
+                    percentage_done = int(80 + (i / total_records_to_send) * 19)
+                    status_progress_text.text(f"Synchronizing database stream: {i} of {total_records_to_send} records processed... ({percentage_done}% Complete)")
+                    progress_bar_control.progress(percentage_done)
+                    
                     supabase.table("patient_deliveries").upsert(chunk, on_conflict="article_id").execute()
                 
-                # Clear cache so fresh data is loaded
+                # Clear cache
                 st.session_state["master_manifest_cache"] = None
                 
                 status_progress_text.empty()
                 progress_bar_control.empty()
                 ui_blocker.empty()
-                st.success(f"🟢 Success: File processed successfully! Out of {total_input_count} total records, {total_duplicates_cleared} duplicate entries were detected and removed. The unique records have been securely inserted into the 'patient_deliveries' table.")
+                st.success(f"🟢 Success: File processed successfully! Out of {total_input_count} total records, {total_duplicates_cleared} duplicate entries were detected and removed. The unique records ({len(records_to_insert)}) have been securely inserted into the 'patient_deliveries' table.")
             except Exception as store_ex:
                 ui_blocker.empty()
                 st.error(f"Failed to synchronize database stream archive: {store_ex}")
@@ -888,14 +936,15 @@ def ingestion_view():
     if match_file is not None:
         try:
             df_match = pd.read_excel(match_file, dtype=str) if match_file.name.endswith('.xlsx') else pd.read_csv(match_file, low_memory=False, dtype=str)
+            df_match = df_match.fillna("").replace(to_replace=r'^[Nn][Aa][Nn]$', value='', regex=True)
             
             with st.spinner("Fetching cloud database for matching..."):
-                # Use cache for Cloud Matching to eliminate redundant egress costs
                 if "master_manifest_cache" not in st.session_state or st.session_state["master_manifest_cache"] is None:
                     try:
+                        # 30MB data matching ke liye thoda time le sakta hai. Agar data bohot zyada ho to isko bhi chunk select kiya ja sakta hai.
                         db_bytes = supabase.table("patient_deliveries").select("*").execute().data
                         if db_bytes:
-                            df_cloud = pd.DataFrame(db_bytes).astype(str)
+                            df_cloud = pd.DataFrame(db_bytes).astype(str).fillna("").replace(to_replace=r'^[Nn][Aa][Nn]$', value='', regex=True)
                         else:
                             df_cloud = pd.DataFrame(columns=["article_id", "patient_name", "phone_number", "booking_date", "address", "patient_city", "mrn_no", "booking_office", "status"])
                         st.session_state["master_manifest_cache"] = df_cloud
@@ -927,8 +976,9 @@ def ingestion_view():
                     total_rows = len(df_match)
                     for i, row in df_match.iterrows():
                         perc = int(((i + 1) / total_rows) * 100)
-                        progress_bar.progress(perc)
-                        status_text.text(f"Processing and matching records... {perc}% Completed")
+                        if i % 100 == 0 or perc == 100: # Har 100 rows par UI progress update karein taake speed bani rahe
+                            progress_bar.progress(perc)
+                            status_text.text(f"Processing and matching records... {perc}% Completed")
                         
                         val1 = str(row[upload_col1]).strip().lower()
                         cloud_match = df_cloud[df_cloud[cloud_col1].astype(str).str.strip().str.lower() == val1]
