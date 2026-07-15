@@ -473,6 +473,8 @@ st.markdown(f"""
 
         st.markdown(
     """
+    st.markdown(
+    """
     <style>
     .print-manifest-card { 
         visibility: visible !important; 
