@@ -499,7 +499,16 @@ st.markdown(f"""
 
         /* Faint Watermark on Print Page */
         .print-manifest-card::before {
-            content: "SHC Cell Lahore GPO" !important;
+            st.markdown(
+    """
+    <style>
+    .your-class-name::before {
+        content: "SHC Cell Lahore GPO" !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
             position: absolute !important;
             top: 55% !important;
             left: 50% !important;
