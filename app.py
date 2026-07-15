@@ -1743,15 +1743,18 @@ if st.session_state.logged_in:
         try:
             today = datetime.date.today()
             today_count = 0
+            
+            # 1. Database se 'created_at' ke sath 'status' ka column bhi mangwaya
             if st.session_state.role == "admin":
-                # 'created_at' ke sath 'status' ka column bhi database se fetch kar rahe hain
                 res_stats = supabase.table("patient_deliveries").select("created_at, status").execute().data
             else:
                 res_stats = supabase.table("patient_deliveries").select("created_at, status").eq("operator_stamp", st.session_state.full_name).execute().data
                 
             for r in res_stats:
-                # Check lagaya hai ke status 'Pending' ya khali (nan) na ho
+                # 2. Check lagaya ke current record ka status kya hai
                 status_val = str(r.get('status', 'Pending')).strip()
+                
+                # 3. Agar status in mein se NAI hai, sirf tabhi count karo
                 if status_val not in ["Pending", "Pending Retry", "nan", "None", ""]:
                     if 'created_at' in r and r['created_at']:
                         try:
