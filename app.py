@@ -1100,7 +1100,8 @@ def communications_view():
     
     query_date = st.date_input("Filter Manifest Records by Booking Date (Overridden by Search):", value=None)
     
-    with st.spinner("Processing cloud database lookup and audit..."):
+    if st.button("🔍 Execute System Audit & Database Sync", use_container_width=True):
+                    with st.spinner("Processing cloud database lookup and audit..."):
                         # Fetching Master Ledger directly from the database table now
                         if "master_manifest_cache" not in st.session_state or st.session_state["master_manifest_cache"] is None:
                             try:
