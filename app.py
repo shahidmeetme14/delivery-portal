@@ -499,7 +499,7 @@ st.markdown(f"""
 
         /* Faint Watermark on Print Page */
         .print-manifest-card::before {
-            st.markdown(
+            st.markdown()
     """
     <style>
     .your-class-name::before {
