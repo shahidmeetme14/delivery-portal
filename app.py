@@ -1,4 +1,68 @@
 import streamlit as st
+
+# === LOCAL LAPTOP DATABASE ENGINE (SQLite) ===
+import sqlite3
+import os
+import logging
+
+# Setup log file for local operations
+logging.basicConfig(
+    filename='app_local_logs.txt',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+def get_local_connection():
+    try:
+        conn = sqlite3.connect("local_delivery.db", timeout=5)
+        return conn
+    except Exception as e:
+        logging.error(f"Local SQLite Connection Failed: {e}")
+        return None
+
+def init_local_db():
+    conn = get_local_connection()
+    if conn:
+        cursor = conn.cursor()
+        # Auto-creating table with exact same schema as Supabase patient_deliveries
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS patient_deliveries (
+                transaction_id TEXT PRIMARY KEY,
+                mrn_no TEXT,
+                patient_name TEXT,
+                phone_no TEXT,
+                address TEXT,
+                ward_name TEXT,
+                delivery_date TEXT,
+                status TEXT,
+                consignment_no TEXT,
+                weight TEXT,
+                postage_charges TEXT,
+                prescription_date TEXT,
+                user_name TEXT,
+                created_at TEXT
+            )
+        """)
+        # Questionnaire table with same columns
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS questionnaire (
+                transaction_id TEXT PRIMARY KEY,
+                q1 TEXT,
+                q2 TEXT,
+                q3 TEXT,
+                q4 TEXT,
+                q5 TEXT,
+                comments TEXT,
+                submitted_by TEXT,
+                submitted_at TEXT
+            )
+        """)
+        conn.commit()
+        conn.close()
+
+# Initialize Local Database
+init_local_db()
+
 from supabase import create_client, Client
 import pandas as pd
 import datetime
