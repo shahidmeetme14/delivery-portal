@@ -9,7 +9,7 @@ import urllib.request
 from bs4 import BeautifulSoup
 import streamlit.components.v1 as components
 
-# 🇵🇰 Pakistan Standard Time (PKT) Setup - No external libraries needed
+# 🇵🇰 Pakistan Standard Time (PKT) Setup
 PKT_TZ = datetime.timezone(datetime.timedelta(hours=5))
 
 # 🎛️ Page Structural Settings
@@ -20,7 +20,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🔄 URL HYDRATION ENGINE (Fixed for Refresh Lock)
+# 🔄 URL HYDRATION ENGINE
 SESSION_TIMEOUT = 30 * 60  
 
 if "logged_in" not in st.session_state: 
@@ -34,11 +34,10 @@ if not st.session_state.logged_in and "usr" in st.query_params:
             st.session_state.username = str(st.query_params.get("usr", ""))
             st.session_state.full_name = str(st.query_params.get("nm", ""))
             st.session_state.role = str(st.query_params.get("rl", "staff"))
-            st.session_state.last_activity = time.time()  # Keep session alive on page refresh
+            st.session_state.last_activity = time.time()
             if "tab" in st.query_params:
                 st.session_state.current_navigation_tab = str(st.query_params.get("tab"))
                 
-            # Log auto-login credentials to user_logins table
             try:
                 supabase.table("user_logins").insert({
                     "username": st.session_state.username,
@@ -65,10 +64,8 @@ if "show_recovery_prompt" not in st.session_state: st.session_state.show_recover
 if "cached_recovery_data" not in st.session_state: st.session_state.cached_recovery_data = {}
 if "duplicate_log_csv" not in st.session_state: st.session_state.duplicate_log_csv = None
 if "fetched_emtts_data" not in st.session_state: st.session_state.fetched_emtts_data = {}
-# Session Memory Cache for Supabase Egress Control
 if "master_manifest_cache" not in st.session_state: st.session_state["master_manifest_cache"] = None
 
-# Initialize Column Mappings Memory
 mapping_keys = ["map_article", "map_name", "map_city", "map_phone", "map_date", "map_mrn", "map_address", "map_bo", "map_dup", "map_tx", "map_db_col"]
 for key in mapping_keys:
     if key not in st.session_state:
@@ -106,13 +103,11 @@ else:
     }
     """
 
-# --- Step 1: Admin Alert Expanders Highlighting in Closed View ---
 generic_expander_highlight_css = """
-/* 📦 Admin Alert Expanders - Generic Styling in closed view for highlighting */
 div[data-testid="stExpander"] {
-    border: 2px solid rgba(212, 175, 55, 0.4) !important; /* Gold border */
+    border: 2px solid rgba(212, 175, 55, 0.4) !important; 
     border-radius: 8px !important;
-    background-color: rgba(212, 175, 55, 0.05) !important; /* Subtle gold tint */
+    background-color: rgba(212, 175, 55, 0.05) !important; 
     box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
     margin-bottom: 20px !important;
     transition: all 0.3s ease !important;
@@ -120,7 +115,7 @@ div[data-testid="stExpander"] {
 
 div[data-testid="stExpander"] button[data-testid="stExpanderHeader"] p {
     font-weight: 800 !important;
-    color: #5c1414 !important; /* Deep red matching subtitle */
+    color: #5c1414 !important; 
 }
 
 div[data-testid="stExpander"] button[data-testid="stExpanderHeader"] p span {
@@ -128,7 +123,7 @@ div[data-testid="stExpander"] button[data-testid="stExpanderHeader"] p span {
 }
 
 div[data-testid="stExpander"] button[data-testid="stExpanderHeader"] [data-testid="stExpanderToggleIcon"] {
-    color: #d4af37 !important; /* Gold */
+    color: #d4af37 !important; 
 }
 
 div[data-testid="stExpander"] > div[data-testid="stExpanderBody"] {
@@ -139,11 +134,9 @@ div[data-testid="stExpander"] > div[data-testid="stExpanderBody"] {
 
 st.markdown(f"""
     <style>
-    /* Complete & Absolute Removal of Streamlit Watermarks, Headers, Footers, Badges & Links */
     div[data-testid="stToolbar"], #MainMenu, footer, header,
     [data-testid="stHeader"], [data-testid="stDecoration"],
-    [data-testid="stStatusWidget"], [data-testid="stStateIndicator"],
-    [data-testid="stActionElements"], .stSpinner,
+    [data-testid="stStatusWidget"], [data-testid="stActionElements"],
     .stDeployButton, .stAppDeployButton, button[kind="header"],
     [data-testid="stViewerBadge"], div[class^="viewerBadge"], div[class*="viewerBadge"],
     .viewerBadge_container__1616G, a[href*="streamlit.io"],
@@ -166,7 +159,6 @@ st.markdown(f"""
     .brand-title {{ color: #a61c1c; font-weight: 800; font-size: 2.1rem; margin-bottom: 2px; }}
     .brand-subtitle {{ color: #5c1414; font-size: 1.05rem; margin-bottom: 25px; font-weight: 600; border-left: 4px solid #d4af37; padding-left: 12px; }}
     
-    /* 📦 3D Premium Cards for Admin Alerts */
     .alert-3d-card {{
         background: linear-gradient(145deg, #ffffff, #fdfbf7);
         border-radius: 12px;
@@ -216,7 +208,6 @@ st.markdown(f"""
         box-shadow: inset 0px 2px 5px rgba(0,0,0,0.3) !important;
     }}
     
-    /* 💎 Crystal Style Navigation Buttons */
     section[data-testid="stSidebar"] div.stButton > button {{
         background: rgba(255, 255, 255, 0.05) !important;
         color: #ffffff !important;
@@ -239,7 +230,6 @@ st.markdown(f"""
         transform: translateY(-1px) !important;
     }}
 
-    /* 🟡 Glossy Gold Crystal Password Button */
     div:has(> .password-btn-anchor) + div button,
     div:has(.password-btn-anchor) + div button {{
         background: linear-gradient(180deg, #ffd700 0%, #b8860b 100%) !important;
@@ -252,7 +242,6 @@ st.markdown(f"""
         text-shadow: 0px 1px 1px rgba(255, 255, 255, 0.6) !important;
     }}
     
-     /* 🔴 Terminate Session Button */
     div:has(> .terminate-btn-anchor) + div button,
     div:has(.terminate-btn-anchor) + div button {{
         background: linear-gradient(180deg, #ff4d4d 0%, #c31414 100%) !important;
@@ -265,7 +254,6 @@ st.markdown(f"""
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
     }}
     
-    /* ✨ 3D Dropdowns, Inputs & Textareas */
     div[data-baseweb="select"] > div, 
     div[data-testid="stSelectbox"] div[data-baseweb="select"],
     div[data-testid="stDateInput"] > div,
@@ -302,7 +290,6 @@ st.markdown(f"""
         font-weight: 600 !important;
     }}
     
-    /* 🎨 Right Column Questionnaire Background */
     [data-testid="column"]:nth-of-type(2) {{
         background: linear-gradient(135deg, #ffffff 0%, #fdfbf7 100%);
         border: 1px solid #e2e8f0;
@@ -359,11 +346,10 @@ st.markdown(f"""
     section[data-testid="stSidebar"] .sb-privilege-label {{ margin-top: 10px; color: #cbd5e1 !important; font-size: 14px; }}
     section[data-testid="stSidebar"] .sb-privilege-label span {{ color: #39ff14 !important; font-weight: bold !important; text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14 !important; }}
     
-    /* 🖨️ Absolute Print Media Optimization (Fully Forced on Single Page A4 Portrait) */
     @media print {{
         @page {{ 
             size: A4 portrait !important; 
-            margin: 0mm !important; /* Strips browser headers and footers completely */
+            margin: 0mm !important; 
         }}
         
         html, body {{ 
@@ -409,8 +395,8 @@ st.markdown(f"""
             box-sizing: border-box !important; 
             margin: 0 !important; 
             padding: 25px !important; 
-            border: 3px double #a61c1c !important; /* Elegant double border */
-            border-radius: 0px !important; /* Formal Square Border */
+            border: 3px double #a61c1c !important; 
+            border-radius: 0px !important; 
             background: #ffffff !important; 
             background-color: #ffffff !important; 
             page-break-inside: avoid !important; 
@@ -426,7 +412,7 @@ st.markdown(f"""
         .print-manifest-card * {{ 
             visibility: visible !important; 
             color: #000000 !important; 
-            background-color: #ffffff !important; 
+            background-color: transparent !important; 
             box-shadow: none !important; 
             text-shadow: none !important; 
         }}
@@ -435,7 +421,7 @@ st.markdown(f"""
             width: 100% !important; 
             display: table !important; 
             border-collapse: collapse !important; 
-            margin-top: 5px !important; 
+            margin-top: 10px !important; 
         }}
         
         .print-manifest-card tr {{ 
@@ -495,7 +481,6 @@ def calculate_mapped_index(df_cols, session_key, alternative_match_string):
             return idx
     return 0
 
-# URL Syncing for Refresh Page Lock Engine
 if st.session_state.logged_in:
     if time.time() - st.session_state.last_activity > SESSION_TIMEOUT:
         st.session_state.logged_in = False
@@ -661,28 +646,33 @@ def open_alert_manifest(alert_data):
     current_pkt_time = datetime.datetime.now(PKT_TZ).strftime('%Y-%m-%d %I:%M:%S %p')
         
     st.markdown(f"""
-        <div class="print-manifest-card" style="position: relative; background: #ffffff; border: 3px double #a61c1c; padding: 25px; font-family: 'Segoe UI', sans-serif; color: #000000; z-index: 1;">
-            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 65px; color: rgba(166, 28, 28, 0.06); font-weight: 900; white-space: nowrap; z-index: -1; pointer-events: none; text-transform: uppercase;">SHC Cell Lahore GPO</div>
-            <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 5px; margin-bottom: 5px;">
-                <img src="https://www.pakpost.gov.pk/images/New%20Logo%20PPO.jpg" style="height: 65px; margin-bottom: -5px;" alt="Pak Post Logo">
-                <h2 style="margin: 0; margin-bottom: -2px; color: #a61c1c; font-size: 22px; font-weight: 800; line-height: 1;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
-                <p style="margin: 0; color: #1e293b; font-size: 16px; font-weight: 700;">OFFICE OF THE CHIEF POSTMASTER LAHORE GPO</p>
-                <p style="margin: 3px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Patient Feedback & Medicine Delivery Audit Certificate</p>
+        <div class="print-manifest-card" style="background: #ffffff; border: 3px double #a61c1c; padding: 25px; font-family: 'Segoe UI', sans-serif; color: #000000; position: relative;">
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 70px; color: rgba(0, 0, 0, 0.04); font-weight: 800; white-space: nowrap; z-index: 0; pointer-events: none; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
+                SHC Cell Lahore GPO
             </div>
-            <table style="width: 100%; border-collapse: collapse; font-size: 15px; color: #000000;">
-                <tr><td style="padding: 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('patient_name', 'N/A')}</td></tr>
-                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">MRN Number:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('mrn_no', 'N/A')}</td></tr>
-                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Consignment ID (Article):</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: 700; color: #a61c1c;">{alert_data['article_id']}</td></tr>
-                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Contact Number:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{raw_phone if raw_phone else 'N/A'}</td></tr>
-                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Booking GPO Station:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('booking_office', 'N/A')}</td></tr>
-                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Mailing Address:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('address', 'N/A')}</td></tr>
-                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">EMTTS Tracking Status:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top;">{emtts_status_html}</td></tr>
-                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Verification Status:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{print_status_detail}</td></tr>
-            </table>
-            <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 8px; color: #000000;">
-                <div>
-                    <b>Verified By (Operator ID):</b> {print_operator}<br>
-                    <span style="font-size: 11px; color: #475569;">Timestamp: {current_pkt_time} (PKT)</span>
+            
+            <div style="position: relative; z-index: 2;">
+                <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 2px; margin-bottom: 2px;">
+                    <img src="https://www.pakpost.gov.pk/images/New%20Logo%20PPO.jpg" style="height: 55px; margin-bottom: 0px;" alt="Pak Post Logo">
+                    <h2 style="margin: 0; color: #a61c1c; font-size: 21px; font-weight: 800; line-height: 1;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
+                    <p style="margin: 2px 0 0 0; color: #1e293b; font-size: 15px; font-weight: 700;">OFFICE OF THE CHIEF POSTMASTER LAHORE GPO</p>
+                    <p style="margin: 2px 0 0 0; color: #475569; font-size: 12px; font-weight: 600;">Patient Feedback & Medicine Delivery Audit Certificate</p>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 15px; color: #000000; margin-top: 5px;">
+                    <tr><td style="padding: 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('patient_name', 'N/A')}</td></tr>
+                    <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">MRN Number:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('mrn_no', 'N/A')}</td></tr>
+                    <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Consignment ID (Article):</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: 700; color: #a61c1c;">{alert_data['article_id']}</td></tr>
+                    <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Contact Number:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{raw_phone if raw_phone else 'N/A'}</td></tr>
+                    <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Booking GPO Station:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('booking_office', 'N/A')}</td></tr>
+                    <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Mailing Address:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('address', 'N/A')}</td></tr>
+                    <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">EMTTS Tracking Status:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top;">{emtts_status_html}</td></tr>
+                    <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Verification Status:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{print_status_detail}</td></tr>
+                </table>
+                <div style="margin-top: 35px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 15px; color: #000000;">
+                    <div>
+                        <b>Verified By (Operator ID):</b> {print_operator}<br>
+                        <span style="font-size: 11px; color: #475569;">Timestamp: {current_pkt_time} (PKT)</span>
+                    </div>
                 </div>
              </div>
         </div>
@@ -711,7 +701,6 @@ def login_view():
                         try:
                             ud = supabase.table("app_users").select("*").eq("username", input_user.strip()).eq("password", input_pass.strip()).execute().data
                             if ud:
-                                # Insert detailed audit login logs into user_logins table
                                 try:
                                     supabase.table("user_logins").insert({
                                         "username": ud[0]["username"],
@@ -803,6 +792,7 @@ def ingestion_view():
             
             df = df.fillna("")
             df = df.replace(to_replace=r'^[Nn][Aa][Nn]$', value='', regex=True)
+            
             st.session_state[file_key] = df
         else: 
             df = st.session_state[file_key]
@@ -895,6 +885,7 @@ def ingestion_view():
             
             is_duplicate_in_db = uploaded_records_df["_dup_check_col_"].isin(existing_db_records) | (uploaded_records_df["_dup_check_col_"] == "")
             clean_unique_records = uploaded_records_df[~is_duplicate_in_db].copy()
+            
             clean_unique_records = clean_unique_records.drop_duplicates(subset=["_dup_check_col_"])
             
             if "_dup_check_col_" in clean_unique_records.columns:
@@ -913,18 +904,23 @@ def ingestion_view():
             try:
                 for i in range(0, total_records_to_send, chunk_size):
                     chunk = records_to_insert[i:i+chunk_size]
+                    
                     percentage_done = int(80 + (i / total_records_to_send) * 19)
                     status_progress_text.text(f"Synchronizing database stream: {i} of {total_records_to_send} records processed... ({percentage_done}% Complete)")
                     progress_bar_control.progress(percentage_done)
                     
-                    supabase.table("patient_deliveries").insert(chunk).execute()
+                    # Fix 4 applied: Gracefully skip duplicates to avoid db crash
+                    try:
+                        supabase.table("patient_deliveries").upsert(chunk, on_conflict=db_dup_col, ignore_duplicates=True).execute()
+                    except Exception:
+                        supabase.table("patient_deliveries").upsert(chunk, ignore_duplicates=True).execute()
                 
                 st.session_state["master_manifest_cache"] = None
                 
                 status_progress_text.empty()
                 progress_bar_control.empty()
                 ui_blocker.empty()
-                st.success(f"🟢 Success: File processed successfully! Out of {total_input_count} total records, {total_duplicates_cleared} duplicate entries were detected and removed using column '{excel_dup_col}'. The unique records ({len(records_to_insert)}) have been securely inserted into the 'patient_deliveries' table.")
+                st.success(f"🟢 Success: File processed successfully! Out of {total_input_count} total records, {total_duplicates_cleared} duplicate entries were detected and smoothly bypassed using column '{excel_dup_col}'. The unique records ({len(records_to_insert)}) have been securely inserted into the 'patient_deliveries' table.")
             except Exception as store_ex:
                 ui_blocker.empty()
                 st.error(f"Failed to synchronize database stream archive: {store_ex}")
@@ -977,7 +973,7 @@ def ingestion_view():
                     total_rows = len(df_match)
                     for i, row in df_match.iterrows():
                         perc = int(((i + 1) / total_rows) * 100)
-                        if i % 100 == 0 or perc == 100: 
+                        if i % 100 == 0 or perc == 100:
                             progress_bar.progress(perc)
                             status_text.text(f"Processing and matching records... {perc}% Completed")
                         
@@ -1295,29 +1291,35 @@ def communications_view():
 
                     current_pkt_time = datetime.datetime.now(PKT_TZ).strftime('%Y-%m-%d %I:%M:%S %p')
 
+                    # Design Fix 1 Applied for Spacing and Watermark
                     st.markdown(f"""
-                        <div class="print-manifest-card" style="position: relative; background: #ffffff; border: 3px double #a61c1c; padding: 25px; font-family: 'Segoe UI', sans-serif; color: #000000; z-index: 1;">
-                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 65px; color: rgba(166, 28, 28, 0.06); font-weight: 900; white-space: nowrap; z-index: -1; pointer-events: none; text-transform: uppercase;">SHC Cell Lahore GPO</div>
-                            <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 5px; margin-bottom: 5px;">
-                                <img src="https://www.pakpost.gov.pk/images/New%20Logo%20PPO.jpg" style="height: 65px; margin-bottom: -5px;" alt="Pak Post Logo">
-                                <h2 style="margin: 0; margin-bottom: -2px; color: #a61c1c; font-size: 22px; font-weight: 800; line-height: 1;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
-                                <p style="margin: 0; color: #1e293b; font-size: 16px; font-weight: 700;">OFFICE OF THE CHIEF POSTMASTER LAHORE GPO</p>
-                                <p style="margin: 3px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Quality Verification & Consignee Audit Certificate</p>
+                        <div class="print-manifest-card" style="background: #ffffff; border: 3px double #a61c1c; padding: 25px; font-family: 'Segoe UI', sans-serif; color: #000000; position: relative;">
+                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 70px; color: rgba(0, 0, 0, 0.04); font-weight: 800; white-space: nowrap; z-index: 0; pointer-events: none; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
+                                SHC Cell Lahore GPO
                             </div>
-                            <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #000000;">
-                                <tr><td style="padding: 8px 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['patient_name']}</td></tr>
-                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">MRN Number:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('mrn_no', 'N/A')}</td></tr>
-                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Consignment ID (Article):</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: 700; color: #a61c1c;">{target_profile['article_id']}</td></tr>
-                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Contact Number:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{raw_phone if raw_phone else 'N/A'}</td></tr>
-                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Booking GPO Station:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('booking_office', 'N/A')}</td></tr>
-                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Mailing Address:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['address']}</td></tr>
-                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">EMTTS Tracking Status:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top;">{emtts_status_html}</td></tr>
-                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Verification Status:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{print_status_detail}</td></tr>
-                            </table>
-                            <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 8px; color: #000000;">
-                                <div>
-                                    <b>Verified By (Operator ID):</b> {print_operator}<br>
-                                    <span style="font-size: 11px; color: #475569;">Timestamp: {current_pkt_time} (PKT)</span>
+                            
+                            <div style="position: relative; z-index: 2;">
+                                <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 2px; margin-bottom: 2px;">
+                                    <img src="https://www.pakpost.gov.pk/images/New%20Logo%20PPO.jpg" style="height: 55px; margin-bottom: 0px;" alt="Pak Post Logo">
+                                    <h2 style="margin: 0; color: #a61c1c; font-size: 21px; font-weight: 800; line-height: 1;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
+                                    <p style="margin: 2px 0 0 0; color: #1e293b; font-size: 15px; font-weight: 700;">OFFICE OF THE CHIEF POSTMASTER LAHORE GPO</p>
+                                    <p style="margin: 2px 0 0 0; color: #475569; font-size: 12px; font-weight: 600;">Quality Verification & Consignee Audit Certificate</p>
+                                </div>
+                                <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #000000; margin-top: 5px;">
+                                    <tr><td style="padding: 8px 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['patient_name']}</td></tr>
+                                    <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">MRN Number:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('mrn_no', 'N/A')}</td></tr>
+                                    <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Consignment ID (Article):</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: 700; color: #a61c1c;">{target_profile['article_id']}</td></tr>
+                                    <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Contact Number:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{raw_phone if raw_phone else 'N/A'}</td></tr>
+                                    <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Booking GPO Station:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('booking_office', 'N/A')}</td></tr>
+                                    <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Mailing Address:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['address']}</td></tr>
+                                    <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">EMTTS Tracking Status:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top;">{emtts_status_html}</td></tr>
+                                    <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Verification Status:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{print_status_detail}</td></tr>
+                                </table>
+                                <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 15px; color: #000000;">
+                                    <div>
+                                        <b>Verified By (Operator ID):</b> {print_operator}<br>
+                                        <span style="font-size: 11px; color: #475569;">Timestamp: {current_pkt_time} (PKT)</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1518,24 +1520,14 @@ def communications_view():
                                 payload_buffer["booking_office"] = target_profile["booking_office"]
                                 
                                 try:
-                                    # Fallback to article_id update if ID causes issues
-                                    match_id = target_profile.get("id")
-                                    match_article = target_profile.get("article_id")
-                                    
-                                    if match_id:
-                                        supabase.table("patient_deliveries").update(payload_buffer).eq("id", match_id).execute()
-                                    elif match_article:
-                                        supabase.table("patient_deliveries").update(payload_buffer).eq("article_id", match_article).execute()
-                                    else:
-                                        supabase.table("patient_deliveries").insert(payload_buffer).execute()
-                                        
+                                    # Fix 3 Applied: Forced UPDATE based on article_id to avoid crash
+                                    supabase.table("patient_deliveries").update(payload_buffer).eq("article_id", target_profile["article_id"]).execute()
                                     st.success("Updated securely with your operator identity stamp!")
                                     st.session_state.selected_profile_index += 1
                                     save_operator_state()
                                     time.sleep(0.5)
                                     st.rerun()
-                                except Exception as e: 
-                                    st.error(f"Sync Error: Apka record database mein upload nahi hua (Column mismatch ya connection issue). Detail: {e}")
+                                except Exception as e: st.error(f"Sync error: {e}")
                 else:
                     st.info("ℹ️ Select 'Yes' above to unlock the patient questionnaire for re-verification.")
 
@@ -1586,40 +1578,6 @@ def export_center_view():
         else: st.warning("Cloud database nodes are currently empty.")
     except Exception as err: st.error(f"Failed to compile export ledger sheets: {err}")
 
-# === NEW ADDITION: SIDEBAR VERIFICATION COUNTS ===
-if st.session_state.logged_in:
-    with st.sidebar:
-        try:
-            today_date = datetime.datetime.now(PKT_TZ).date()
-            todays_records = supabase.table("patient_deliveries").select("operator_stamp, created_at").neq("status", "Pending").execute().data
-            total_today = 0
-            my_today = 0
-            for r in todays_records:
-                if r.get('created_at'):
-                    try:
-                        dt = datetime.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00')).date()
-                        if dt == today_date:
-                            op = r.get('operator_stamp')
-                            if op:
-                                total_today += 1
-                                if op == st.session_state.full_name:
-                                    my_today += 1
-                    except: pass
-            
-            display_count = total_today if st.session_state.role == "admin" else my_today
-            subtitle_text = "Total Verifications Today" if st.session_state.role == "admin" else "My Verifications Today"
-            
-            st.markdown(f"""
-            <div style="padding: 15px; background: rgba(212,175,55,0.08); border-radius: 8px; border: 1px solid rgba(212,175,55,0.3); margin-top: 10px; margin-bottom: 10px;">
-                <div style="color: #cbd5e1; font-size: 13px; font-weight: 600;">📅 TODAY'S VERIFICATIONS</div>
-                <div style="color: #d4af37; font-size: 28px; font-weight: 800; margin-top: 5px;">{display_count}</div>
-                <div style="color: #94a3b8; font-size: 11px; margin-top: 3px;">{subtitle_text}</div>
-            </div>
-            """, unsafe_allow_html=True)
-        except Exception:
-            pass
-# ==================================================
-
 # Routing Engine setup
 def is_default_page(title_keyword):
     curr = st.session_state.get("current_navigation_tab")
@@ -1642,6 +1600,24 @@ else:
             st.Page(communications_view, title="Communications Desk", icon="📞", default=is_default_page("Communications Desk")),
             st.Page(export_center_view, title="My Exports & Backup", icon="📥", default=is_default_page("Export Center"))
         ]
+
+# Fix 2 Applied: Sidebar verifications daily counter injected smoothly before titles
+if st.session_state.logged_in:
+    with st.sidebar:
+        st.markdown("<div style='border-top: 2px solid rgba(212, 175, 55, 0.4); margin: 10px 0;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='color: #d4af37; font-weight: bold; font-size: 15px; margin-bottom: 5px;'>📊 Total Verifications</div>", unsafe_allow_html=True)
+        try:
+            if st.session_state.role == "admin":
+                admin_count_res = supabase.table("patient_deliveries").select("id", count="exact").neq("status", "Pending").execute()
+                tot = admin_count_res.count if hasattr(admin_count_res, 'count') and admin_count_res.count else len(admin_count_res.data)
+                st.markdown(f"<div style='background: rgba(255,255,255,0.05); border: 1px solid rgba(212, 175, 55, 0.5); padding: 10px; border-radius: 8px; text-align: center; font-size: 20px; font-weight: 800; color: #ffffff;'>Total Network Calls: <br><span style='color: #39ff14; font-size: 26px;'>{tot}</span></div>", unsafe_allow_html=True)
+            else:
+                staff_count_res = supabase.table("patient_deliveries").select("id", count="exact").eq("operator_stamp", st.session_state.full_name).neq("status", "Pending").execute()
+                tot = staff_count_res.count if hasattr(staff_count_res, 'count') and staff_count_res.count else len(staff_count_res.data)
+                st.markdown(f"<div style='background: rgba(255,255,255,0.05); border: 1px solid rgba(212, 175, 55, 0.5); padding: 10px; border-radius: 8px; text-align: center; font-size: 20px; font-weight: 800; color: #ffffff;'>My Verifications: <br><span style='color: #39ff14; font-size: 26px;'>{tot}</span></div>", unsafe_allow_html=True)
+        except Exception:
+            pass
+        st.markdown("<div style='border-top: 2px solid rgba(212, 175, 55, 0.4); margin: 10px 0 20px 0;'></div>", unsafe_allow_html=True)
 
 selected_navigation_route = st.navigation(pages_to_display, position="hidden")
 
@@ -1697,26 +1673,5 @@ if st.session_state.logged_in and st.session_state.role == "admin":
                                 st.rerun()
                     
                     st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
-            
-        resolved_or_history_alerts = [a for a in alert_records_query if a.get("extra_money_charged") in ["Yes (Resolved)", "Under Enquiry"]]
-        if resolved_or_history_alerts:
-            with st.expander("📁 View & Download Alert History Logs (Backup)"):
-                st.markdown("""
-                <div class="alert-3d-card" style="border-left-color: #d4af37; background: linear-gradient(145deg, #ffffff, #fdfdfa);">
-                    <h4 style="margin-top:0; color:#1e293b;">📥 Download Historical Alert Records</h4>
-                    <p style="color:#64748b; font-size:14px; margin-bottom: 0;">Download logs for all previous alerts (Resolved and Under Enquiry cases).</p>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                hc1, hc2 = st.columns(2)
-                with hc1: d_from = st.date_input("From Date", datetime.date.today() - datetime.timedelta(days=7), key="dfrom_alert")
-                with hc2: d_to = st.date_input("To Date", datetime.date.today(), key="dto_alert")
-                
-                if st.button("📥 Download Alert Logs", use_container_width=True):
-                    history_logs = []
-                    for a in resolved_or_history_alerts:
-                        history_logs.append(a)
-                    # Implementation for downloading logs can be continued here
-                    pass
-    except Exception as err:
+    except Exception as e:
         pass
