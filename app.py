@@ -20,6 +20,17 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# 🔌 Initialize Database Connection First (Fixed: Solves user_logins database insert failure on auto-login)
+@st.cache_resource
+def init_connection():
+    return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
+
+try:
+    supabase: Client = init_connection()
+except Exception as e:
+    st.error(f"Database core failure: {e}")
+    st.stop()
+
 # 🔄 URL HYDRATION ENGINE (Fixed for Refresh Lock)
 SESSION_TIMEOUT = 30 * 60  
 
@@ -38,7 +49,7 @@ if not st.session_state.logged_in and "usr" in st.query_params:
             if "tab" in st.query_params:
                 st.session_state.current_navigation_tab = str(st.query_params.get("tab"))
                 
-            # Log auto-login credentials to user_logins table
+            # Log auto-login credentials to user_logins table (Now works perfectly)
             try:
                 supabase.table("user_logins").insert({
                     "username": st.session_state.username,
@@ -456,16 +467,6 @@ st.markdown(f"""
     }}
     </style>
 """, unsafe_allow_html=True)
-
-@st.cache_resource
-def init_connection():
-    return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
-
-try:
-    supabase: Client = init_connection()
-except Exception as e:
-    st.error(f"Database core failure: {e}")
-    st.stop()
 
 def save_operator_state():
     if st.session_state.logged_in and st.session_state.username:
@@ -1049,10 +1050,11 @@ def communications_view():
     st.session_state.current_navigation_tab = "📞 Outbound Communications Desk"
     st.markdown("### 📞 Outbound Communications Desk")
     
-    query_date = st.date_input("Filter Manifest Records by Booking Date (Overridden by Search):", datetime.date.today())
+    # Empty Date Selection (Defaults to None and prompts user)
+    query_date = st.date_input("Filter Manifest Records by Booking Date (Overridden by Search):", value=None, placeholder="Select Date")
     
     with st.spinner("Processing cloud storage lookup and database audit..."):
-        # Request 2: Bandwidth Egress Optimizer using cache
+        # Bandwidth Egress Optimizer using cache
         if "master_manifest_cache" not in st.session_state or st.session_state["master_manifest_cache"] is None:
             try:
                 existing_master_bytes = supabase.storage.from_("manifests").download("master_manifest_store.csv")
@@ -1082,19 +1084,19 @@ def communications_view():
         unique_offices = sorted(list(set([str(r.get('booking_office', 'Lahore GPO')).strip() for r in all_master_recs])))
         unique_offices.insert(0, "All Offices")
         
-        # 4-Column Header including egress refresh controller button (Request 2)
-        filter_col1, filter_col2, filter_col3, filter_col4 = st.columns([1.5, 1.5, 1.5, 1.2])
+        # 3-Column Header layout (Sync Database button completely removed)
+        filter_col1, filter_col2, filter_col3 = st.columns([2.0, 2.0, 2.0])
         with filter_col1: selected_office = st.selectbox("🏥 Filter by Booking Office:", unique_offices)
         with filter_col2: search_category = st.selectbox("🔎 Search By Heading:", ["All Fields"] + dynamic_headings)
         with filter_col3: search_term = st.text_input("Enter detail to search (Searches Entire Backend Data):", placeholder="Type patient detail here...").strip().lower()
-        with filter_col4:
-            st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-            if st.button("🔄 Sync Database", use_container_width=True, help="Force refresh local cache from cloud storage"):
-                st.session_state["master_manifest_cache"] = None
-                st.rerun()
         
-        if search_term: base_recs = all_master_recs
-        else: base_recs = [r for r in all_master_recs if r.get("booking_date") == str(query_date)]
+        # Performance booster: If date is empty and no search text is entered, base_recs stays empty (Prevents heavy data load)
+        if search_term: 
+            base_recs = all_master_recs
+        elif query_date is not None: 
+            base_recs = [r for r in all_master_recs if r.get("booking_date") == str(query_date)]
+        else: 
+            base_recs = []
             
         filtered_by_office = base_recs if selected_office == "All Offices" else [r for r in base_recs if str(r.get('booking_office')).strip() == selected_office]
         
@@ -1103,9 +1105,14 @@ def communications_view():
                 final_recs = [r for r in filtered_by_office if any(search_term in str(val).lower() for val in r.values())]
             else:
                 final_recs = [r for r in filtered_by_office if search_term in str(r.get(search_category, '')).lower()]
-        else: final_recs = filtered_by_office
+        else: 
+            final_recs = filtered_by_office
 
-        if not final_recs: st.warning("No records matched your filters or search.")
+        if not final_recs: 
+            if query_date is None and not search_term:
+                st.info("👋 Welcome! Please select a Booking Date above or type in the Search Bar to view and process records instantly.")
+            else:
+                st.warning("No records matched your filters or search.")
         else:
             if search_term and len(final_recs) > 1:
                 st.markdown("##### 📑 Multiple Matches Detected")
@@ -1260,7 +1267,8 @@ def communications_view():
                         use_mapped = (active_data_mode == "Fetch Snipped Data (Mapped Mode)")
                         
                         last_entry = history_list[-1]
-                        status_val = map_status(last_entry["status"]) if use_mapped else last_entry["status"]
+                        status_val = map_status(last_entry["status"]) if use_mapped \
+                            else last_entry["status"]
                         
                         print_historical_anomaly = any("delivered" in h["status"].lower() or "return" in h["status"].lower() or "rts" in h["status"].lower() for h in history_list[:-1])
                         last_status_lower_print = last_entry["status"].lower()
@@ -1639,7 +1647,7 @@ if st.session_state.logged_in and st.session_state.role == "admin":
                             with st.spinner("..."):
                                 supabase.table("patient_deliveries").update({"extra_money_charged": "Yes (Resolved)"}).eq("id", alert["id"]).execute()
                                 time.sleep(0.5)
-                                st.rerun()
+                                    st.rerun()
                     
                     st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
             
@@ -1716,60 +1724,81 @@ if st.session_state.logged_in:
                         margin-bottom: 15px !important;
                     }}
                     
-                    /* Machine Label */
-                    .machine-label, .machine-label * {{
-                        color: #94a3b8 !important;
-                        font-size: 11px !important;
-                        font-weight: 700 !important;
-                        text-transform: uppercase !important;
-                        letter-spacing: 1px !important;
+                    /* Digital Glowing LED Text */
+                    .led-glowing-count {{
+                        font-family: 'Courier New', Courier, monospace !important;
+                        font-size: 32px !important;
+                        font-weight: 900 !important;
+                        color: #ff3333 !important; /* Pure Red LED */
+                        text-shadow: 0 0 5px #ff3333, 
+                                     0 0 15px #ff0000, 
+                                     0 0 25px #ff0000 !important; /* Heavy LED Glow */
+                        letter-spacing: 2px;
                     }}
                     
-                    /* Bulletproof Shiny Red Digital Count */
-                    .machine-count, .machine-count * {{
-                        color: #ffb703 !important; /* Universal Override */
-                        font-size: 24px !important; 
-                        font-weight: 900 !important;
-                        font-family: 'Courier New', Courier, monospace !important; /* Digital Display Look */
-                        text-shadow: 0 0 10px #ff3333, 0 0 20px rgba(255, 51, 51, 0.6) !important;
-                        margin-top: 5px !important;
-                        display: block !important;
+                    .led-panel-label {{
+                        color: #888888 !important;
+                        font-size: 11px !important;
+                        font-weight: bold !important;
+                        text-transform: uppercase !important;
+                        letter-spacing: 1px;
+                        margin-bottom: 2px;
                     }}
                 </style>
-                
                 <div class='machine-box'>
-                    <div class='machine-label'>{count_label}</div>
-                    <span class='machine-count'>{today_count}</span>
+                    <div class='led-panel-label'>{count_label}</div>
+                    <div class='led-glowing-count'>{today_count:03d}</div>
                 </div>
             """, unsafe_allow_html=True)
-            
-            if st.button("📅 View Date-wise Stats", use_container_width=True):
-                user_stats_dialog()
+        except Exception:
+            pass
+
+        st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
+        
+        # Crystal Navigation Layout
+        if st.session_state.role == "admin":
+            if st.button("📊 Ingestion Engine", use_container_width=True):
+                st.session_state.current_navigation_tab = "📊 Administrative Ingestion Engine"
+                save_operator_state()
+                st.rerun()
+            if st.button("👥 Operator Matrix", use_container_width=True):
+                st.session_state.current_navigation_tab = "👥 Operator Matrix & Security Audit Logs"
+                save_operator_state()
+                st.rerun()
                 
-        except Exception: pass
-        
-        st.markdown("<div class='password-btn-anchor'></div>", unsafe_allow_html=True)
-        if st.button("🔐 Change User Password", use_container_width=True): change_password_dialog()
-        
-        if not st.session_state.show_recovery_prompt:
-            st.markdown("<br><hr style='border-top: 2px solid rgba(212,175,55,0.4); margin: 10px 0;'><br>", unsafe_allow_html=True)
-            st.markdown("<div style='font-size: 15px; font-weight: 800; color: #d4af37; margin-bottom: 12px; letter-spacing: 1.5px;'>📂 SYSTEM NAVIGATION</div>", unsafe_allow_html=True)
+        if st.button("📞 Communications Desk", use_container_width=True):
+            st.session_state.current_navigation_tab = "📞 Outbound Communications Desk"
+            save_operator_state()
+            st.rerun()
             
-            for pg in pages_to_display:
-                button_label = f"▶️ **{pg.icon} {pg.title}**" if pg.title == selected_navigation_route.title else f"{pg.icon} {pg.title}"
-                if st.button(button_label, use_container_width=True, key=f"nav_btn_{pg.title}"): 
-                    if pg.title != selected_navigation_route.title:
-                        st.session_state.current_navigation_tab = pg.title
-                        st.query_params["tab"] = pg.title
-                        st.switch_page(pg)
-                    
-        st.markdown("<br><hr style='border-top: 2px solid rgba(212,175,55,0.4); margin: 10px 0;'><br>", unsafe_allow_html=True)
+        if st.button("📥 Reports Export Center", use_container_width=True):
+            st.session_state.current_navigation_tab = "📥 Secure Reports Export Center"
+            save_operator_state()
+            st.rerun()
+
+        st.markdown("<br><hr style='border-top: 1px solid rgba(212,175,55,0.3);'><br>", unsafe_allow_html=True)
         
+        # Glowing Password Action
+        st.markdown("<div class='password-btn-anchor'></div>", unsafe_allow_html=True)
+        if st.button("🔐 CHANGE MY PASSWORD", use_container_width=True):
+            change_password_dialog()
+            
+        st.markdown("<div style='margin-top: 12px;'></div>", unsafe_allow_html=True)
+        
+        # Terminate Action
         st.markdown("<div class='terminate-btn-anchor'></div>", unsafe_allow_html=True)
-        if st.button("Terminate Session 🚪", use_container_width=True):
-            with st.spinner("Processing session termination..."):
+        if st.button("⚠️ TERMINATE CURRENT SESSION", use_container_width=True):
+            with st.spinner("Locking Terminal..."):
                 st.session_state.logged_in = False
+                st.session_state.username = ""
+                st.session_state.full_name = ""
+                st.session_state.role = ""
                 st.query_params.clear()
+                time.sleep(1)
                 st.rerun()
 
-selected_navigation_route.run()
+# Run Router Routing Engine
+try:
+    selected_navigation_route.run()
+except Exception as e:
+    pass
