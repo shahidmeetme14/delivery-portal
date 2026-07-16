@@ -8,72 +8,9 @@ import requests
 import urllib.request
 from bs4 import BeautifulSoup
 import streamlit.components.v1 as components
-import os
-import sqlite3
 
 # 🇵🇰 Pakistan Standard Time (PKT) Setup - No external libraries needed
 PKT_TZ = datetime.timezone(datetime.timedelta(hours=5))
-
-# 📁 Local Database Constants & Directories
-LOCAL_DB_DIR = "D:\\SHC Database\\"
-LOCAL_DB_PATH = os.path.join(LOCAL_DB_DIR, "shc_local.db")
-LOCAL_LOG_PATH = os.path.join(LOCAL_DB_DIR, "app_logs.txt")
-
-# 📝 Safe Local Logging Function
-def log_local(message):
-    try:
-        os.makedirs(LOCAL_DB_DIR, exist_ok=True)
-        timestamp = datetime.datetime.now(PKT_TZ).strftime('%Y-%m-%d %I:%M:%S %p')
-        with open(LOCAL_LOG_PATH, "a", encoding="utf-8") as f:
-            f.write(f"[{timestamp}] {message}\n")
-    except Exception:
-        pass
-
-# 🗄️ SQLite Auto-Schema Creation (Identical to Supabase schema)
-def init_local_db():
-    try:
-        os.makedirs(LOCAL_DB_DIR, exist_ok=True)
-        conn = sqlite3.connect(LOCAL_DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS patient_deliveries (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            transaction_id TEXT,
-            article_id TEXT,
-            patient_name TEXT,
-            phone_number TEXT,
-            booking_date TEXT,
-            address TEXT,
-            patient_city TEXT,
-            mrn_no TEXT,
-            booking_office TEXT,
-            status TEXT DEFAULT 'Pending',
-            operator_stamp TEXT,
-            delivery_date TEXT,
-            received_mode TEXT,
-            extra_money_charged TEXT,
-            postman_issue_type TEXT,
-            extra_money_amount TEXT,
-            postman_name TEXT,
-            postman_phone TEXT,
-            post_office_name TEXT,
-            updated_address TEXT,
-            postman_contacted TEXT,
-            not_received_reason TEXT,
-            issue_reason TEXT,
-            contact_status TEXT,
-            emtts_conflict TEXT,
-            created_at TEXT
-        );
-        """)
-        conn.commit()
-        conn.close()
-        log_local("Local database successfully connected/initialized.")
-    except Exception as e:
-        log_local(f"Local database initialization failed: {str(e)}")
-
-# Initialize Local Database on Application Start
-init_local_db()
 
 # 🎛️ Page Structural Settings
 st.set_page_config(
@@ -88,14 +25,6 @@ SESSION_TIMEOUT = 30 * 60
 
 if "logged_in" not in st.session_state: 
     st.session_state.logged_in = False
-
-# Try initializing connection with Supabase smoothly
-try:
-    supabase: Client = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
-except Exception as e:
-    log_local(f"Database connection setup failed: {str(e)}")
-    st.error("Database core failure: Connection issue or secrets missing.")
-    st.stop()
 
 if not st.session_state.logged_in and "usr" in st.query_params:
     try:
@@ -429,7 +358,7 @@ st.markdown(f"""
     section[data-testid="stSidebar"] .sb-privilege-label {{ margin-top: 10px; color: #cbd5e1 !important; font-size: 14px; }}
     section[data-testid="stSidebar"] .sb-privilege-label span {{ color: #39ff14 !important; font-weight: bold !important; text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14 !important; }}
     
-    /* 🖨️ Absolute Print Media Optimization (Fully Forced on Single Page A4 Portrait with Watermark) */
+    /* 🖨️ Absolute Print Media Optimization (Fully Forced on Single Page A4 Portrait) */
     @media print {{
         @page {{ 
             size: A4 portrait !important; 
@@ -493,27 +422,10 @@ st.markdown(f"""
             overflow: hidden !important;
         }}
 
-        /* Print-specific Watermark styling that won't overlap content */
-        .print-manifest-card::before {{
-            content: "SHC Cell Lahore GPO" !important;
-            position: absolute !important;
-            top: 55% !important;
-            left: 50% !important;
-            transform: translate(-50%, -50%) rotate(-30deg) !important;
-            font-size: 52px !important;
-            font-weight: 900 !important;
-            color: rgba(0, 0, 0, 0.045) !important; /* Extremely faint but legible watermark */
-            white-space: nowrap !important;
-            pointer-events: none !important;
-            z-index: -1 !important;
-            text-transform: uppercase !important;
-            font-family: 'Segoe UI', sans-serif !important;
-        }}
-
         .print-manifest-card * {{ 
             visibility: visible !important; 
             color: #000000 !important; 
-            background-color: transparent !important; 
+            background-color: #ffffff !important; 
             box-shadow: none !important; 
             text-shadow: none !important; 
         }}
@@ -522,7 +434,7 @@ st.markdown(f"""
             width: 100% !important; 
             display: table !important; 
             border-collapse: collapse !important; 
-            margin-top: 5px !important; /* Reduced margin to push content upward */
+            margin-top: 15px !important; 
         }}
         
         .print-manifest-card tr {{ 
@@ -532,7 +444,7 @@ st.markdown(f"""
         
         .print-manifest-card td, .print-manifest-card th {{ 
             display: table-cell !important; 
-            padding: 6px 8px !important; /* Slightly tighter padding to save spaces */
+            padding: 8px 10px !important; 
             font-size: 14px !important; 
             color: #000000 !important; 
             border-bottom: 1px solid #cbd5e1 !important; 
@@ -545,38 +457,15 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# 🔎 Searching local SQLite records securely
-def search_local_records(search_term, category="All Fields", office="All Offices"):
-    try:
-        if not os.path.exists(LOCAL_DB_PATH):
-            return []
-        conn = sqlite3.connect(LOCAL_DB_PATH)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        
-        query = "SELECT * FROM patient_deliveries WHERE 1=1"
-        params = []
-        
-        if search_term:
-            if category == "All Fields":
-                query += " AND (patient_name LIKE ? OR article_id LIKE ? OR mrn_no LIKE ? OR phone_number LIKE ? OR transaction_id LIKE ?)"
-                term = f"%{search_term}%"
-                params.extend([term, term, term, term, term])
-            else:
-                query += f" AND {category} LIKE ?"
-                params.append(f"%{search_term}%")
-                
-        if office != "All Offices":
-            query += " AND booking_office = ?"
-            params.append(office)
-            
-        cursor.execute(query, params)
-        rows = cursor.fetchall()
-        conn.close()
-        return [dict(r) for r in rows]
-    except Exception as e:
-        log_local(f"Local database search failure: {str(e)}")
-        return []
+@st.cache_resource
+def init_connection():
+    return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
+
+try:
+    supabase: Client = init_connection()
+except Exception as e:
+    st.error(f"Database core failure: {e}")
+    st.stop()
 
 def save_operator_state():
     if st.session_state.logged_in and st.session_state.username:
@@ -586,10 +475,8 @@ def save_operator_state():
             "last_index": st.session_state.selected_profile_index,
             "updated_at": datetime.datetime.now(PKT_TZ).isoformat()
         }
-        try: 
-            supabase.table("operator_sessions").upsert(state_payload, on_conflict="username").execute()
-        except: 
-            pass
+        try: supabase.table("operator_sessions").upsert(state_payload, on_conflict="username").execute()
+        except: pass
 
 def fetch_operator_state(username):
     try:
@@ -640,7 +527,7 @@ def fetch_live_emtts_status(article_id):
     url = f"https://ep.gov.pk/emtts/EPTrack_Live.aspx?ArticleIDz={article_id.strip()}"
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     try:
-        with urllib.request.urlopen(req, timeout=12.0) as response:
+        with urllib.request.urlopen(req, timeout=20.0) as response:
             html = response.read().decode('utf-8', errors='ignore')
             soup = BeautifulSoup(html, 'html.parser')
             mrn = soup.find(id="lblMRNNumber").text.strip() if soup.find(id="lblMRNNumber") else ""
@@ -774,23 +661,23 @@ def open_alert_manifest(alert_data):
         
     st.markdown(f"""
         <div class="print-manifest-card" style="background: #ffffff; border: 3px double #a61c1c; padding: 25px; font-family: 'Segoe UI', sans-serif; color: #000000;">
-            <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 2px; margin-bottom: 5px;">
-                <img src="https://www.pakpost.gov.pk/images/New%20Logo%20PPO.jpg" style="height: 50px; margin-bottom: 2px;" alt="Pak Post Logo">
-                <h2 style="margin: 0; color: #a61c1c; font-size: 20px; font-weight: 800; line-height: 1.1;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
-                <p style="margin: 2px 0 0 0; color: #1e293b; font-size: 14px; font-weight: 700;">OFFICE OF THE CHIEF POSTMASTER LAHORE GPO</p>
-                <p style="margin: 1px 0 0 0; color: #475569; font-size: 11px; font-weight: 600;">Patient Feedback & Medicine Delivery Audit Certificate</p>
+            <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 5px; margin-bottom: 10px;">
+                <img src="https://www.pakpost.gov.pk/images/New%20Logo%20PPO.jpg" style="height: 65px; margin-bottom: 5px;" alt="Pak Post Logo">
+                <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
+                <p style="margin: 3px 0 0 0; color: #1e293b; font-size: 16px; font-weight: 700;">OFFICE OF THE CHIEF POSTMASTER LAHORE GPO</p>
+                <p style="margin: 3px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Patient Feedback & Medicine Delivery Audit Certificate</p>
             </div>
-            <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #000000; margin-top: 5px;">
-                <tr><td style="padding: 6px 8px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td><td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('patient_name', 'N/A')}</td></tr>
-                <tr><td style="padding: 6px 8px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">MRN Number:</td><td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('mrn_no', 'N/A')}</td></tr>
-                <tr><td style="padding: 6px 8px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Consignment ID (Article):</td><td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: 700; color: #a61c1c;">{alert_data['article_id']}</td></tr>
-                <tr><td style="padding: 6px 8px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Contact Number:</td><td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0;">{raw_phone if raw_phone else 'N/A'}</td></tr>
-                <tr><td style="padding: 6px 8px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Booking GPO Station:</td><td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('booking_office', 'N/A')}</td></tr>
-                <tr><td style="padding: 6px 8px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Mailing Address:</td><td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('address', 'N/A')}</td></tr>
-                <tr><td style="padding: 6px 8px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">EMTTS Tracking Status:</td><td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; vertical-align: top;">{emtts_status_html}</td></tr>
-                <tr><td style="padding: 6px 8px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Verification Status:</td><td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0;">{print_status_detail}</td></tr>
+            <table style="width: 100%; border-collapse: collapse; font-size: 15px; color: #000000;">
+                <tr><td style="padding: 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('patient_name', 'N/A')}</td></tr>
+                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">MRN Number:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('mrn_no', 'N/A')}</td></tr>
+                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Consignment ID (Article):</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: 700; color: #a61c1c;">{alert_data['article_id']}</td></tr>
+                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Contact Number:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{raw_phone if raw_phone else 'N/A'}</td></tr>
+                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Booking GPO Station:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('booking_office', 'N/A')}</td></tr>
+                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Mailing Address:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('address', 'N/A')}</td></tr>
+                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">EMTTS Tracking Status:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top;">{emtts_status_html}</td></tr>
+                <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Verification Status:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{print_status_detail}</td></tr>
             </table>
-            <div style="margin-top: 25px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 15px; color: #000000;">
+            <div style="margin-top: 35px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 15px; color: #000000;">
                 <div>
                     <b>Verified By (Operator ID):</b> {print_operator}<br>
                     <span style="font-size: 11px; color: #475569;">Timestamp: {current_pkt_time} (PKT)</span>
@@ -822,7 +709,7 @@ def login_view():
                         try:
                             ud = supabase.table("app_users").select("*").eq("username", input_user.strip()).eq("password", input_pass.strip()).execute().data
                             if ud:
-                                # Insert detailed audit login logs into user_logins table
+                                # Insert detailed audit login logs into user_logins table (Request 3)
                                 try:
                                     supabase.table("user_logins").insert({
                                         "username": ud[0]["username"],
@@ -909,29 +796,33 @@ def ingestion_view():
     if source_file is not None:
         file_key = f"cached_df_{source_file.name}_{source_file.size}"
         if file_key not in st.session_state:
+            # File ko load karte waqt dtype=str lagaya hai aur NaN ko khali string se fill kar diya hai
             if source_file.name.endswith('.xlsx'):
                 df = pd.read_excel(source_file, dtype=str)
             else:
                 df = pd.read_csv(source_file, low_memory=False, dtype=str)
             
+            # 🛠️ ERROR KA ILAJ: Saari 'nan' ya empty values ko safe khali strings me badlein
             df = df.fillna("")
+            # Agar 'nan' string me convert ho chuka ho, usko bhi normal blank karein
             df = df.replace(to_replace=r'^[Nn][Aa][Nn]$', value='', regex=True)
+            
             st.session_state[file_key] = df
         else: 
             df = st.session_state[file_key]
         
+        # 1. Supabase se dynamic columns fetch karna (Match Dropdown ke liye)
         db_cols = []
         try:
-            # Optimized egress selection
-            temp_res = supabase.table("patient_deliveries").select("id").limit(1).execute()
+            temp_res = supabase.table("patient_deliveries").select("*").limit(1).execute()
             if temp_res.data:
-                db_cols = ["id", "transaction_id", "article_id", "patient_name", "phone_number", "booking_date", "address", "patient_city", "mrn_no", "booking_office", "status", "created_at"]
+                db_cols = list(temp_res.data[0].keys())
             else:
                 db_cols = ["transaction_id", "article_id", "patient_name", "phone_number", "booking_date", "address", "patient_city", "mrn_no", "booking_office", "status"]
         except Exception:
             db_cols = ["transaction_id", "article_id", "patient_name", "phone_number", "booking_date", "address", "patient_city", "mrn_no", "booking_office", "status"]
 
-        # Dropdowns mapping
+        # Dropdowns
         mc1, mc2, mc3 = st.columns(3)
         with mc1:
             c_article = st.selectbox("Article ID Column:", df.columns, index=calculate_mapped_index(df.columns, "map_article", "Article ID"))
@@ -948,22 +839,16 @@ def ingestion_view():
             c_dup = st.selectbox("Duplication Log Column:", df.columns, index=calculate_mapped_index(df.columns, "map_dup", "Duplicate"))
 
         st.markdown("---")
-        st.markdown("#### 💾 Select Storage Destination (Exclusive Only)")
-        storage_destination = st.radio(
-            "Where should this uploaded data be stored? (Data will be stored in ONLY ONE selected destination)",
-            ["Local Database", "Supabase"],
-            index=1,
-            key="ingest_storage_destination_sel"
-        )
-
         st.markdown("#### ⚙️ Dynamic Unique Key & Deduplication Selection")
         dup_col1, dup_col2 = st.columns(2)
         with dup_col1:
+            # User se check krwana ke kis column se Excel ke andar duplication chk krni hai (default to Transaction No if found)
             excel_dup_col = st.selectbox("📁 Select Excel Column for Unique Duplication Check:", df.columns, index=df.columns.get_loc(c_tx) if c_tx in df.columns else 0)
         with dup_col2:
-            db_dup_col = st.selectbox("🗄️ Match with Database Table Column (Checks BOTH Cloud & Local):", db_cols, index=db_cols.index("transaction_id") if "transaction_id" in db_cols else (db_cols.index("article_id") if "article_id" in db_cols else 0))
+            # User se select krwana ke wo table ke kis column se match ho
+            db_dup_col = st.selectbox("🗄️ Match with Supabase Database Table Column:", db_cols, index=db_cols.index("transaction_id") if "transaction_id" in db_cols else (db_cols.index("article_id") if "article_id" in db_cols else 0))
 
-        if st.button("🚀 Push Verified Records to Selected Database", use_container_width=True):
+        if st.button("🚀 Push Verified Records to Cloud Database Table", use_container_width=True):
             ui_blocker = st.empty()
             ui_blocker.markdown("<style> [data-testid='stSidebar'], [data-testid='stHeader'] { pointer-events: none !important; opacity: 0.6 !important; filter: blur(0.5px) !important; } </style>", unsafe_allow_html=True)
             
@@ -973,46 +858,30 @@ def ingestion_view():
             status_progress_text.text("Connecting with database nodes... (15% Complete)")
             progress_bar_control.progress(15)
             
-            # Extract clean unique search identifiers from uploaded document
+            # 🛠️ SMART DUPLICATION CHECK FOR LARGE DATABASE USING SELECTED COLUMN
             raw_unique_vals = df[excel_dup_col].astype(str).str.strip().unique().tolist()
             raw_unique_vals = [x for x in raw_unique_vals if x not in ["", "nan", "NaN", "None"]]
             
-            # Combine duplicate indexes from BOTH databases
-            existing_records_set = set()
-            
-            # 1. Fetch from Supabase (Egress optimized - select only unique column)
-            status_progress_text.text(f"Querying Cloud Supabase for duplicates against column '{db_dup_col}'... (30% Complete)")
+            existing_db_records = set()
+            status_progress_text.text(f"Checking cloud database for duplicates against column '{db_dup_col}'... (30% Complete)")
             progress_bar_control.progress(30)
-            check_batch_size = 1000
+            
+            # 10,000 ke sub-batches me check karenge taake server overload na ho
+            check_batch_size = 10000
             for k in range(0, len(raw_unique_vals), check_batch_size):
                 sub_batch = raw_unique_vals[k:k+check_batch_size]
                 try:
                     db_res = supabase.table("patient_deliveries").select(db_dup_col).in_(db_dup_col, sub_batch).execute().data
                     for r in db_res:
-                        if db_dup_col in r and r[db_dup_col]:
-                            existing_records_set.add(str(r[db_dup_col]).strip().lower())
+                        if db_dup_col in r:
+                            existing_db_records.add(str(r[db_dup_col]).strip())
                 except Exception as e:
-                    log_local(f"Cloud duplicate scan failed block: {str(e)}")
-                    
-            # 2. Fetch from Local Database
-            status_progress_text.text(f"Querying Local Database for duplicates against column '{db_dup_col}'... (45% Complete)")
-            progress_bar_control.progress(45)
-            try:
-                conn = sqlite3.connect(LOCAL_DB_PATH)
-                cursor = conn.cursor()
-                cursor.execute(f"SELECT {db_dup_col} FROM patient_deliveries")
-                local_res = cursor.fetchall()
-                for r in local_res:
-                    if r[0]:
-                        existing_records_set.add(str(r[0]).strip().lower())
-                conn.close()
-            except Exception as e:
-                log_local(f"Local database duplicate scan failed: {str(e)}")
+                    pass
 
-            status_progress_text.text("Analyzing spreadsheet matrix structures... (55% Complete)")
-            progress_bar_control.progress(55)
+            status_progress_text.text("Analyzing spreadsheet matrix structures... (45% Complete)")
+            progress_bar_control.progress(45)
             
-            # Construct standard database representation format
+            # DataFrame create karte waqt columns ko saaf suthra string data dein
             uploaded_records_df = pd.DataFrame({
                 "transaction_id": df[c_tx].astype(str).str.strip() if c_tx in df.columns else "",
                 "article_id": df[c_article].astype(str).str.strip(),
@@ -1025,87 +894,67 @@ def ingestion_view():
                 "booking_office": df[c_bo].astype(str).str.strip() if c_bo in df.columns else "Lahore GPO"
             })
             
-            uploaded_records_df["_dup_check_col_"] = df[excel_dup_col].astype(str).str.strip().str.lower()
+            # Jo column deduplication ke liye chuna gaya tha uski values ko mapping array me shamil karein
+            uploaded_records_df["_dup_check_col_"] = df[excel_dup_col].astype(str).str.strip()
+            
+            # 🛠️ Dobara check karke double secure karein ke koi "nan" values dictionary me na jayein
             uploaded_records_df = uploaded_records_df.fillna("")
             uploaded_records_df = uploaded_records_df.replace(to_replace=r'^[Nn][Aa][Nn]$', value='', regex=True)
             
             total_input_count = len(uploaded_records_df)
 
-            # Filter out duplicates matching either database
-            is_duplicate_record = uploaded_records_df["_dup_check_col_"].isin(existing_records_set) | (uploaded_records_df["_dup_check_col_"] == "")
-            clean_unique_records = uploaded_records_df[~is_duplicate_record].copy()
+            status_progress_text.text("Scanning database for cross-duplications... (70% Complete)")
+            progress_bar_control.progress(70)
+            
+            # Jo pehle se database me hain unhe filter out karein
+            is_duplicate_in_db = uploaded_records_df["_dup_check_col_"].isin(existing_db_records) | (uploaded_records_df["_dup_check_col_"] == "")
+            clean_unique_records = uploaded_records_df[~is_duplicate_in_db].copy()
+            
+            # Apne upload file ke andar ki duplicates bhi saaf karein
             clean_unique_records = clean_unique_records.drop_duplicates(subset=["_dup_check_col_"])
             
+            # Extra temp column drop karein
             if "_dup_check_col_" in clean_unique_records.columns:
                 clean_unique_records = clean_unique_records.drop(columns=["_dup_check_col_"])
                 
             total_duplicates_cleared = total_input_count - len(clean_unique_records)
             
-            status_progress_text.text("Converting ledger stream... (70% Complete)")
-            progress_bar_control.progress(70)
+            status_progress_text.text("Converting ledger stream... (80% Complete)")
+            progress_bar_control.progress(80)
             
+            # Dict me convert karein aur final check karein koi float NaN na bacha ho
             records_to_insert = clean_unique_records.to_dict(orient="records")
+            
+            # Safe Chunking mechanism for upload
+            chunk_size = 3000
             total_records_to_send = len(records_to_insert)
             
-            inserted_successfully = 0
-            
-            # Destination-specific save routes
-            if storage_destination == "Supabase":
-                status_progress_text.text("Pushing unique records into Cloud Supabase... (80% Complete)")
-                progress_bar_control.progress(80)
-                # Row-by-row inserts to prevent duplicate-key anomalies from stopping operation
-                for idx, record in enumerate(records_to_insert):
-                    try:
-                        supabase.table("patient_deliveries").insert(record).execute()
-                        inserted_successfully += 1
-                    except Exception as ins_err:
-                        err_str = str(ins_err).lower()
-                        if "duplicate key" in err_str or "unique constraint" in err_str:
-                            log_local(f"Skipped duplicate row on upload: {record.get('transaction_id') or record.get('article_id')}")
-                        else:
-                            log_local(f"Supabase upload skip error: {str(ins_err)}")
-                            
-                    perc_done = int(80 + (idx / total_records_to_send) * 19) if total_records_to_send > 0 else 99
-                    status_progress_text.text(f"Synchronizing database stream: {idx} of {total_records_to_send} records processed... ({perc_done}% Complete)")
-                    progress_bar_control.progress(perc_done)
+            try:
+                for i in range(0, total_records_to_send, chunk_size):
+                    chunk = records_to_insert[i:i+chunk_size]
                     
+                    # Progress update show karne ke liye
+                    percentage_done = int(80 + (i / total_records_to_send) * 19)
+                    status_progress_text.text(f"Synchronizing database stream: {i} of {total_records_to_send} records processed... ({percentage_done}% Complete)")
+                    progress_bar_control.progress(percentage_done)
+                    
+                    # Direct insert ki bajaye normal insert ab smoothly chalegi bina primary key conflicts k
+                    supabase.table("patient_deliveries").insert(chunk).execute()
+                
+                # Clear cache
                 st.session_state["master_manifest_cache"] = None
                 
-            else: # Local SQLite database
-                status_progress_text.text("Inserting unique records into Local SQLite Database... (80% Complete)")
-                progress_bar_control.progress(80)
-                try:
-                    conn = sqlite3.connect(LOCAL_DB_PATH)
-                    cursor = conn.cursor()
-                    for idx, record in enumerate(records_to_insert):
-                        cols = ", ".join(record.keys())
-                        placeholders = ", ".join(["?"] * len(record))
-                        sql_insert = f"INSERT INTO patient_deliveries ({cols}) VALUES ({placeholders})"
-                        try:
-                            cursor.execute(sql_insert, tuple(record.values()))
-                            inserted_successfully += 1
-                        except sqlite3.IntegrityError:
-                            log_local(f"Skipped duplicate row in SQLite insert: {record.get('transaction_id')}")
-                        except Exception as sq_err:
-                            log_local(f"SQLite dynamic query error: {str(sq_err)}")
-                            
-                        perc_done = int(80 + (idx / total_records_to_send) * 19) if total_records_to_send > 0 else 99
-                        status_progress_text.text(f"Updating local sqlite index: {idx} of {total_records_to_send} records... ({perc_done}% Complete)")
-                        progress_bar_control.progress(perc_done)
-                        
-                    conn.commit()
-                    conn.close()
-                except Exception as db_con_err:
-                    log_local(f"Local SQLite database insertion stream crashed: {str(db_con_err)}")
-
-            status_progress_text.empty()
-            progress_bar_control.empty()
-            ui_blocker.empty()
-            st.success(f"🟢 Processing Completed successfully! Out of {total_input_count} total scanned rows, {total_duplicates_cleared} duplicate entries were skipped using unique column '{excel_dup_col}'. A total of {inserted_successfully} records were safely appended into your chosen {storage_destination.upper()} database table.")
+                status_progress_text.empty()
+                progress_bar_control.empty()
+                ui_blocker.empty()
+                st.success(f"🟢 Success: File processed successfully! Out of {total_input_count} total records, {total_duplicates_cleared} duplicate entries were detected and removed using column '{excel_dup_col}'. The unique records ({len(records_to_insert)}) have been securely inserted into the 'patient_deliveries' table.")
+            except Exception as store_ex:
+                ui_blocker.empty()
+                st.error(f"Failed to synchronize database stream archive: {store_ex}")
 
     st.markdown("<br><hr style='border-top: 2px solid #cbd5e1;'><br>", unsafe_allow_html=True)
-    st.markdown("### 🔍 Database Cross-Matching Engine (Matches Both Local & Cloud)")
-    st.info("Upload a file here to cross-match with both the cloud and local SQLite database. This will generate a comprehensive CSV report.")
+    st.markdown("### 🔍 Cloud Database Matching Engine (Admin Only)")
+    st.info("Upload a file here to cross-match with the existing cloud database. This will generate a CSV report with matching status.")
     
     match_file = st.file_uploader("Upload File for Matching", type=["xlsx", "csv"], key="match_uploader_engine")
     
@@ -1114,50 +963,30 @@ def ingestion_view():
             df_match = pd.read_excel(match_file, dtype=str) if match_file.name.endswith('.xlsx') else pd.read_csv(match_file, low_memory=False, dtype=str)
             df_match = df_match.fillna("").replace(to_replace=r'^[Nn][Aa][Nn]$', value='', regex=True)
             
-            with st.spinner("Compiling cross-database profiles for matching..."):
-                # 1. Fetch Supabase Data
-                df_cloud_data = pd.DataFrame()
-                try:
-                    db_bytes = supabase.table("patient_deliveries").select("*").execute().data
-                    if db_bytes:
-                        df_cloud_data = pd.DataFrame(db_bytes)
-                except Exception as cloud_match_err:
-                    log_local(f"Matching fetch error (Cloud): {str(cloud_match_err)}")
-                    
-                # 2. Fetch Local SQLite Data
-                df_local_data = pd.DataFrame()
-                try:
-                    conn = sqlite3.connect(LOCAL_DB_PATH)
-                    df_local_data = pd.read_sql_query("SELECT * FROM patient_deliveries", conn)
-                    conn.close()
-                except Exception as local_match_err:
-                    log_local(f"Matching fetch error (Local): {str(local_match_err)}")
-                
-                # Combine both datasets with primary key/transaction_id deduplication
-                df_combined_db = pd.DataFrame()
-                if not df_cloud_data.empty and not df_local_data.empty:
-                    df_combined_db = pd.concat([df_cloud_data, df_local_data], ignore_index=True)
-                elif not df_cloud_data.empty:
-                    df_combined_db = df_cloud_data
-                elif not df_local_data.empty:
-                    df_combined_db = df_local_data
-                    
-                if not df_combined_db.empty:
-                    df_combined_db = df_combined_db.fillna("").replace(to_replace=r'^[Nn][Aa][Nn]$', value='', regex=True)
-                    if "transaction_id" in df_combined_db.columns:
-                        df_combined_db = df_combined_db.drop_duplicates(subset=["transaction_id"])
-                    elif "article_id" in df_combined_db.columns:
-                        df_combined_db = df_combined_db.drop_duplicates(subset=["article_id"])
-                        
-            if df_combined_db.empty:
-                st.error("Both Cloud and Local Databases are empty. Nothing to cross-match.")
+            with st.spinner("Fetching cloud database for matching..."):
+                if "master_manifest_cache" not in st.session_state or st.session_state["master_manifest_cache"] is None:
+                    try:
+                        # 30MB data matching ke liye thoda time le sakta hai. Agar data bohot zyada ho to isko bhi chunk select kiya ja sakta hai.
+                        db_bytes = supabase.table("patient_deliveries").select("*").execute().data
+                        if db_bytes:
+                            df_cloud = pd.DataFrame(db_bytes).astype(str).fillna("").replace(to_replace=r'^[Nn][Aa][Nn]$', value='', regex=True)
+                        else:
+                            df_cloud = pd.DataFrame(columns=["transaction_id", "article_id", "patient_name", "phone_number", "booking_date", "address", "patient_city", "mrn_no", "booking_office", "status"])
+                        st.session_state["master_manifest_cache"] = df_cloud
+                    except Exception:
+                        df_cloud = pd.DataFrame()
+                else:
+                    df_cloud = st.session_state["master_manifest_cache"]
+            
+            if df_cloud.empty:
+                st.error("Cloud database is currently empty. Nothing to match against.")
             else:
                 st.markdown("#### 🔗 Define Match Parameters")
                 mc_col1, mc_col2 = st.columns(2)
                 with mc_col1:
                     upload_col1 = st.selectbox("Uploaded File Field:", df_match.columns, key="uc1")
                 with mc_col2:
-                    cloud_col1 = st.selectbox("Cross Database Field:", df_combined_db.columns, key="cc1")
+                    cloud_col1 = st.selectbox("Cloud Database Field:", df_cloud.columns, key="cc1")
                 
                 if st.button("⚙️ Start Secure Matching Process", use_container_width=True):
                     ui_blocker_match = st.empty()
@@ -1172,17 +1001,17 @@ def ingestion_view():
                     total_rows = len(df_match)
                     for i, row in df_match.iterrows():
                         perc = int(((i + 1) / total_rows) * 100)
-                        if i % 100 == 0 or perc == 100:
+                        if i % 100 == 0 or perc == 100: # Har 100 rows par UI progress update karein taake speed bani rahe
                             progress_bar.progress(perc)
                             status_text.text(f"Processing and matching records... {perc}% Completed")
                         
                         val1 = str(row[upload_col1]).strip().lower()
-                        cloud_match = df_combined_db[df_combined_db[cloud_col1].astype(str).str.strip().str.lower() == val1]
+                        cloud_match = df_cloud[df_cloud[cloud_col1].astype(str).str.strip().str.lower() == val1]
                         
                         if not cloud_match.empty:
                             matched_rows.append(cloud_match.iloc[0].to_dict())
                         else:
-                            unmatched_dict = {col: "" for col in df_combined_db.columns}
+                            unmatched_dict = {col: "" for col in df_cloud.columns}
                             unmatched_dict[cloud_col1] = str(row[upload_col1])
                             unmatched_dict['Match_Status'] = 'Unmatched'
                             unmatched_rows.append(unmatched_dict)
@@ -1205,7 +1034,7 @@ def ingestion_view():
                         st.download_button(
                             label="📥 Export Result & Download CSV File",
                             data=csv_buffer.getvalue().encode('utf-8'),
-                            file_name=f"Database_CrossMatch_Results_{datetime.datetime.now().strftime('%d%m%Y_%H%M')}.csv",
+                            file_name=f"Cloud_Match_Results_{datetime.datetime.now().strftime('%d%m%Y_%H%M')}.csv",
                             mime="text/csv",
                             use_container_width=True
                         )
@@ -1277,7 +1106,7 @@ def communications_view():
     
     # Fast extraction of recent unique offices
     try:
-        recent_offices_query = supabase.table("patient_deliveries").select("booking_office").limit(200).execute().data
+        recent_offices_query = supabase.table("patient_deliveries").select("booking_office").limit(1000).execute().data
         unique_offices = sorted(list(set([str(r.get('booking_office', 'Lahore GPO')).strip() for r in recent_offices_query if r.get('booking_office')])))
         if "Lahore GPO" not in unique_offices: unique_offices.append("Lahore GPO")
     except:
@@ -1293,64 +1122,39 @@ def communications_view():
     if not query_date and not search_term:
         st.info("📅 Please select a Date from above or use the Search bar to load patient records.")
     else:
-        # Dual database integration search
-        supabase_recs = []
-        local_recs = []
-        
-        # 1. Quietly search Supabase
-        if search_term or query_date:
-            try:
-                query = supabase.table("patient_deliveries").select("*")
-                if search_term:
-                    if search_category == "All Fields":
-                        or_cond = f"patient_name.ilike.%{search_term}%,article_id.ilike.%{search_term}%,mrn_no.ilike.%{search_term}%,phone_number.ilike.%{search_term}%,transaction_id.ilike.%{search_term}%"
-                        query = query.or_(or_cond)
-                    else:
-                        query = query.ilike(search_category, f"%{search_term}%")
-                    if selected_office != "All Offices":
-                        query = query.eq("booking_office", selected_office)
+        with st.spinner("Processing live database query..."):
+            query = supabase.table("patient_deliveries").select("*")
+            
+            if search_term:
+                if search_category == "All Fields":
+                    or_cond = f"patient_name.ilike.%{search_term}%,article_id.ilike.%{search_term}%,mrn_no.ilike.%{search_term}%,phone_number.ilike.%{search_term}%,transaction_id.ilike.%{search_term}%"
+                    query = query.or_(or_cond)
                 else:
-                    if query_date:
-                        query = query.eq("booking_date", str(query_date))
-                    if selected_office != "All Offices":
-                        query = query.eq("booking_office", selected_office)
-                        
-                supabase_recs = query.limit(100).execute().data
-                for r in supabase_recs:
-                    r["_source_db"] = "supabase"
-            except Exception as se:
-                log_local(f"Supabase offline search silent error: {str(se)}")
-                
-            # 2. Quietly search Local SQLite
+                    query = query.ilike(search_category, f"%{search_term}%")
+                    
+                if selected_office != "All Offices":
+                    query = query.eq("booking_office", selected_office)
+            else:
+                if query_date:
+                    query = query.eq("booking_date", str(query_date))
+                if selected_office != "All Offices":
+                    query = query.eq("booking_office", selected_office)
+            
             try:
-                local_recs = search_local_records(search_term, search_category, selected_office)
-                for r in local_recs:
-                    r["_source_db"] = "local"
-            except Exception as le:
-                log_local(f"Local database offline search silent error: {str(le)}")
-                
-        # Merge, prioritizing Cloud records if there's a unique transaction_id/article_id match
-        combined_dict = {}
-        for r in local_recs:
-            key = r.get("transaction_id") or r.get("article_id") or str(r.get("id"))
-            combined_dict[key] = r
-            
-        for r in supabase_recs:
-            key = r.get("transaction_id") or r.get("article_id") or str(r.get("id"))
-            combined_dict[key] = r # Cloud overrides or appends
-            
-        final_recs = list(combined_dict.values())
+                # Execute query on Supabase end directly! Limit to 150 to avoid UI lag on broad searches
+                final_recs = query.limit(150).execute().data
+            except Exception as e:
+                st.error(f"Search failed: {e}")
+                final_recs = []
 
         if not final_recs: 
-            st.error("Not Found")
+            st.warning("No records matched your filters or search in the database.")
         else:
             if search_term and len(final_recs) > 1:
                 st.markdown("##### 📑 Multiple Matches Detected")
                 st.info(f"Showing top {len(final_recs)} results. Please review the matching entries below and select the correct one from the dropdown to proceed.")
-                display_df = pd.DataFrame(final_recs)
-                # Ensure headers exist
-                display_headers = [c for c in ['patient_name', 'mrn_no', 'article_id', 'phone_number', 'booking_office', 'booking_date'] if c in display_df.columns]
-                st.dataframe(display_df[display_headers], use_container_width=True)
+                display_df = pd.DataFrame(final_recs)[['patient_name', 'mrn_no', 'article_id', 'phone_number', 'booking_office', 'booking_date']]
+                st.dataframe(display_df, use_container_width=True)
 
             for profile in final_recs:
                 if "status" not in profile or str(profile.get("status")) in ["nan", "None", "", "NoneType"]:
@@ -1359,11 +1163,13 @@ def communications_view():
             options_list = []
             for r in final_recs:
                 status_val = r.get('status', 'Pending')
-                status_display = "Verified" if status_val == "Delivered" else status_val
+                if status_val == "Delivered":
+                    status_display = "Verified"
+                else:
+                    status_display = status_val
                 options_list.append(f"{str(r.get('patient_name', '')).upper()} (MRN: {r.get('mrn_no', 'N/A')}) - [{status_display}]")
                 
-            if st.session_state.selected_profile_index >= len(options_list): 
-                st.session_state.selected_profile_index = 0
+            if st.session_state.selected_profile_index >= len(options_list): st.session_state.selected_profile_index = 0
                 
             selected_prof_str = st.selectbox("Select Patient Profile to Process:", options_list, index=st.session_state.selected_profile_index, key="outbound_profile_select")
             actual_index = options_list.index(selected_prof_str) if selected_prof_str in options_list else 0
@@ -1517,23 +1323,23 @@ def communications_view():
 
                     st.markdown(f"""
                         <div class="print-manifest-card" style="background: #ffffff; border: 3px double #a61c1c; padding: 25px; font-family: 'Segoe UI', sans-serif; color: #000000;">
-                            <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 2px; margin-bottom: 5px;">
-                                <img src="https://www.pakpost.gov.pk/images/New%20Logo%20PPO.jpg" style="height: 50px; margin-bottom: 2px;" alt="Pak Post Logo">
-                                <h2 style="margin: 0; color: #a61c1c; font-size: 20px; font-weight: 800; line-height: 1.1;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
-                                <p style="margin: 2px 0 0 0; color: #1e293b; font-size: 14px; font-weight: 700;">OFFICE OF THE CHIEF POSTMASTER LAHORE GPO</p>
-                                <p style="margin: 1px 0 0 0; color: #475569; font-size: 11px; font-weight: 600;">Quality Verification & Consignee Audit Certificate</p>
+                            <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 5px; margin-bottom: 10px;">
+                                <img src="https://www.pakpost.gov.pk/images/New%20Logo%20PPO.jpg" style="height: 65px; margin-bottom: 5px;" alt="Pak Post Logo">
+                                <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
+                                <p style="margin: 3px 0 0 0; color: #1e293b; font-size: 16px; font-weight: 700;">OFFICE OF THE CHIEF POSTMASTER LAHORE GPO</p>
+                                <p style="margin: 3px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Quality Verification & Consignee Audit Certificate</p>
                             </div>
-                            <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #000000; margin-top: 5px;">
-                                <tr><td style="padding: 6px 8px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td><td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0;">{target_profile['patient_name']}</td></tr>
-                                <tr><td style="padding: 6px 8px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">MRN Number:</td><td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('mrn_no', 'N/A')}</td></tr>
-                                <tr><td style="padding: 6px 8px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Consignment ID (Article):</td><td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: 700; color: #a61c1c;">{target_profile['article_id']}</td></tr>
-                                <tr><td style="padding: 6px 8px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Contact Number:</td><td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0;">{raw_phone if raw_phone else 'N/A'}</td></tr>
-                                <tr><td style="padding: 6px 8px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Booking GPO Station:</td><td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('booking_office', 'N/A')}</td></tr>
-                                <tr><td style="padding: 6px 8px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Mailing Address:</td><td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0;">{target_profile['address']}</td></tr>
-                                <tr><td style="padding: 6px 8px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">EMTTS Tracking Status:</td><td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; vertical-align: top;">{emtts_status_html}</td></tr>
-                                <tr><td style="padding: 6px 8px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Verification Status:</td><td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0;">{print_status_detail}</td></tr>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #000000;">
+                                <tr><td style="padding: 8px 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['patient_name']}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">MRN Number:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('mrn_no', 'N/A')}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Consignment ID (Article):</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: 700; color: #a61c1c;">{target_profile['article_id']}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Contact Number:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{raw_phone if raw_phone else 'N/A'}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Booking GPO Station:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile.get('booking_office', 'N/A')}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Mailing Address:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['address']}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">EMTTS Tracking Status:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top;">{emtts_status_html}</td></tr>
+                                <tr><td style="padding: 8px 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0; vertical-align: top;">Verification Status:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{print_status_detail}</td></tr>
                             </table>
-                            <div style="margin-top: 25px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 15px; color: #000000;">
+                            <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 13px; border-top: 1px solid #cbd5e1; padding-top: 15px; color: #000000;">
                                 <div>
                                     <b>Verified By (Operator ID):</b> {print_operator}<br>
                                     <span style="font-size: 11px; color: #475569;">Timestamp: {current_pkt_time} (PKT)</span>
@@ -1726,74 +1532,28 @@ def communications_view():
                                  
                     if can_submit:
                         if st.button("💾 Finalize Session & Commit Logs", use_container_width=True):
-                            payload_buffer["operator_stamp"] = st.session_state.full_name
-                            payload_buffer["article_id"] = target_profile["article_id"]
-                            payload_buffer["patient_name"] = target_profile["patient_name"]
-                            payload_buffer["phone_number"] = target_profile["phone_number"]
-                            payload_buffer["booking_date"] = target_profile["booking_date"]
-                            payload_buffer["address"] = target_profile["address"]
-                            payload_buffer["patient_city"] = target_profile["patient_city"]
-                            payload_buffer["mrn_no"] = target_profile["mrn_no"]
-                            payload_buffer["booking_office"] = target_profile["booking_office"]
-                            
-                            source_db = target_profile.get("_source_db", "supabase")
-                            
-                            # Log verification operation quietly
-                            log_local(f"Attempting update for Article ID {target_profile['article_id']} in database source '{source_db}'")
-                            
-                            # Strip the temporary tracking identifier column
-                            clean_payload = payload_buffer.copy()
-                            if "_source_db" in clean_payload:
-                                del clean_payload["_source_db"]
+                            with st.spinner("Processing transaction submission rules..."):
+                                payload_buffer["operator_stamp"] = st.session_state.full_name
+                                payload_buffer["article_id"] = target_profile["article_id"]
+                                payload_buffer["patient_name"] = target_profile["patient_name"]
+                                payload_buffer["phone_number"] = target_profile["phone_number"]
+                                payload_buffer["booking_date"] = target_profile["booking_date"]
+                                payload_buffer["address"] = target_profile["address"]
+                                payload_buffer["patient_city"] = target_profile["patient_city"]
+                                payload_buffer["mrn_no"] = target_profile["mrn_no"]
+                                payload_buffer["booking_office"] = target_profile["booking_office"]
                                 
-                            if source_db == "supabase":
                                 try:
-                                    if target_profile.get("id"):
-                                        supabase.table("patient_deliveries").update(clean_payload).eq("id", target_profile.get("id")).execute()
-                                    else:
-                                        supabase.table("patient_deliveries").update(clean_payload).eq("article_id", current_article_id).execute()
-                                        
-                                    st.success("Updated securely in Cloud (Supabase) with your operator identity stamp!")
+                                    # Database insert me ab conflicts ki parwa kiye bina seamlessly upsert/update hoga
+                                    supabase.table("patient_deliveries").update(payload_buffer).eq("id", target_profile.get("id")).execute() if target_profile.get("id") else supabase.table("patient_deliveries").insert(payload_buffer).execute()
+                                    st.success("Updated securely with your operator identity stamp!")
                                     st.session_state.selected_profile_index += 1
                                     save_operator_state()
                                     time.sleep(0.5)
                                     st.rerun()
-                                except Exception as e: 
-                                    st.error(f"Cloud update failed: {str(e)}")
-                                    log_local(f"Cloud update failure: {str(e)}")
-                            else: # local
-                                try:
-                                    conn = sqlite3.connect(LOCAL_DB_PATH)
-                                    cursor = conn.cursor()
-                                    
-                                    update_fields = []
-                                    update_values = []
-                                    for col, val in clean_payload.items():
-                                        if col != "id":
-                                            update_fields.append(f"{col} = ?")
-                                            update_values.append(val)
-                                            
-                                    if target_profile.get("id"):
-                                        update_values.append(target_profile.get("id"))
-                                        sql_q = f"UPDATE patient_deliveries SET {', '.join(update_fields)} WHERE id = ?"
-                                    else:
-                                        update_values.append(current_article_id)
-                                        sql_q = f"UPDATE patient_deliveries SET {', '.join(update_fields)} WHERE article_id = ?"
-                                        
-                                    cursor.execute(sql_q, tuple(update_values))
-                                    conn.commit()
-                                    conn.close()
-                                    
-                                    st.success("Updated securely in Local SQLite database with your operator identity stamp!")
-                                    st.session_state.selected_profile_index += 1
-                                    save_operator_state()
-                                    time.sleep(0.5)
-                                    st.rerun()
-                                except Exception as e:
-                                    st.error(f"Local SQLite update failed: {str(e)}")
-                                    log_local(f"Local update failure: {str(e)}")
+                                except Exception as e: st.error(f"Sync error: {e}")
                 else:
-                    st.info("ℹ_ Select 'Yes' above to unlock the patient questionnaire for re-verification.")
+                    st.info("ℹ️ Select 'Yes' above to unlock the patient questionnaire for re-verification.")
 
 def export_center_view():
     st.session_state.current_navigation_tab = "📥 Secure Reports Export Center"
@@ -1963,41 +1723,97 @@ if st.session_state.logged_in:
             today = datetime.date.today()
             today_count = 0
             
-            # Database statistics scan
+            # 1. Database se 'created_at' ke sath 'status' ka column bhi mangwaya
             if st.session_state.role == "admin":
                 res_stats = supabase.table("patient_deliveries").select("created_at, status").execute().data
             else:
                 res_stats = supabase.table("patient_deliveries").select("created_at, status").eq("operator_stamp", st.session_state.full_name).execute().data
                 
             for r in res_stats:
-                if r.get("created_at"):
-                    try:
-                        dt = datetime.datetime.fromisoformat(r["created_at"].replace('Z', '+00:00')).date()
-                        if dt == today:
-                            today_count += 1
-                    except Exception:
-                        pass
-                        
-            st.markdown(f"<div class='sb-login-label'>Today's Verifications:</div><div class='sb-username-display' style='color:#39ff14 !important;'>{today_count}</div>", unsafe_allow_html=True)
-        except Exception:
-            pass
+                # 2. Check lagaya ke current record ka status kya hai
+                status_val = str(r.get('status', 'Pending')).strip()
+                
+                # 3. Agar status in mein se NAI hai, sirf tabhi count karo
+                if status_val not in ["Pending", "Pending Retry", "nan", "None", ""]:
+                    if 'created_at' in r and r['created_at']:
+                        try:
+                            dt = datetime.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00')).date()
+                            if dt == today:
+                                today_count += 1
+                        except: pass
             
-        st.markdown("<hr style='border-color: rgba(212,175,55,0.3);'>", unsafe_allow_html=True)
+            count_label = "Total Verifications Today"
+            st.markdown(f"""
+                <style>
+                    /* 3D Machine Box Style */
+                    .machine-box {{
+                        background: linear-gradient(145deg, #151518, #1f1f24) !important;
+                        border: 2px solid #ff3333 !important;
+                        border-bottom: 5px solid #990000 !important; /* 3D Base Depth */
+                        border-radius: 12px !important;
+                        padding: 6px !important;
+                        text-align: center !important;
+                        /* 3D Outer Shadow + Inside Glow */
+                        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6), 
+                                    inset 0 0 12px rgba(255, 51, 51, 0.2) !important;
+                        margin-top: 15px !important;
+                        margin-bottom: 15px !important;
+                    }}
+                    
+                    /* Machine Label */
+                    .machine-label, .machine-label * {{
+                        color: #94a3b8 !important;
+                        font-size: 11px !important;
+                        font-weight: 700 !important;
+                        text-transform: uppercase !important;
+                        letter-spacing: 1px !important;
+                    }}
+                    
+                    /* Bulletproof Shiny Red Digital Count */
+                    .machine-count, .machine-count * {{
+                        color: #ffb703 !important; /* Universal Override */
+                        font-size: 24px !important; 
+                        font-weight: 900 !important;
+                        font-family: 'Courier New', Courier, monospace !important; /* Digital Display Look */
+                        text-shadow: 0 0 10px #ff3333, 0 0 20px rgba(255, 51, 51, 0.6) !important;
+                        margin-top: 5px !important;
+                        display: block !important;
+                    }}
+                </style>
+                
+                <div class='machine-box'>
+                    <div class='machine-label'>{count_label}</div>
+                    <span class='machine-count'>{today_count}</span>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("📅 View Date-wise Stats", use_container_width=True):
+                user_stats_dialog()
+                
+        except Exception: pass
         
-        if st.button("🔐 Change Password", use_container_width=True):
-            change_password_dialog()
+        st.markdown("<div class='password-btn-anchor'></div>", unsafe_allow_html=True)
+        if st.button("🔐 Change User Password", use_container_width=True): change_password_dialog()
+        
+        if not st.session_state.show_recovery_prompt:
+            st.markdown("<br><hr style='border-top: 2px solid rgba(212,175,55,0.4); margin: 10px 0;'><br>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size: 15px; font-weight: 800; color: #d4af37; margin-bottom: 12px; letter-spacing: 1.5px;'>📂 SYSTEM NAVIGATION</div>", unsafe_allow_html=True)
             
-        if st.button("📊 Verification Stats", use_container_width=True):
-            user_stats_dialog()
-            
+            for pg in pages_to_display:
+                button_label = f"▶️ **{pg.icon} {pg.title}**" if pg.title == selected_navigation_route.title else f"{pg.icon} {pg.title}"
+                if st.button(button_label, use_container_width=True, key=f"nav_btn_{pg.title}"): 
+                    if pg.title != selected_navigation_route.title:
+                        st.session_state.current_navigation_tab = pg.title
+                        st.query_params["tab"] = pg.title
+                        st.switch_page(pg)
+                    
+        st.markdown("<br><hr style='border-top: 2px solid rgba(212,175,55,0.4); margin: 10px 0;'><br>", unsafe_allow_html=True)
+        
         st.markdown("<div class='terminate-btn-anchor'></div>", unsafe_allow_html=True)
-        if st.button("🔴 Terminate Session", use_container_width=True):
-            st.session_state.logged_in = False
-            st.session_state.username = ""
-            st.session_state.full_name = ""
-            st.session_state.role = ""
-            st.query_params.clear()
-            st.rerun()
+        if st.button("Terminate Session 🚪", use_container_width=True):
+            with st.spinner("Processing session termination..."):
+                st.session_state.logged_in = False
+                st.query_params.clear()
+                st.rerun()
 
-# Run the navigation system cleanly
 selected_navigation_route.run()
