@@ -86,8 +86,33 @@ init_local_db()
 
 def check_duplicates_dual(unique_vals, col_name="transaction_id"):
     existing = set()
-    if not unique_vals:
-        return existing
+    if not unique_vals: return existing
+    vals_list = list(unique_vals)
+    
+    # 1. Check Local SQLite (Fast Batching: 900 records at a time)
+    conn = get_local_db_connection()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            for i in range(0, len(vals_list), 900):
+                sub = vals_list[i:i+900]
+                placeholders = ",".join(["?"] * len(sub))
+                cursor.execute(f"SELECT {col_name} FROM patient_deliveries WHERE {col_name} IN ({placeholders})", sub)
+                for r in cursor.fetchall():
+                    if r[0]: existing.add(str(r[0]).strip())
+            conn.close()
+        except Exception: pass
+
+    # 2. Check Supabase (Batch limit: 100 to prevent API crashing/stuck at 30%)
+    try:
+        for i in range(0, len(vals_list), 100):
+            sub = vals_list[i:i+100]
+            res = supabase.table("patient_deliveries").select(col_name).in_(col_name, sub).execute().data
+            for r in res:
+                if r.get(col_name): existing.add(str(r[col_name]).strip())
+    except Exception: pass
+        
+    return existing
     # 1. Check Local SQLite
     conn = get_local_db_connection()
     if conn:
@@ -796,8 +821,9 @@ def open_alert_manifest(alert_data):
     st.markdown(f"""
         
         <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 55px; font-weight: bold; color: rgba(0, 0, 0, 0.035); z-index: -1; pointer-events: none; font-family: 'Segoe UI', sans-serif;">SHC Cell Lahore GPO</div>
-        <div class="print-manifest-card" style="background: #ffffff; border: 3px double #a61c1c; padding: 20px; font-family: 'Segoe UI', sans-serif; color: #000000;">
-            <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 2px; margin-bottom: 6px;">
+        <div class="print-manifest-card" style="position: relative; background: #ffffff; border: 3px double #a61c1c; padding: 10px 25px; font-family: 'Segoe UI', sans-serif; color: #000000; z-index: 1;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 80px; font-weight: 900; color: rgba(0, 0, 0, 0.05); z-index: -1; pointer-events: none; white-space: nowrap;">SHC Cell Lahore GPO</div>
+        <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 0px; margin-bottom: 2px;">
                 <img src="https://www.pakpost.gov.pk/images/New%20Logo%20PPO.jpg" style="height: 65px; margin-bottom: 5px;" alt="Pak Post Logo">
                 <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
                 <p style="margin: 3px 0 0 0; color: #1e293b; font-size: 16px; font-weight: 700;">OFFICE OF THE CHIEF POSTMASTER LAHORE GPO</p>
@@ -1518,8 +1544,9 @@ def communications_view():
                     current_pkt_time = datetime.datetime.now(PKT_TZ).strftime('%Y-%m-%d %I:%M:%S %p')
 
                     st.markdown(f"""
-                        <div class="print-manifest-card" style="background: #ffffff; border: 3px double #a61c1c; padding: 25px; font-family: 'Segoe UI', sans-serif; color: #000000;">
-                            <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 5px; margin-bottom: 10px;">
+                        <div class="print-manifest-card" style="position: relative; background: #ffffff; border: 3px double #a61c1c; padding: 10px 25px; font-family: 'Segoe UI', sans-serif; color: #000000; z-index: 1;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 80px; font-weight: 900; color: rgba(0, 0, 0, 0.05); z-index: -1; pointer-events: none; white-space: nowrap;">SHC Cell Lahore GPO</div>
+        <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 0px; margin-bottom: 2px;">
                                 <img src="https://www.pakpost.gov.pk/images/New%20Logo%20PPO.jpg" style="height: 65px; margin-bottom: 5px;" alt="Pak Post Logo">
                                 <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
                                 <p style="margin: 3px 0 0 0; color: #1e293b; font-size: 16px; font-weight: 700;">OFFICE OF THE CHIEF POSTMASTER LAHORE GPO</p>
