@@ -15,7 +15,10 @@ import logging
 # =============================================================================
 # 🗄️ LOCAL DATABASE HYDRATION & LOGGING ENGINE (Request 5, 8, 13)
 # =============================================================================
-LOCAL_DB_DIR = r"D:\SHC Database"
+import platform
+# Smart DB Engine: Detects Windows (Laptop) vs Linux (Streamlit Cloud)
+IS_WINDOWS = platform.system() == "Windows"
+LOCAL_DB_DIR = r"D:\SHC Database" if IS_WINDOWS else "/tmp/shc_local_temp"
 LOCAL_DB_PATH = os.path.join(LOCAL_DB_DIR, "shc_local.db")
 LOCAL_LOG_PATH = os.path.join(LOCAL_DB_DIR, "questionnaire_logs.txt")
 
@@ -32,6 +35,7 @@ logging.basicConfig(
 )
 
 def get_local_db_connection():
+    if not IS_WINDOWS: return None # Forces Supabase fallback on Cloud
     try:
         os.makedirs(LOCAL_DB_DIR, exist_ok=True)
         conn = sqlite3.connect(LOCAL_DB_PATH, timeout=20.0)
@@ -749,7 +753,7 @@ def user_stats_dialog():
         with st.spinner("Fetching logs matrix..."):
             try:
                 if st.session_state.role == "admin":
-                    users_res = supabase.table("app_users").select("full_name").eq("role", "staff").execute().data
+                    users_res = supabase.table("app_users").select("full_name").execute().data  # Patched: Fetch Admin + Staff
                     staff_names = [u['full_name'] for u in users_res] if users_res else []
                     
                     all_records = supabase.table("patient_deliveries").select("operator_stamp, created_at").execute().data
@@ -820,16 +824,16 @@ def open_alert_manifest(alert_data):
         
     st.markdown(f"""
         
-        <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 55px; font-weight: bold; color: rgba(0, 0, 0, 0.035); z-index: -1; pointer-events: none; font-family: 'Segoe UI', sans-serif;">SHC Cell Lahore GPO</div>
+        <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 55px; font-weight: bold; color: rgba(0, 0, 0, 0.015); z-index: -1; pointer-events: none; font-family: 'Segoe UI', sans-serif;">SHC Cell Lahore GPO</div>
         <div class="print-manifest-card" style="position: relative; background: #ffffff; border: 3px double #a61c1c; padding: 10px 25px; font-family: 'Segoe UI', sans-serif; color: #000000; z-index: 1;">
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 80px; font-weight: 900; color: rgba(0, 0, 0, 0.05); z-index: -1; pointer-events: none; white-space: nowrap;">SHC Cell Lahore GPO</div>
-        <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 0px; margin-bottom: 2px;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 80px; font-weight: 900; color: rgba(0, 0, 0, 0.02); z-index: -1; pointer-events: none; white-space: nowrap;">SHC Cell Lahore GPO</div>
+        <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 15px; margin-bottom: 20px;">
                 <img src="https://www.pakpost.gov.pk/images/New%20Logo%20PPO.jpg" style="height: 65px; margin-bottom: 5px;" alt="Pak Post Logo">
                 <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
                 <p style="margin: 3px 0 0 0; color: #1e293b; font-size: 16px; font-weight: 700;">OFFICE OF THE CHIEF POSTMASTER LAHORE GPO</p>
                 <p style="margin: 3px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Patient Feedback & Medicine Delivery Audit Certificate</p>
             </div>
-            <table style="width: 100%; border-collapse: collapse; font-size: 15px; color: #000000;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 15px; color: #000000; margin-top: 20px;">
                 <tr><td style="padding: 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('patient_name', 'N/A')}</td></tr>
                 <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">MRN Number:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('mrn_no', 'N/A')}</td></tr>
                 <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Consignment ID (Article):</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: 700; color: #a61c1c;">{alert_data['article_id']}</td></tr>
@@ -1545,8 +1549,8 @@ def communications_view():
 
                     st.markdown(f"""
                         <div class="print-manifest-card" style="position: relative; background: #ffffff; border: 3px double #a61c1c; padding: 10px 25px; font-family: 'Segoe UI', sans-serif; color: #000000; z-index: 1;">
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 80px; font-weight: 900; color: rgba(0, 0, 0, 0.05); z-index: -1; pointer-events: none; white-space: nowrap;">SHC Cell Lahore GPO</div>
-        <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 0px; margin-bottom: 2px;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 80px; font-weight: 900; color: rgba(0, 0, 0, 0.02); z-index: -1; pointer-events: none; white-space: nowrap;">SHC Cell Lahore GPO</div>
+        <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 15px; margin-bottom: 20px;">
                                 <img src="https://www.pakpost.gov.pk/images/New%20Logo%20PPO.jpg" style="height: 65px; margin-bottom: 5px;" alt="Pak Post Logo">
                                 <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
                                 <p style="margin: 3px 0 0 0; color: #1e293b; font-size: 16px; font-weight: 700;">OFFICE OF THE CHIEF POSTMASTER LAHORE GPO</p>
