@@ -103,7 +103,7 @@ def check_duplicates_dual(unique_vals, col_name="transaction_id"):
             pass
     # 2. Check Supabase (with minimal egress projection)
     try:
-        batch_size = 5000
+        batch_size = 200
         vals_list = list(unique_vals)
         for i in range(0, len(vals_list), batch_size):
             sub = vals_list[i:i+batch_size]
