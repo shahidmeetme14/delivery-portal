@@ -15,10 +15,7 @@ import logging
 # =============================================================================
 # 🗄️ LOCAL DATABASE HYDRATION & LOGGING ENGINE (Request 5, 8, 13)
 # =============================================================================
-import platform
-# Smart DB Engine: Detects Windows (Laptop) vs Linux (Streamlit Cloud)
-IS_WINDOWS = platform.system() == "Windows"
-LOCAL_DB_DIR = r"D:\SHC Database" if IS_WINDOWS else "/tmp/shc_local_temp"
+LOCAL_DB_DIR = r"D:\SHC Database"
 LOCAL_DB_PATH = os.path.join(LOCAL_DB_DIR, "shc_local.db")
 LOCAL_LOG_PATH = os.path.join(LOCAL_DB_DIR, "questionnaire_logs.txt")
 
@@ -35,14 +32,68 @@ logging.basicConfig(
 )
 
 def get_local_db_connection():
-    if not IS_WINDOWS: return None # Forces Supabase fallback on Cloud
     try:
+        # Prevent fake folder creations on Linux/Streamlit Cloud
+        if os.name != 'nt':
+            return None
+        # Verify physical D:\ drive availability on Windows Laptop
+        if not os.path.exists("D:\\"):
+            return None
+            
         os.makedirs(LOCAL_DB_DIR, exist_ok=True)
         conn = sqlite3.connect(LOCAL_DB_PATH, timeout=20.0)
         conn.row_factory = sqlite3.Row
         return conn
     except Exception as e:
         return None
+
+def get_todays_verification_count(role, full_name):
+    pkt_today = datetime.datetime.now(PKT_TZ).strftime('%Y-%m-%d')
+    todays_ids = set()
+    
+    # 1. Pull verified transactions from Local SQLite if available
+    conn = get_local_db_connection()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            if role == "admin":
+                cursor.execute("SELECT transaction_id, created_at FROM patient_deliveries")
+            else:
+                cursor.execute("SELECT transaction_id, created_at FROM patient_deliveries WHERE operator_stamp = ?", (full_name,))
+            rows = cursor.fetchall()
+            for r in rows:
+                if r[1]:
+                    try:
+                        dt_str = r[1].split(" ")[0]
+                        if dt_str == pkt_today and r[0]:
+                            todays_ids.add(str(r[0]))
+                    except:
+                        pass
+            conn.close()
+        except Exception:
+            pass
+            
+    # 2. Pull verified transactions from Supabase Cloud
+    try:
+        if role == "admin":
+            res = supabase.table("patient_deliveries").select("transaction_id, created_at").execute().data
+        else:
+            res = supabase.table("patient_deliveries").select("transaction_id, created_at").eq("operator_stamp", full_name).execute().data
+        
+        if res:
+            for r in res:
+                if r.get("created_at") and r.get("transaction_id"):
+                    try:
+                        dt_str = r["created_at"].split("T")[0]
+                        if dt_str == pkt_today:
+                            todays_ids.add(str(r["transaction_id"]))
+                    except:
+                        pass
+    except Exception:
+        pass
+        
+    return len(todays_ids)
+
 
 def init_local_db():
     conn = get_local_db_connection()
@@ -753,7 +804,7 @@ def user_stats_dialog():
         with st.spinner("Fetching logs matrix..."):
             try:
                 if st.session_state.role == "admin":
-                    users_res = supabase.table("app_users").select("full_name").execute().data  # Patched: Fetch Admin + Staff
+                    users_res = supabase.table("app_users").select("full_name").eq("role", "staff").execute().data
                     staff_names = [u['full_name'] for u in users_res] if users_res else []
                     
                     all_records = supabase.table("patient_deliveries").select("operator_stamp, created_at").execute().data
@@ -824,16 +875,16 @@ def open_alert_manifest(alert_data):
         
     st.markdown(f"""
         
-        <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 55px; font-weight: bold; color: rgba(0, 0, 0, 0.015); z-index: -1; pointer-events: none; font-family: 'Segoe UI', sans-serif;">SHC Cell Lahore GPO</div>
+        <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 55px; font-weight: bold; color: rgba(166, 28, 28, 0.012); text-transform: uppercase; letter-spacing: 2px; z-index: -1; pointer-events: none; font-family: 'Segoe UI', sans-serif;">SHC Cell Lahore GPO</div>
         <div class="print-manifest-card" style="position: relative; background: #ffffff; border: 3px double #a61c1c; padding: 10px 25px; font-family: 'Segoe UI', sans-serif; color: #000000; z-index: 1;">
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 80px; font-weight: 900; color: rgba(0, 0, 0, 0.02); z-index: -1; pointer-events: none; white-space: nowrap;">SHC Cell Lahore GPO</div>
-        <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 15px; margin-bottom: 20px;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 75px; font-weight: 700; color: rgba(166, 28, 28, 0.015); text-transform: uppercase; letter-spacing: 2px; z-index: -1; pointer-events: none; white-space: nowrap;">SHC Cell Lahore GPO</div>
+        <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 0px; margin-bottom: 2px;">
                 <img src="https://www.pakpost.gov.pk/images/New%20Logo%20PPO.jpg" style="height: 65px; margin-bottom: 5px;" alt="Pak Post Logo">
                 <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
                 <p style="margin: 3px 0 0 0; color: #1e293b; font-size: 16px; font-weight: 700;">OFFICE OF THE CHIEF POSTMASTER LAHORE GPO</p>
                 <p style="margin: 3px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Patient Feedback & Medicine Delivery Audit Certificate</p>
             </div>
-            <table style="width: 100%; border-collapse: collapse; font-size: 15px; color: #000000; margin-top: 20px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 15px; color: #000000;">
                 <tr><td style="padding: 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('patient_name', 'N/A')}</td></tr>
                 <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">MRN Number:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('mrn_no', 'N/A')}</td></tr>
                 <tr><td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #e2e8f0;">Consignment ID (Article):</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: 700; color: #a61c1c;">{alert_data['article_id']}</td></tr>
@@ -1088,6 +1139,12 @@ def ingestion_view():
             
             try:
                 if upload_destination == "Local Database (Offline D:\\SHC Database)":
+                    if get_local_db_connection() is None:
+                        ui_blocker.empty()
+                        status_progress_text.empty()
+                        progress_bar_control.empty()
+                        st.error("❌ Local Database is unavailable. Please run this app on your physical laptop with a valid D:\\ drive, or select Supabase (Cloud Database) instead.")
+                        st.stop()
                     status_progress_text.text("Writing append-only stream to Local SQLite Database...")
                     ins_count, skip_count = save_to_local_db(records_to_insert)
                     status_progress_text.empty()
@@ -1261,9 +1318,18 @@ def operator_matrix_view():
         st.markdown("#### 🕒 Real-time Session Login Logs")
         try:
             try:
-                logs_res = supabase.table("user_logins").select("*").order("created_at", desc=True).limit(50).execute().data
+                if st.session_state.role == "admin":
+                    logs_res = supabase.table("user_logins").select("*").order("created_at", desc=True).limit(50).execute().data
+                else:
+                    logs_res = supabase.table("user_logins").select("*").eq("username", st.session_state.username).order("created_at", desc=True).limit(50).execute().data
             except Exception:
-                logs_res = supabase.table("user_logins").select("*").limit(50).execute().data
+                try:
+                    if st.session_state.role == "admin":
+                        logs_res = supabase.table("user_logins").select("*").limit(50).execute().data
+                    else:
+                        logs_res = supabase.table("user_logins").select("*").eq("username", st.session_state.username).limit(50).execute().data
+                except Exception:
+                    logs_res = []
                 
             if logs_res:
                 df_logs = pd.DataFrame(logs_res)
@@ -1549,8 +1615,8 @@ def communications_view():
 
                     st.markdown(f"""
                         <div class="print-manifest-card" style="position: relative; background: #ffffff; border: 3px double #a61c1c; padding: 10px 25px; font-family: 'Segoe UI', sans-serif; color: #000000; z-index: 1;">
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 80px; font-weight: 900; color: rgba(0, 0, 0, 0.02); z-index: -1; pointer-events: none; white-space: nowrap;">SHC Cell Lahore GPO</div>
-        <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 15px; margin-bottom: 20px;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 75px; font-weight: 700; color: rgba(166, 28, 28, 0.015); text-transform: uppercase; letter-spacing: 2px; z-index: -1; pointer-events: none; white-space: nowrap;">SHC Cell Lahore GPO</div>
+        <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 0px; margin-bottom: 2px;">
                                 <img src="https://www.pakpost.gov.pk/images/New%20Logo%20PPO.jpg" style="height: 65px; margin-bottom: 5px;" alt="Pak Post Logo">
                                 <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
                                 <p style="margin: 3px 0 0 0; color: #1e293b; font-size: 16px; font-weight: 700;">OFFICE OF THE CHIEF POSTMASTER LAHORE GPO</p>
@@ -1969,7 +2035,7 @@ if st.session_state.logged_in:
         
         try:
             today = datetime.date.today()
-            today_count = 0
+            today_count = get_todays_verification_count(st.session_state.role, st.session_state.full_name)
             
             # 1. Database se 'created_at' ke sath 'status' ka column bhi mangwaya
             if st.session_state.role == "admin":
