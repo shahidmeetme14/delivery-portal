@@ -661,11 +661,9 @@ def open_alert_manifest(alert_data):
         
     st.markdown(f"""
         <div class="print-manifest-card" style="background: #ffffff; border: 3px double #a61c1c; padding: 25px; font-family: 'Segoe UI', sans-serif; color: #000000;">
-            <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 5px; margin-bottom: 10px;">
-                <img src="https://www.pakpost.gov.pk/images/New%20Logo%20PPO.jpg" style="height: 65px; margin-bottom: 5px;" alt="Pak Post Logo">
+            <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 10px; margin-bottom: 20px;">
                 <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
-                <p style="margin: 3px 0 0 0; color: #1e293b; font-size: 16px; font-weight: 700;">OFFICE OF THE CHIEF POSTMASTER LAHORE GPO</p>
-                <p style="margin: 3px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Patient Feedback & Medicine Delivery Audit Certificate</p>
+                <p style="margin: 5px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Patient Feedback & Medicine Delivery Audit Certificate</p>
             </div>
             <table style="width: 100%; border-collapse: collapse; font-size: 15px; color: #000000;">
                 <tr><td style="padding: 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">{alert_data.get('patient_name', 'N/A')}</td></tr>
@@ -1344,11 +1342,9 @@ def communications_view():
 
                         st.markdown(f"""
                             <div class="print-manifest-card" style="background: #ffffff; border: 3px double #a61c1c; padding: 25px; font-family: 'Segoe UI', sans-serif; color: #000000;">
-                                <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 5px; margin-bottom: 10px;">
-                                    <img src="https://www.pakpost.gov.pk/images/New%20Logo%20PPO.jpg" style="height: 65px; margin-bottom: 5px;" alt="Pak Post Logo">
+                                <div style="text-align: center; border-bottom: 2px solid #a61c1c; padding-bottom: 10px; margin-bottom: 20px;">
                                     <h2 style="margin: 0; color: #a61c1c; font-size: 22px; font-weight: 800;">PAKISTAN POST | PATIENT FEEDBACK MANIFEST</h2>
-                                    <p style="margin: 3px 0 0 0; color: #1e293b; font-size: 16px; font-weight: 700;">OFFICE OF THE CHIEF POSTMASTER LAHORE GPO</p>
-                                    <p style="margin: 3px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Quality Verification & Consignee Audit Certificate</p>
+                                    <p style="margin: 5px 0 0 0; color: #475569; font-size: 13px; font-weight: 600;">Quality Verification & Consignee Audit Certificate</p>
                                 </div>
                                 <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #000000;">
                                     <tr><td style="padding: 8px 10px; font-weight: bold; width: 35%; border-bottom: 1px solid #e2e8f0;">Patient Name:</td><td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">{target_profile['patient_name']}</td></tr>
@@ -1743,25 +1739,18 @@ if st.session_state.logged_in:
         try:
             today = datetime.date.today()
             today_count = 0
-            
-            # 1. Database se 'created_at' ke sath 'status' ka column bhi mangwaya
             if st.session_state.role == "admin":
-                res_stats = supabase.table("patient_deliveries").select("created_at, status").execute().data
+                res_stats = supabase.table("patient_deliveries").select("created_at").execute().data
             else:
-                res_stats = supabase.table("patient_deliveries").select("created_at, status").eq("operator_stamp", st.session_state.full_name).execute().data
+                res_stats = supabase.table("patient_deliveries").select("created_at").eq("operator_stamp", st.session_state.full_name).execute().data
                 
             for r in res_stats:
-                # 2. Check lagaya ke current record ka status kya hai
-                status_val = str(r.get('status', 'Pending')).strip()
-                
-                # 3. Agar status in mein se NAI hai, sirf tabhi count karo
-                if status_val not in ["Pending", "Pending Retry", "nan", "None", ""]:
-                    if 'created_at' in r and r['created_at']:
-                        try:
-                            dt = datetime.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00')).date()
-                            if dt == today:
-                                today_count += 1
-                        except: pass
+                if 'created_at' in r and r['created_at']:
+                    try:
+                        dt = datetime.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00')).date()
+                        if dt == today:
+                            today_count += 1
+                    except: pass
             
             count_label = "Total Verifications Today"
             st.markdown(f"""
